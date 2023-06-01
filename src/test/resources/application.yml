@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: contracts-orchestrator
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://key-server:8080/realms/POC1
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+  datasource:
+    driverClassName: org.h2.Driver
+  jpa:
+    generate-ddl: true
+    ddl:
+      ddl-auto: create
+    properties:
+      hibernate:
+        show_sql: true
+        use_sql_comments: true
+        format_sql: true
+
+
+jwt:
+  auth:
+    converter:
+      resource-id: MARKETPLACE
+      principal-attribute: preferred_username
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+server:
+  port: '8084'
+  servlet:
+    context-path: /api
+  error:
+    include-stacktrace: "never"
+
+gxfscatalog:
+  base-uri: "http://localhost:8081"
+  selfdescriptions-uri: "${gxfscatalog.base-uri}/self-descriptions"
+
+gxfswizard:
+  base-uri: "http://localhost:8085"
+
+keycloak:
+  client-id: "federated-catalogue"
+  authorization-grant-type: "password"
+  base-uri: "http://key-server:8080"
+  oidc-base-uri: "${keycloak.base-uri}/realms/gxfscatalog/protocol/openid-connect"
+  authorization-uri: "${keycloak.oidc-base-uri}/auth"
+  token-uri: "${keycloak.oidc-base-uri}/token"
+  logout-uri: "${keycloak.oidc-base-uri}/logout"
+  jwk-set-uri: "${keycloak.oidc-base-uri}/certs"
+  client-secret: "NnyjZISWVHa9zamW8XEGsSuH6pbtXLmg"
+  gxfscatalog-user: "gxfscatalog"
+  gxfscatalog-pass: "gxfscatalog"

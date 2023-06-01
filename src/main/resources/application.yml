@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: contracts-orchestrator
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://key-server:8080/realms/POC1
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+  datasource:
+    url: jdbc:h2:file:./database.db
+    username: sa
+    password:
+    driverClassName: org.h2.Driver
+    initialization-mode: always
+  jpa:
+    generate-ddl: true
+    ddl:
+      ddl-auto: create
+    properties:
+      hibernate:
+        show_sql: true
+        use_sql_comments: true
+        format_sql: true
+
+
+jwt:
+  auth:
+    converter:
+      resource-id: MARKETPLACE
+      principal-attribute: preferred_username
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+server:
+  port: '8086'
+  servlet:
+    context-path: /api
+  error:
+    include-stacktrace: "never"
