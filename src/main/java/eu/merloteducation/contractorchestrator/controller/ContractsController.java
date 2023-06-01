@@ -57,8 +57,7 @@ public class ContractsController {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return null;
         }
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        authentication.getAuthorities()
+
         return this.contractStorageService.addContractTemplate(contractCreateRequest, authToken);
     }
 
