@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import jakarta.persistence.Entity;
@@ -13,13 +12,15 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
-public class Contract {
+public class ContractTemplate {
     @Id
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @Setter(AccessLevel.NONE)
     private String id;
 
     @Enumerated(EnumType.STRING)
@@ -28,6 +29,7 @@ public class Contract {
     private ContractState state;
 
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @Setter(AccessLevel.NONE)
     private OffsetDateTime creationDate;
 
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
@@ -67,16 +69,15 @@ public class Contract {
     private String providerTncUrl;
 
     @JsonView(ContractViews.DetailedView.class)
-    private String providerTncHash;
-
-    @JsonView(ContractViews.DetailedView.class)
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
     private List<String> offeringAttachments;
 
-    public Contract() {
+    public ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
+        this.id = "Contract:" + UUID.randomUUID();
+        this.creationDate = OffsetDateTime.now();
     }
 
     public void transitionState(ContractState targetState) {

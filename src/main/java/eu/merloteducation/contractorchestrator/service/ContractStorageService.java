@@ -1,29 +1,40 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import eu.merloteducation.contractorchestrator.models.entities.Contract;
+import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.repositories.ContractRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.Principal;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.UUID;
 
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.*;
 
 @Service
 public class ContractStorageService {
 
     @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
     private ContractRepository contractRepository;
+
+    @Value("${serviceoffering-orchestrator.base-uri}")
+    private String serviceOfferingOrchestratorBaseUri;
+
+    @Value("${organizations-orchestrator.base-uri}")
+    private String organizationsOrchestratorBaseUri;
 
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
@@ -35,26 +46,40 @@ public class ContractStorageService {
      * @return Instantiated contract object from the database
      */
     @Transactional
-    public Contract addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken) {
+    public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken) throws Exception {
 
-        // initialize contract fields
-        Contract contract = new Contract();
-        contract.setId("Contract:" + UUID.randomUUID());
-        contract.setCreationDate(OffsetDateTime.now());
+        // check that fields are in a valid format
+        System.out.println(contractCreateRequest.getOfferingId() + " " + contractCreateRequest.getConsumerId());
+        if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
+                !contractCreateRequest.getConsumerId().matches("Participant:\\d+")) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Creation request contains invalid fields.");
+        }
+
+        // initialize contract fields, id and creation date
+        ContractTemplate contract = new ContractTemplate();
 
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
-
-        // TODO request details of provider of service offering from organizations orchestrator, use token provided by user accessing this function
-        contract.setProviderTncUrl("TODO");
-        contract.setProviderTncHash("TODO");
-
-        // TODO request details of service offering from service offering orchestrator, use token provided by user accessing this function
         // TODO associate a contract to the specified service offering to disable further edits
-        contract.setOfferingName("TODO");
-        contract.setProviderId("TODO");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", authToken);
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+        String serviceOfferingResponse = restTemplate.exchange(
+                serviceOfferingOrchestratorBaseUri + "serviceoffering/" + contractCreateRequest.getOfferingId(),
+                HttpMethod.GET, request, String.class).getBody();
+
+        JSONObject serviceOfferingJson = new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
+        contract.setOfferingName(serviceOfferingJson.getString("name"));
+        contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
         contract.setOfferingAttachments(new ArrayList<>());
+
+
+        String organizationResponse = restTemplate.exchange(
+                organizationsOrchestratorBaseUri + "organization/" + contract.getProviderId().replace("Participant:", ""),
+                HttpMethod.GET, null, String.class).getBody();
+        JSONObject organizationJson = new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
+        contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
         contractRepository.save(contract);
 
@@ -68,7 +93,10 @@ public class ContractStorageService {
      * @param pageable page request
      * @return Page of contracts that are related to this organization
      */
-    public Page<Contract> getOrganizationContracts(String orgaId, Pageable pageable) {
+    public Page<ContractTemplate> getOrganizationContracts(String orgaId, Pageable pageable) {
+        if (!orgaId.matches("Participant:\\d+")) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Organization ID has invalid format.");
+        }
         return contractRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
     }
 
@@ -79,8 +107,8 @@ public class ContractStorageService {
      * @param representedOrgaIds ids of orgas that the user requesting this action represents
      * @return contract object from the database
      */
-    public Contract getContractDetails(String contractId, Set<String> representedOrgaIds) {
-        Contract contract = contractRepository.findById(contractId).orElse(null);
+    public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
+        ContractTemplate contract = contractRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");

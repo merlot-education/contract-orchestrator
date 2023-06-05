@@ -1,11 +1,10 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import eu.merloteducation.contractorchestrator.models.entities.Contract;
+import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
 @CrossOrigin
@@ -72,9 +70,9 @@ public class ContractsController {
      */
     @PostMapping("")
     @JsonView(ContractViews.BasicView.class)
-    public Contract addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
-                                        @RequestHeader(name = "Authorization") String authToken,
-                                        Principal principal) {
+    public ContractTemplate addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
+                                                @RequestHeader(name = "Authorization") String authToken,
+                                                Principal principal) throws Exception {
         if (!getRepresentedOrgaIds(principal).contains(contractCreateRequest.getConsumerId().replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to create a contract for this organization.");
         }
@@ -94,11 +92,11 @@ public class ContractsController {
      */
     @GetMapping("organization/{orgaId}")
     @JsonView(ContractViews.BasicView.class)
-    public Page<Contract> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
-                                                   @RequestParam(value = "size", defaultValue = "9") int size,
-                                                   @PathVariable(value = "orgaId") String orgaId,
-                                                   Principal principal) {
-        if (!getRepresentedOrgaIds(principal).contains(orgaId)) {
+    public Page<ContractTemplate> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                           @RequestParam(value = "size", defaultValue = "9") int size,
+                                                           @PathVariable(value = "orgaId") String orgaId,
+                                                           Principal principal) {
+        if (!getRepresentedOrgaIds(principal).contains(orgaId.replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to access contracts of this id.");
         }
 
@@ -115,8 +113,8 @@ public class ContractsController {
      */
     @GetMapping("contract/{contractId}")
     @JsonView(ContractViews.DetailedView.class)
-    public Contract getContractDetails(@PathVariable(value = "contractId") String contractId,
-                                       Principal principal) {
+    public ContractTemplate getContractDetails(@PathVariable(value = "contractId") String contractId,
+                                               Principal principal) {
 
         return contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(principal));
     }
