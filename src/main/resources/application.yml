@@ -40,3 +40,9 @@ server:
     context-path: /api
   error:
     include-stacktrace: "never"
+
+serviceoffering-orchestrator:
+  base-uri: http://localhost:8084/api/
+
+organizations-orchestrator:
+  base-uri: http://localhost:8082/api/
