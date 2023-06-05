@@ -2,7 +2,7 @@ package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.repositories.ContractRepository;
+import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,7 @@ public class ContractStorageService {
     private RestTemplate restTemplate;
 
     @Autowired
-    private ContractRepository contractRepository;
+    private ContractTemplateRepository contractTemplateRepository;
 
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
@@ -49,7 +49,6 @@ public class ContractStorageService {
     public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken) throws Exception {
 
         // check that fields are in a valid format
-        System.out.println(contractCreateRequest.getOfferingId() + " " + contractCreateRequest.getConsumerId());
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
                 !contractCreateRequest.getConsumerId().matches("Participant:\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Creation request contains invalid fields.");
@@ -72,7 +71,7 @@ public class ContractStorageService {
         JSONObject serviceOfferingJson = new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
-        contract.setOfferingAttachments(new ArrayList<>());
+        contract.setOfferingAttachments(new ArrayList<>()); // TODO fetch this from response
 
 
         String organizationResponse = restTemplate.exchange(
@@ -81,7 +80,7 @@ public class ContractStorageService {
         JSONObject organizationJson = new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
-        contractRepository.save(contract);
+        contractTemplateRepository.save(contract);
 
         return contract;
     }
@@ -97,7 +96,7 @@ public class ContractStorageService {
         if (!orgaId.matches("Participant:\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Organization ID has invalid format.");
         }
-        return contractRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+        return contractTemplateRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
     }
 
     /**
@@ -108,7 +107,7 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
-        ContractTemplate contract = contractRepository.findById(contractId).orElse(null);
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");

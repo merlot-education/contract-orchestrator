@@ -18,7 +18,9 @@ spring:
         show_sql: true
         use_sql_comments: true
         format_sql: true
-
+  jackson:
+    mapper:
+      DEFAULT_VIEW_INCLUSION: true
 
 jwt:
   auth:
@@ -31,28 +33,14 @@ logging:
     org.springframework.security: DEBUG
 
 server:
-  port: '8084'
+  port: '8086'
   servlet:
     context-path: /api
   error:
     include-stacktrace: "never"
 
-gxfscatalog:
-  base-uri: "http://localhost:8081"
-  selfdescriptions-uri: "${gxfscatalog.base-uri}/self-descriptions"
+serviceoffering-orchestrator:
+  base-uri: http://localhost:8084/api/
 
-gxfswizard:
-  base-uri: "http://localhost:8085"
-
-keycloak:
-  client-id: "federated-catalogue"
-  authorization-grant-type: "password"
-  base-uri: "http://key-server:8080"
-  oidc-base-uri: "${keycloak.base-uri}/realms/gxfscatalog/protocol/openid-connect"
-  authorization-uri: "${keycloak.oidc-base-uri}/auth"
-  token-uri: "${keycloak.oidc-base-uri}/token"
-  logout-uri: "${keycloak.oidc-base-uri}/logout"
-  jwk-set-uri: "${keycloak.oidc-base-uri}/certs"
-  client-secret: "NnyjZISWVHa9zamW8XEGsSuH6pbtXLmg"
-  gxfscatalog-user: "gxfscatalog"
-  gxfscatalog-pass: "gxfscatalog"
+organizations-orchestrator:
+  base-uri: http://localhost:8082/api/
