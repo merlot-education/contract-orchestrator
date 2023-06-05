@@ -14,6 +14,7 @@ public enum ContractState {
     private final int numVal;
     private final int stateBit;
     private final int allowedStatesBits;
+
     ContractState(int numVal, int stateBit, int allowedStatesBits) {
         this.numVal = numVal;
         this.stateBit = stateBit;
