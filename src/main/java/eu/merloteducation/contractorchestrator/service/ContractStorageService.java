@@ -33,6 +33,7 @@ public class ContractStorageService {
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
     private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
+    private static final String SELECTION_INFINITE = "Unbegrenzt";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -95,7 +96,7 @@ public class ContractStorageService {
         return true;
     }
 
-    private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws Exception {
+    private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
         JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken, contract.getOfferingId());
 
         // make sure selections are valid
@@ -118,11 +119,11 @@ public class ContractStorageService {
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, JSONArray options) throws Exception {
+    private boolean isValidRuntimeSelection(String selection, JSONArray options) throws JSONException {
         boolean foundMatch = false;
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("runtimeUnlimited") && selection.equals("Unbegrenzt"))
+            if ((option.getBoolean("runtimeUnlimited") && selection.equals(SELECTION_INFINITE))
                     || selection.equals(option.getInt("runtimeCount")
                     + " " + option.getString("runtimeMeasurement"))) {
                 foundMatch = true;
@@ -132,11 +133,11 @@ public class ContractStorageService {
         return foundMatch;
     }
 
-    private boolean isValidUserCountSelection(String selection, JSONArray options) throws Exception {
+    private boolean isValidUserCountSelection(String selection, JSONArray options) throws JSONException {
         boolean foundMatch = false;
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("userCountUnlimited") && selection.equals("Unbegrenzt"))
+            if ((option.getBoolean("userCountUnlimited") && selection.equals(SELECTION_INFINITE))
                     || selection.equals("Bis zu " + option.getInt("userCountUpTo"))) {
                 foundMatch = true;
                 break;
@@ -145,11 +146,11 @@ public class ContractStorageService {
         return foundMatch;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, JSONArray options) throws Exception {
+    private boolean isValidExchangeCountSelection(String selection, JSONArray options) throws JSONException {
         boolean foundMatch = false;
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("exchangeCountUnlimited") && selection.equals("Unbegrenzt"))
+            if ((option.getBoolean("exchangeCountUnlimited") && selection.equals(SELECTION_INFINITE))
                     || selection.equals("Bis zu " + option.getInt("exchangeCountUpTo"))) {
                 foundMatch = true;
                 break;
@@ -168,7 +169,8 @@ public class ContractStorageService {
      * @return Instantiated contract object from the database
      */
     @Transactional
-    public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken) throws Exception {
+    public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
+            throws JSONException {
 
         // check that fields are in a valid format
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
@@ -220,7 +222,7 @@ public class ContractStorageService {
      */
     public ContractTemplate updateContractTemplate(ContractTemplate editedContract,
                                                    String authToken,
-                                                   Set<String> representedOrgaIds) throws Exception {
+                                                   Set<String> representedOrgaIds) throws JSONException {
 
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
 
