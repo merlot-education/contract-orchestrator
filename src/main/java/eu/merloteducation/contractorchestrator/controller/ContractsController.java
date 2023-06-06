@@ -7,6 +7,7 @@ import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -78,6 +79,20 @@ public class ContractsController {
         }
 
         return this.contractStorageService.addContractTemplate(contractCreateRequest, authToken);
+    }
+
+    /**
+     * PUT mapping for updating an existing contract template.
+     * @param editedContract contract template with updated fields
+     * @param authToken active OAuth2 token of this user
+     * @param principal user data
+     * @return updated contract template
+     */
+    @PutMapping("")
+    public ContractTemplate updateContractTemplate(@Valid @RequestBody ContractTemplate editedContract,
+                                                   @RequestHeader(name = "Authorization") String authToken,
+                                                   Principal principal) throws Exception {
+        return contractStorageService.updateContractTemplate(editedContract, authToken, getRepresentedOrgaIds(principal));
     }
 
 
