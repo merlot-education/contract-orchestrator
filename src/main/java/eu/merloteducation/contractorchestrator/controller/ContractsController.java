@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
@@ -83,9 +84,10 @@ public class ContractsController {
 
     /**
      * PUT mapping for updating an existing contract template.
+     *
      * @param editedContract contract template with updated fields
-     * @param authToken active OAuth2 token of this user
-     * @param principal user data
+     * @param authToken      active OAuth2 token of this user
+     * @param principal      user data
      * @return updated contract template
      */
     @PutMapping("")
@@ -93,6 +95,21 @@ public class ContractsController {
                                                    @RequestHeader(name = "Authorization") String authToken,
                                                    Principal principal) throws Exception {
         return contractStorageService.updateContractTemplate(editedContract, authToken, getRepresentedOrgaIds(principal));
+    }
+
+    /**
+     * PATCH mapping for transitioning the contract template with the given id to the given state.
+     *
+     * @param contractId id of contract template to transition
+     * @param status     target state
+     * @param principal  user data
+     * @return updated contract template
+     */
+    @PatchMapping("/contract/status/{contractId}/{status}")
+    public ContractTemplate transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
+                                                       @PathVariable(value = "status") ContractState status,
+                                                       Principal principal) throws Exception {
+        return contractStorageService.transitionContractTemplateState(contractId, status, getRepresentedOrgaIds(principal));
     }
 
 

@@ -29,6 +29,7 @@ import static org.springframework.http.HttpStatus.*;
 public class ContractStorageService {
 
     private static final String INVALID_FIELD_DATA = "Fields contain invalid data.";
+    private static final String INVALID_STATE_TRANSITION = "Requested transition is not allowed.";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -211,7 +212,7 @@ public class ContractStorageService {
      * @param editedContract     contract template with edited fields
      * @param authToken          the OAuth2 Token from the user requesting this action
      * @param representedOrgaIds list of organization ids the user represents
-     * @return updated contract template from databse
+     * @return updated contract template from database
      */
     public ContractTemplate updateContractTemplate(ContractTemplate editedContract,
                                                    String authToken,
@@ -219,12 +220,12 @@ public class ContractStorageService {
 
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
 
-        boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId());
-        boolean isProvider = representedOrgaIds.contains(editedContract.getProviderId());
-
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");
         }
+
+        boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId());
+        boolean isProvider = representedOrgaIds.contains(editedContract.getProviderId());
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -249,6 +250,50 @@ public class ContractStorageService {
 
         // at this point we have a valid requested update, save it in the db
         return contractTemplateRepository.save(editedContract);
+    }
+
+    /**
+     * Transition the contract template attached to the given id to the target state if allowed.
+     *
+     * @param contractId         id of the contract template to transition
+     * @param targetState        target state of the contract template
+     * @param representedOrgaIds list of organization ids the user represents
+     * @return updated contract template from database
+     */
+    public ContractTemplate transitionContractTemplateState(String contractId,
+                                                            ContractState targetState,
+                                                            Set<String> representedOrgaIds) {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");
+        }
+
+        boolean isConsumer = representedOrgaIds.contains(contract.getConsumerId());
+        boolean isProvider = representedOrgaIds.contains(contract.getProviderId());
+
+        // user must be either consumer or provider of contract
+        if (!(isConsumer || isProvider)) {
+            throw new ResponseStatusException(FORBIDDEN, "Not allowed to edit this contract.");
+        }
+
+        if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+        }
+
+        if (targetState == ContractState.RELEASED && !isProvider) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+        }
+
+        try {
+            contract.transitionState(targetState);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+        }
+
+        // TODO on RELEASED transfer data to EDC of provider and start negotiation
+
+        return contractTemplateRepository.save(contract);
     }
 
     /**
