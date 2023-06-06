@@ -33,7 +33,7 @@ public class ContractStorageService {
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
     private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
-    private static final String SELECTION_INFINITE = "Unbegrenzt";
+    private static final String SELECTION_INFINITE = "unlimited";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -138,7 +138,7 @@ public class ContractStorageService {
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
             if ((option.getBoolean("userCountUnlimited") && selection.equals(SELECTION_INFINITE))
-                    || selection.equals("Bis zu " + option.getInt("userCountUpTo"))) {
+                    || selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
                 foundMatch = true;
                 break;
             }
@@ -151,7 +151,7 @@ public class ContractStorageService {
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
             if ((option.getBoolean("exchangeCountUnlimited") && selection.equals(SELECTION_INFINITE))
-                    || selection.equals("Bis zu " + option.getInt("exchangeCountUpTo"))) {
+                    || selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {
                 foundMatch = true;
                 break;
             }
