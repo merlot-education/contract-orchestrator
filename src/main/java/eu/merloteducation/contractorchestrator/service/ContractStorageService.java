@@ -235,8 +235,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId());
-        boolean isProvider = representedOrgaIds.contains(editedContract.getProviderId());
+        boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = representedOrgaIds.contains(editedContract.getProviderId().replace(ORGA_PREFIX, ""));
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -279,8 +279,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        boolean isConsumer = representedOrgaIds.contains(contract.getConsumerId());
-        boolean isProvider = representedOrgaIds.contains(contract.getProviderId());
+        boolean isConsumer = representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, ""));
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
