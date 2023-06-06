@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 @RestController
 @CrossOrigin
@@ -109,7 +110,8 @@ public class ContractsController {
     public ContractTemplate transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                        @PathVariable(value = "status") ContractState status,
                                                        Principal principal) throws Exception {
-        return contractStorageService.transitionContractTemplateState(contractId, status, getRepresentedOrgaIds(principal));
+        // TODO call service once implementation is done
+        throw new ResponseStatusException(NOT_IMPLEMENTED, "State transition is not implemented yet");
     }
 
 
