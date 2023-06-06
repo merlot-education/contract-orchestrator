@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
@@ -74,7 +75,7 @@ public class ContractStorageService {
         if (!originalContract.getProviderId().equals(editedContract.getProviderId())
                 || !originalContract.getConsumerId().equals(editedContract.getConsumerId())
                 || !originalContract.getState().equals(editedContract.getState())
-                || !originalContract.getCreationDate().equals(editedContract.getCreationDate())
+                || !originalContract.getCreationDate().isEqual(editedContract.getCreationDate())
                 || !originalContract.getOfferingName().equals(editedContract.getOfferingName())
                 || !originalContract.getOfferingId().equals(editedContract.getOfferingId())
                 || !originalContract.getProviderTncUrl().equals(editedContract.getProviderTncUrl())) {
@@ -84,8 +85,8 @@ public class ContractStorageService {
         // depending on the role some other fields may not be changed either
         if (isConsumer) {
             if (originalContract.isProviderMerlotTncAccepted() != editedContract.isProviderMerlotTncAccepted()
-                    || !originalContract.getAdditionalAgreements().equals(editedContract.getAdditionalAgreements())
-                    || !originalContract.getOfferingAttachments().equals(editedContract.getOfferingAttachments())) {
+                    || !Objects.equals(originalContract.getAdditionalAgreements(), editedContract.getAdditionalAgreements())
+                    || !Objects.equals(originalContract.getOfferingAttachments(), editedContract.getOfferingAttachments())) {
                 return false;
             }
         } else if (isProvider) {

@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
+@ToString
 public class ContractTemplate {
     @Id
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
