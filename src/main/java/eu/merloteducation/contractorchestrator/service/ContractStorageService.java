@@ -35,6 +35,8 @@ public class ContractStorageService {
     private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
     private static final String SELECTION_INFINITE = "unlimited";
 
+    private static final String ORGA_PREFIX = "Participant:";
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -174,7 +176,7 @@ public class ContractStorageService {
 
         // check that fields are in a valid format
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
-                !contractCreateRequest.getConsumerId().matches("Participant:\\d+")) {
+                !contractCreateRequest.getConsumerId().matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
@@ -209,7 +211,7 @@ public class ContractStorageService {
         }
 
         JSONObject organizationJson = requestOrganizationDetails(
-                contract.getProviderId().replace("Participant:", ""));
+                contract.getProviderId().replace(ORGA_PREFIX, ""));
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
         return contractTemplateRepository.save(contract);
@@ -312,7 +314,7 @@ public class ContractStorageService {
      * @return Page of contracts that are related to this organization
      */
     public Page<ContractTemplate> getOrganizationContracts(String orgaId, Pageable pageable) {
-        if (!orgaId.matches("Participant:\\d+")) {
+        if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
         return contractTemplateRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
@@ -332,8 +334,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        if (!(representedOrgaIds.contains(contract.getConsumerId())
-                || representedOrgaIds.contains(contract.getProviderId()))) {
+        if (!(representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""))
+                || representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, "")))) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_VIEW_FORBIDDEN);
         }
 
