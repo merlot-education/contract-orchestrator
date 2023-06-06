@@ -186,17 +186,22 @@ public class ContractStorageService {
         contract.setConsumerId(contractCreateRequest.getConsumerId());
 
         // TODO associate a contract to the specified service offering to disable further edits
-        // TODO check if we need to associate on template creation or when a contract is transitioned to released
+        // TODO this will need a message bus to avoid race conditions
         JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
                 contractCreateRequest.getOfferingId());
+        if (!serviceOfferingJson.getString("merlotState").equals("RELEASED")) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
+        }
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
-        JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
-        List<String> attachments = new ArrayList<>();
-        for (int i = 0; i < jsonAttachments.length(); i++) {
-            attachments.add(jsonAttachments.get(0).toString());
+        if (!serviceOfferingJson.isNull("attachments")) {
+            JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
+            List<String> attachments = new ArrayList<>();
+            for (int i = 0; i < jsonAttachments.length(); i++) {
+                attachments.add(jsonAttachments.get(0).toString());
+            }
+            contract.setOfferingAttachments(attachments);
         }
-        contract.setOfferingAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
@@ -207,9 +212,7 @@ public class ContractStorageService {
                 contract.getProviderId().replace("Participant:", ""));
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
-        contractTemplateRepository.save(contract);
-
-        return contract;
+        return contractTemplateRepository.save(contract);
     }
 
     /**
