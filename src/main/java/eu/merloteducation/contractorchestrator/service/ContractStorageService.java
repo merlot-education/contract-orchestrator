@@ -30,6 +30,8 @@ public class ContractStorageService {
 
     private static final String INVALID_FIELD_DATA = "Fields contain invalid data.";
     private static final String INVALID_STATE_TRANSITION = "Requested transition is not allowed.";
+    private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
+    private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -221,7 +223,7 @@ public class ContractStorageService {
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
 
         if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
         boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId());
@@ -229,13 +231,13 @@ public class ContractStorageService {
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
-            throw new ResponseStatusException(FORBIDDEN, "Not allowed to edit this contract.");
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
         // state must be either IN_DRAFT or user must be provider if state is SIGNED_CONSUMER
         if (!(contract.getState() == ContractState.IN_DRAFT
                 || (contract.getState() == ContractState.SIGNED_CONSUMER && isProvider))) {
-            throw new ResponseStatusException(FORBIDDEN, "Not allowed to edit this contract.");
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
         // ensure that immutable fields (depending on role) were not modified
@@ -266,7 +268,7 @@ public class ContractStorageService {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
         boolean isConsumer = representedOrgaIds.contains(contract.getConsumerId());
@@ -274,7 +276,7 @@ public class ContractStorageService {
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
-            throw new ResponseStatusException(FORBIDDEN, "Not allowed to edit this contract.");
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
         if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
@@ -321,7 +323,7 @@ public class ContractStorageService {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Could not find a contract with this id.");
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
         if (!(representedOrgaIds.contains(contract.getConsumerId())
