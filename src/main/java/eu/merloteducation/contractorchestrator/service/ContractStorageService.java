@@ -32,6 +32,7 @@ public class ContractStorageService {
     private static final String INVALID_STATE_TRANSITION = "Requested transition is not allowed.";
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
+    private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
 
     @Autowired
     private RestTemplate restTemplate;
@@ -172,7 +173,7 @@ public class ContractStorageService {
         // check that fields are in a valid format
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
                 !contractCreateRequest.getConsumerId().matches("Participant:\\d+")) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Creation request contains invalid fields.");
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
         // initialize contract fields, id and creation date
@@ -183,6 +184,7 @@ public class ContractStorageService {
         contract.setConsumerId(contractCreateRequest.getConsumerId());
 
         // TODO associate a contract to the specified service offering to disable further edits
+        // TODO check if we need to associate on template creation or when a contract is transitioned to released
         JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
                 contractCreateRequest.getOfferingId());
         contract.setOfferingName(serviceOfferingJson.getString("name"));
@@ -307,7 +309,7 @@ public class ContractStorageService {
      */
     public Page<ContractTemplate> getOrganizationContracts(String orgaId, Pageable pageable) {
         if (!orgaId.matches("Participant:\\d+")) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Organization ID has invalid format.");
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
         return contractTemplateRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
     }
@@ -328,7 +330,7 @@ public class ContractStorageService {
 
         if (!(representedOrgaIds.contains(contract.getConsumerId())
                 || representedOrgaIds.contains(contract.getProviderId()))) {
-            throw new ResponseStatusException(FORBIDDEN, "Not allowed to request details of this contract.");
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_VIEW_FORBIDDEN);
         }
 
         return contract;
