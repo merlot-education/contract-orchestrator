@@ -73,6 +73,11 @@ public class ContractStorageService {
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
         contract.setOfferingAttachments(new ArrayList<>()); // TODO fetch this from response
 
+        // check if consumer and provider are equal, and if so abort
+        if (contract.getProviderId().equals(contract.getConsumerId())) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Provider and consumer must not be equal.");
+        }
+
 
         String organizationResponse = restTemplate.exchange(
                 organizationsOrchestratorBaseUri + "organization/" + contract.getProviderId().replace("Participant:", ""),
