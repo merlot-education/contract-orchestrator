@@ -72,7 +72,7 @@ public class ContractsController {
      * @return basic view of the created contract
      */
     @PostMapping("")
-    @JsonView(ContractViews.BasicView.class)
+    @JsonView(ContractViews.DetailedView.class)
     public ContractTemplate addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
                                                 @RequestHeader(name = "Authorization") String authToken,
                                                 Principal principal) throws Exception {

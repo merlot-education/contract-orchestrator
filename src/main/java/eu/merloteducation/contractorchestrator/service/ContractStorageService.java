@@ -242,8 +242,7 @@ public class ContractStorageService {
         }
 
         // state must be either IN_DRAFT or user must be provider if state is SIGNED_CONSUMER
-        if (!(contract.getState() == ContractState.IN_DRAFT
-                || (contract.getState() == ContractState.SIGNED_CONSUMER && isProvider))) {
+        if (contract.getState() != ContractState.IN_DRAFT) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
