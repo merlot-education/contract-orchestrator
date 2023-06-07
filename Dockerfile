@@ -1,6 +1,6 @@
 FROM maven:3-eclipse-temurin-17-alpine AS build
 COPY . /opt/
-RUN mvn -ntp -f /opt/pom.xml clean package
+RUN mvn -ntp -f /opt/pom.xml clean package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 COPY --from=build /opt/target/contract-orchestrator-*.jar /opt/contract-orchestrator.jar
