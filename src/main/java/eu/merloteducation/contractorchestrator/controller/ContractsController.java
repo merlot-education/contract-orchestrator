@@ -6,6 +6,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
+import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.configurationprocessor.json.JSONException;
@@ -32,6 +33,9 @@ public class ContractsController {
 
     @Autowired
     private ContractStorageService contractStorageService;
+
+    @Autowired
+    private MessageQueueService messageQueueService;
 
     // TODO refactor to library
     private Set<String> getMerlotRoles(Principal principal) {
@@ -60,6 +64,11 @@ public class ContractsController {
     @GetMapping("health")
     public void getHealth() {
         // always return code 200
+    }
+
+    @GetMapping("sendmsg")
+    public void sendDemoMessage() {
+        messageQueueService.sendDemoMessage();
     }
 
     /**
