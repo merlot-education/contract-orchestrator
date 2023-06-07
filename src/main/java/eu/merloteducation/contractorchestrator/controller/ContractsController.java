@@ -34,9 +34,6 @@ public class ContractsController {
     @Autowired
     private ContractStorageService contractStorageService;
 
-    @Autowired
-    private MessageQueueService messageQueueService;
-
     // TODO refactor to library
     private Set<String> getMerlotRoles(Principal principal) {
         // get roles from the authenticated user
@@ -64,11 +61,6 @@ public class ContractsController {
     @GetMapping("health")
     public void getHealth() {
         // always return code 200
-    }
-
-    @GetMapping("sendmsg")
-    public void sendDemoMessage() {
-        messageQueueService.sendDemoMessage();
     }
 
     /**

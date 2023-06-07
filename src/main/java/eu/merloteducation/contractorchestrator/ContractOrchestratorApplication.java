@@ -11,10 +11,6 @@ import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class ContractOrchestratorApplication {
-	@RabbitListener(queues = "contract.queue")
-	public void listen(String in) {
-		System.out.println("Message read from contract.queue : " + in);
-	}
 	public static void main(String[] args) {
 		SpringApplication.run(ContractOrchestratorApplication.class, args);
 	}
