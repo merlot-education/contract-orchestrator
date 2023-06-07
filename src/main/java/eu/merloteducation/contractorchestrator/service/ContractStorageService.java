@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.service;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -40,6 +39,9 @@ public class ContractStorageService {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private MessageQueueService messageQueueService;
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
@@ -214,7 +216,11 @@ public class ContractStorageService {
                 contract.getProviderId().replace(ORGA_PREFIX, ""));
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
-        return contractTemplateRepository.save(contract);
+        contract = contractTemplateRepository.save(contract);
+
+        messageQueueService.sendContractCreatedMessage(new ContractTemplateCreated(contract));
+
+        return contract;
     }
 
     /**

@@ -1,26 +1,38 @@
 package eu.merloteducation.contractorchestrator.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MessageQueueConfig {
+
+    public static final String ORCHESTRATOR_EXCHANGE = "orchestrator.exchange";
+    public static final String CONTRACT_CREATED_KEY = "created.contract";
+    public static final String CONTRACT_QUEUE = "contract.queue";
     @Bean
     DirectExchange orchestratorExchange() {
-        return new DirectExchange("orchestrator.exchange");
-    }
-
-    @Bean
-    Binding createdContractBinding(Queue contractQueue, DirectExchange orchestratorExchange) {
-        return BindingBuilder.bind(contractQueue).to(orchestratorExchange).with("created.contract");
+        return new DirectExchange(ORCHESTRATOR_EXCHANGE);
     }
 
     @Bean
     public Queue contractQueue() {
-        return new Queue("contract.queue", false);
+        return new Queue(CONTRACT_QUEUE, false);
+    }
+
+    @Bean
+    public MessageConverter converter(){
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public AmqpTemplate amqpTemplate(ConnectionFactory connectionFactory){
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(converter());
+        return rabbitTemplate;
     }
 }
