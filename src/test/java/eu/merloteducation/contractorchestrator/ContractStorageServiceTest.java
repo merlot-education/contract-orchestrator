@@ -4,6 +4,7 @@ import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
+import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import org.apache.commons.text.StringSubstitutor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,9 @@ import static org.mockito.Mockito.when;
 public class ContractStorageServiceTest {
     @Mock
     private RestTemplate restTemplate;
+
+    @Mock
+    private MessageQueueService messageQueueService;
 
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
@@ -142,7 +146,6 @@ public class ContractStorageServiceTest {
         template1.setProviderId("Participant:20");
         template1.setOfferingId("ServiceOffering:1234");
         template1.setOfferingName("HelloWorld");
-        template1.setOfferingAttachments(new ArrayList<>());
         template1.setProviderTncUrl("http://example.com/");
         contractTemplateRepository.save(template1);
 
@@ -151,7 +154,6 @@ public class ContractStorageServiceTest {
         template2.setProviderId("Participant:10");
         template2.setOfferingId("ServiceOffering:2345");
         template2.setOfferingName("HelloWorld2");
-        template2.setOfferingAttachments(new ArrayList<>());
         template2.setProviderTncUrl("http://example.com/");
         contractTemplateRepository.save(template2);
 
