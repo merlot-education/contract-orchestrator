@@ -83,19 +83,20 @@ public class ContractStorageService {
         }
 
         // depending on the role some other fields may not be changed either
-        if (isConsumer) {
+        if (isConsumer && !isProvider) {
             if (originalContract.isProviderMerlotTncAccepted() != editedContract.isProviderMerlotTncAccepted()
                     || !Objects.equals(originalContract.getAdditionalAgreements(), editedContract.getAdditionalAgreements())
                     || !Objects.equals(originalContract.getOfferingAttachments(), editedContract.getOfferingAttachments())) {
                 return false;
             }
-        } else if (isProvider) {
+        } else if (isProvider && !isConsumer) {
             if (originalContract.isConsumerMerlotTncAccepted() != editedContract.isConsumerMerlotTncAccepted()
                     || originalContract.isConsumerOfferingTncAccepted() != editedContract.isConsumerOfferingTncAccepted()
                     || originalContract.isConsumerProviderTncAccepted() != editedContract.isConsumerProviderTncAccepted()) {
                 return false;
             }
         }
+        // otherwise user both has roles for provider and consumer, hence accept the changes
         return true;
     }
 
@@ -197,14 +198,12 @@ public class ContractStorageService {
         }
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
-        List<String> attachments = new ArrayList<>();
         if (!serviceOfferingJson.isNull("attachments")) {
             JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
             for (int i = 0; i < jsonAttachments.length(); i++) {
-                attachments.add(jsonAttachments.get(0).toString());
+                contract.addAttachment(jsonAttachments.get(0).toString());
             }
         }
-        contract.setOfferingAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {

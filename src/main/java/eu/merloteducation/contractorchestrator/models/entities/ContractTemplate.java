@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -74,12 +75,15 @@ public class ContractTemplate {
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
+    @Setter(AccessLevel.NONE)
     private List<String> offeringAttachments;
 
     public ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
+        this.offeringAttachments = new ArrayList<>();
+        this.additionalAgreements = "";
     }
 
     public void transitionState(ContractState targetState) {
@@ -89,5 +93,9 @@ public class ContractTemplate {
             throw new IllegalStateException(
                     String.format("Cannot transition from state %s to %s", state.name(), targetState.name()));
         }
+    }
+
+    public void addAttachment(String attachment) {
+        this.offeringAttachments.add(attachment);
     }
 }
