@@ -197,14 +197,14 @@ public class ContractStorageService {
         }
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
+        List<String> attachments = new ArrayList<>();
         if (!serviceOfferingJson.isNull("attachments")) {
             JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
-            List<String> attachments = new ArrayList<>();
             for (int i = 0; i < jsonAttachments.length(); i++) {
                 attachments.add(jsonAttachments.get(0).toString());
             }
-            contract.setOfferingAttachments(attachments);
         }
+        contract.setOfferingAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
