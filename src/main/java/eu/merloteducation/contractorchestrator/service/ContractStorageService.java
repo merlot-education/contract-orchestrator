@@ -191,8 +191,6 @@ public class ContractStorageService {
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
 
-        // TODO associate a contract to the specified service offering to disable further edits
-        // TODO this will need a message bus to avoid race conditions
         JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
                 contractCreateRequest.getOfferingId());
         if (!serviceOfferingJson.getString("merlotState").equals("RELEASED")) {
