@@ -202,7 +202,7 @@ public class ContractStorageServiceTest {
     @Test
     void getContractByIdExistent() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add("Participant:10");
+        representedOrgaIds.add("10");
         ContractTemplate contract = contractStorageService.getContractDetails(template1.getId(), representedOrgaIds);
 
         assertEquals(template1.getConsumerId(), contract.getConsumerId());
@@ -211,7 +211,7 @@ public class ContractStorageServiceTest {
     @Test
     void getContractByIdNonExistent() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add("Participant:10");
+        representedOrgaIds.add("10");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.getContractDetails("Contract:1234", representedOrgaIds));
 
@@ -221,7 +221,7 @@ public class ContractStorageServiceTest {
     @Test
     void getContractByIdNotAllowed() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add("Participant:1234");
+        representedOrgaIds.add("1234");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.getContractDetails(template1.getId(), representedOrgaIds));
 
