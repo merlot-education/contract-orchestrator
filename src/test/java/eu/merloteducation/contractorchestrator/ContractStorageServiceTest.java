@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -49,7 +50,7 @@ public class ContractStorageServiceTest {
     private RestTemplate restTemplate;
 
     @Mock
-    private MessageQueueService messageQueueService;
+    private RabbitTemplate rabbitTemplate;
 
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
@@ -59,6 +60,9 @@ public class ContractStorageServiceTest {
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
+
+    @Autowired
+    private MessageQueueService messageQueueService;
 
     @InjectMocks
     private ContractStorageService contractStorageService;
@@ -82,7 +86,9 @@ public class ContractStorageServiceTest {
                     "modifiedDate": "2023-05-26T09:55:46.189505Z",
                     "dataAccessType": "Download",
                     "exampleCosts": null,
-                    "attachments": null,
+                    "attachments": [
+                        "demoAttachment"
+                    ],
                     "termsAndConditions": [
                         {
                             "content": "asd",
@@ -143,6 +149,8 @@ public class ContractStorageServiceTest {
         ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorBaseUri", serviceOfferingOrchestratorBaseUri);
         ReflectionTestUtils.setField(contractStorageService, "organizationsOrchestratorBaseUri", organizationsOrchestratorBaseUri);
         ReflectionTestUtils.setField(contractStorageService, "contractTemplateRepository", contractTemplateRepository);
+        ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
+        ReflectionTestUtils.setField(messageQueueService, "rabbitTemplate", rabbitTemplate);
 
         template1 = new ContractTemplate();
         template1.setConsumerId("Participant:10");
