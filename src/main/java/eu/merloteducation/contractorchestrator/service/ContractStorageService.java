@@ -77,7 +77,7 @@ public class ContractStorageService {
         if (!originalContract.getProviderId().equals(editedContract.getProviderId())
                 || !originalContract.getConsumerId().equals(editedContract.getConsumerId())
                 || !originalContract.getState().equals(editedContract.getState())
-                || !originalContract.getCreationDate().isEqual(editedContract.getCreationDate())
+                || originalContract.getCreationDate().toInstant().toEpochMilli() != editedContract.getCreationDate().toInstant().toEpochMilli()
                 || !originalContract.getOfferingName().equals(editedContract.getOfferingName())
                 || !originalContract.getOfferingId().equals(editedContract.getOfferingId())
                 || !originalContract.getProviderTncUrl().equals(editedContract.getProviderTncUrl())) {
