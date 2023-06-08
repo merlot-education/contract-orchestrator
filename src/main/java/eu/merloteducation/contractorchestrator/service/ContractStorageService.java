@@ -292,17 +292,17 @@ public class ContractStorageService {
         }
 
         if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         if (targetState == ContractState.RELEASED && !isProvider) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         try {
             contract.transitionState(targetState);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_STATE_TRANSITION);
+            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         // TODO on RELEASED transfer data to EDC of provider and start negotiation
