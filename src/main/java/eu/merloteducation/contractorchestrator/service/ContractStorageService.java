@@ -3,6 +3,8 @@ package eu.merloteducation.contractorchestrator.service;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
@@ -112,13 +114,17 @@ public class ContractStorageService {
             return false;
         }
 
-        if (contract.getUserCountSelection() != null && !isValidUserCountSelection(
-                contract.getUserCountSelection(), serviceOfferingJson.getJSONArray("userCountOption"))) {
+        if (contract instanceof SaasContractTemplate saasContract
+                && saasContract.getUserCountSelection() != null
+                && !isValidUserCountSelection(saasContract.getUserCountSelection(),
+                serviceOfferingJson.getJSONArray("userCountOption"))) {
             return false;
         }
 
-        if (contract.getExchangeCountSelection() != null && isValidExchangeCountSelection(
-                contract.getExchangeCountSelection(), serviceOfferingJson.getJSONArray("exchangeCountOption"))) {
+        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
+                && dataDeliveryContract.getExchangeCountSelection() != null
+                && isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
+                serviceOfferingJson.getJSONArray("exchangeCountOption"))) {
             return false;
         }
 
@@ -184,18 +190,27 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
-        // initialize contract fields, id and creation date
-        ContractTemplate contract = new ContractTemplate();
-
-        // extract data from request
-        contract.setOfferingId(contractCreateRequest.getOfferingId());
-        contract.setConsumerId(contractCreateRequest.getConsumerId());
-
         JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
                 contractCreateRequest.getOfferingId());
         if (!serviceOfferingJson.getString("merlotState").equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
+
+        // initialize contract fields, id and creation date
+        ContractTemplate contract;
+
+        if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingSaaS")) {
+            contract = new SaasContractTemplate();
+        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingDataDelivery")) {
+            contract = new DataDeliveryContractTemplate();
+        } else {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
+        }
+
+        // extract data from request
+        contract.setOfferingId(contractCreateRequest.getOfferingId());
+        contract.setConsumerId(contractCreateRequest.getConsumerId());
+
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
         if (!serviceOfferingJson.isNull("attachments")) {

@@ -2,10 +2,7 @@ package eu.merloteducation.contractorchestrator.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,11 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@Entity
+
 @Getter
 @Setter
 @ToString
-public class ContractTemplate {
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name="discriminator")
+public abstract class ContractTemplate {
     @Id
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
     @Setter(AccessLevel.NONE)
@@ -52,12 +52,6 @@ public class ContractTemplate {
     private String runtimeSelection;
 
     @JsonView(ContractViews.DetailedView.class)
-    private String exchangeCountSelection;
-
-    @JsonView(ContractViews.DetailedView.class)
-    private String userCountSelection;
-
-    @JsonView(ContractViews.DetailedView.class)
     private boolean consumerMerlotTncAccepted;
 
     @JsonView(ContractViews.DetailedView.class)
@@ -79,7 +73,7 @@ public class ContractTemplate {
     @Setter(AccessLevel.NONE)
     private List<String> offeringAttachments;
 
-    public ContractTemplate() {
+    protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
@@ -87,7 +81,7 @@ public class ContractTemplate {
         this.additionalAgreements = "";
     }
 
-    public ContractTemplate(ContractTemplate template) {
+    protected ContractTemplate(ContractTemplate template) {
         this.id = template.getId();
         this.state = template.getState();
         this.creationDate = template.getCreationDate();
@@ -96,8 +90,6 @@ public class ContractTemplate {
         this.providerId = template.getProviderId();
         this.consumerId = template.getConsumerId();
         this.runtimeSelection = template.getRuntimeSelection();
-        this.exchangeCountSelection = template.getExchangeCountSelection();
-        this.userCountSelection = template.getUserCountSelection();
         this.consumerMerlotTncAccepted = template.isConsumerMerlotTncAccepted();
         this.providerMerlotTncAccepted = template.isProviderMerlotTncAccepted();
         this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
