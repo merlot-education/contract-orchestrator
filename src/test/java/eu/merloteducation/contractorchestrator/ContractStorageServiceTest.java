@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -439,5 +440,72 @@ public class ContractStorageServiceTest {
         template = new ContractTemplate(template1);
         template.setUserCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+    }
+
+    @Test
+    @Transactional
+    void transitionContractConsumerProviderSign() {
+        Set<String> consumer = new HashSet<>();
+        consumer.add(template1.getConsumerId().replace("Participant:", ""));
+
+        Set<String> provider = new HashSet<>();
+        provider.add(template1.getProviderId().replace("Participant:", ""));
+
+        ContractTemplate template = new ContractTemplate(template1);
+
+        ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
+                ContractState.SIGNED_CONSUMER ,consumer);
+        assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
+
+        result = contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.RELEASED ,provider);
+        assertEquals(ContractState.RELEASED, result.getState());
+    }
+
+    @Test
+    @Transactional
+    void transitionContractNotAuthorized() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add("99");
+
+        ContractTemplate template = new ContractTemplate(template1);
+        String templateId = template.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.transitionContractTemplateState(templateId,
+                        ContractState.SIGNED_CONSUMER ,representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+    }
+
+    @Test
+    @Transactional
+    void transitionContractProviderNotAllowed() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
+
+        ContractTemplate template = new ContractTemplate(template1);
+        String templateId = template.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.transitionContractTemplateState(templateId,
+                        ContractState.SIGNED_CONSUMER ,representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+    }
+
+    @Test
+    @Transactional
+    void transitionContractConsumerNotAllowed() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+
+        ContractTemplate template = new ContractTemplate(template1);
+        String templateId = template.getId();
+        contractStorageService.transitionContractTemplateState(templateId,
+                ContractState.SIGNED_CONSUMER ,representedOrgaIds);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.transitionContractTemplateState(templateId,
+                        ContractState.RELEASED ,representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
     }
 }
