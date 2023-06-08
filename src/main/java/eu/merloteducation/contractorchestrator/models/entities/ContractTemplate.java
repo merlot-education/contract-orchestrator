@@ -12,6 +12,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -84,6 +85,26 @@ public class ContractTemplate {
         this.creationDate = OffsetDateTime.now();
         this.offeringAttachments = new ArrayList<>();
         this.additionalAgreements = "";
+    }
+
+    public ContractTemplate(ContractTemplate template) {
+        this.id = template.getId();
+        this.state = template.getState();
+        this.creationDate = template.getCreationDate();
+        this.offeringId = template.getOfferingId();
+        this.offeringName = template.getOfferingName();
+        this.providerId = template.getProviderId();
+        this.consumerId = template.getConsumerId();
+        this.runtimeSelection = template.getRuntimeSelection();
+        this.exchangeCountSelection = template.getExchangeCountSelection();
+        this.userCountSelection = template.getUserCountSelection();
+        this.consumerMerlotTncAccepted = template.isConsumerMerlotTncAccepted();
+        this.providerMerlotTncAccepted = template.isProviderMerlotTncAccepted();
+        this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
+        this.consumerProviderTncAccepted = template.isConsumerProviderTncAccepted();
+        this.providerTncUrl = template.getProviderTncUrl();
+        this.additionalAgreements = template.getAdditionalAgreements();
+        this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
     }
 
     public void transitionState(ContractState targetState) {
