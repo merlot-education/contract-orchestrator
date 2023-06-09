@@ -38,8 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -231,7 +230,7 @@ public class ContractStorageServiceTest {
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(restTemplate.exchange(
-                eq(organizationsOrchestratorBaseUri + "organization/40"),
+                startsWith(organizationsOrchestratorBaseUri + "organization/"),
                 eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(organizationOrchestratorResponse, HttpStatus.OK));
     }
@@ -290,14 +289,36 @@ public class ContractStorageServiceTest {
     }
 
     @Test
-    void createContractTemplateValidRequest() throws Exception {
+    void createContractTemplateSaasValidRequest() throws Exception {
         ContractCreateRequest request = new ContractCreateRequest();
-        request.setConsumerId("Participant:10");
-        request.setOfferingId("ServiceOffering:4321");
+        request.setConsumerId("Participant:40");
+        request.setOfferingId(template1.getOfferingId());
         ContractTemplate contract = contractStorageService.addContractTemplate(request, "token");
 
-        assertEquals("Participant:40", contract.getProviderId());
-        assertEquals("OfferingName", contract.getOfferingName());
+        assertEquals(template1.getProviderId(), contract.getProviderId());
+        assertEquals(template1.getOfferingName(), contract.getOfferingName());
+    }
+
+    @Test
+    void createContractTemplateDataDeliveryValidRequest() throws Exception {
+        ContractCreateRequest request = new ContractCreateRequest();
+        request.setConsumerId("Participant:40");
+        request.setOfferingId(template2.getOfferingId());
+        ContractTemplate contract = contractStorageService.addContractTemplate(request, "token");
+
+        assertEquals(template2.getProviderId(), contract.getProviderId());
+        assertEquals(template2.getOfferingName(), contract.getOfferingName());
+    }
+
+    @Test
+    void createContractTemplateInvalidConsumerIsProvider() throws Exception {
+        ContractCreateRequest request = new ContractCreateRequest();
+        request.setConsumerId(template1.getProviderId());
+        request.setOfferingId(template1.getOfferingId());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.addContractTemplate(request, "token"));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
     }
 
     @Test
@@ -331,7 +352,6 @@ public class ContractStorageServiceTest {
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setRuntimeSelection("unlimited");
-        template.setUserCountSelection("unlimited");
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
 
         assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
@@ -339,7 +359,30 @@ public class ContractStorageServiceTest {
         assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
         assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
         assertInstanceOf(SaasContractTemplate.class, result);
+    }
+
+    @Test
+    @Transactional
+    void updateContractExistingAllowedAsBoth() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
+        SaasContractTemplate template = new SaasContractTemplate(template1);
+
+        template.setProviderMerlotTncAccepted(true);
+        template.setAdditionalAgreements("agreement");
+        template.addAttachment("attachment1");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setRuntimeSelection("unlimited");
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
+
+        assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
+        assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
+        assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
         assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
+        assertInstanceOf(SaasContractTemplate.class, result);
     }
 
     @Test
