@@ -60,7 +60,7 @@ public class ContractStorageService {
         headers.add("Authorization", authToken);
         HttpEntity<String> request = new HttpEntity<>(null, headers);
         String serviceOfferingResponse = restTemplate.exchange(
-                serviceOfferingOrchestratorBaseUri + "serviceoffering/" + offeringId,
+                serviceOfferingOrchestratorBaseUri + "/serviceoffering/" + offeringId,
                 HttpMethod.GET, request, String.class).getBody();
 
         return new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
@@ -68,7 +68,7 @@ public class ContractStorageService {
 
     private JSONObject requestOrganizationDetails(String orgaId) throws JSONException {
         String organizationResponse = restTemplate.exchange(
-                organizationsOrchestratorBaseUri + "organization/" + orgaId,
+                organizationsOrchestratorBaseUri + "/organization/" + orgaId,
                 HttpMethod.GET, null, String.class).getBody();
         return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
     }

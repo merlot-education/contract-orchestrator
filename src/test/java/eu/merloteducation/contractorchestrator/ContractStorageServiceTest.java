@@ -192,7 +192,7 @@ public class ContractStorageServiceTest {
                                     ]
                 """;
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
+        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
                                 + "ServiceOffering:4321"),
                 eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(
@@ -204,7 +204,7 @@ public class ContractStorageServiceTest {
                                 "merlot:MerlotServiceOfferingSaaS",
                                 userCountOption), HttpStatus.OK));
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
+        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
                                 + template1.getOfferingId()),
                         eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(
@@ -216,7 +216,7 @@ public class ContractStorageServiceTest {
                                 "merlot:MerlotServiceOfferingSaaS",
                                 userCountOption), HttpStatus.OK));
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
+        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
                                 + template2.getOfferingId()),
                         eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(
@@ -230,7 +230,7 @@ public class ContractStorageServiceTest {
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(restTemplate.exchange(
-                startsWith(organizationsOrchestratorBaseUri + "organization/"),
+                startsWith(organizationsOrchestratorBaseUri + "/organization/"),
                 eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(organizationOrchestratorResponse, HttpStatus.OK));
     }

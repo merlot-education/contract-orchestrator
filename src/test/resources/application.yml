@@ -40,7 +40,7 @@ server:
     include-stacktrace: "never"
 
 serviceoffering-orchestrator:
-  base-uri: http://localhost:8084/api/
+  base-uri: http://localhost:8084/api
 
 organizations-orchestrator:
-  base-uri: http://localhost:8082/api/
+  base-uri: http://localhost:8082/api
