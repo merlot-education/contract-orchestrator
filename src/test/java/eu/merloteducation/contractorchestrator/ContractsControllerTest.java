@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.security.JwtAuthConverter;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -65,7 +66,7 @@ public class ContractsControllerTest {
     @BeforeEach
     public void beforeEach() throws JSONException {
         List<ContractTemplate> contractTemplates = new ArrayList<>();
-        contractTemplates.add(new ContractTemplate());
+        contractTemplates.add(new SaasContractTemplate());
         Page<ContractTemplate> contractTemplatesPage = new PageImpl<>(contractTemplates);
 
         lenient().when(contractStorageService.addContractTemplate(any(), any()))
@@ -142,7 +143,7 @@ public class ContractsControllerTest {
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     public void putUpdateContractValid() throws Exception
     {
-        ContractTemplate template = new ContractTemplate();
+        ContractTemplate template = new SaasContractTemplate();
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")

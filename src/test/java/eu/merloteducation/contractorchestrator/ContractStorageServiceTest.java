@@ -3,6 +3,8 @@ package eu.merloteducation.contractorchestrator;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
@@ -36,8 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -70,10 +71,12 @@ public class ContractStorageServiceTest {
 
     private PageRequest defaultPageRequest;
 
-    private ContractTemplate template1;
-    private ContractTemplate template2;
+    private SaasContractTemplate template1;
+    private DataDeliveryContractTemplate template2;
 
-    private String createServiceOfferingOrchestratorResponse(String id, String hash, String name, String offeredBy) {
+    private String createServiceOfferingOrchestratorResponse(String id, String hash, String name, String offeredBy,
+                                                             String offeringType, String typeSpecificFields) {
+        // merlot:MerlotServiceOfferingSaaS
         String response = """
                 {
                     "id": "${id}",
@@ -82,7 +85,7 @@ public class ContractStorageServiceTest {
                     "creationDate": null,
                     "offeredBy": "${offeredBy}",
                     "merlotState": "RELEASED",
-                    "type": "merlot:MerlotServiceOfferingSaaS",
+                    "type": "${offeringType}",
                     "description": null,
                     "modifiedDate": "2023-05-26T09:55:46.189505Z",
                     "dataAccessType": "Download",
@@ -104,14 +107,8 @@ public class ContractStorageServiceTest {
                         }
                     ],
                     "merlotTermsAndConditionsAccepted": true,
-                    "hardwareRequirements": null,
-                    "userCountOption": [
-                        {
-                            "userCountUpTo": 0,
-                            "userCountUnlimited": true
-                        }
-                    ],
-                    "exchangeCountOption": null
+                    "hardwareRequirements": null
+                    ${typeSpecificFields}
                 }
                 """;
         Map<String, Object> params = new HashMap<>();
@@ -119,6 +116,8 @@ public class ContractStorageServiceTest {
         params.put("name", name);
         params.put("hash", hash);
         params.put("offeredBy", offeredBy);
+        params.put("offeringType", offeringType);
+        params.put("typeSpecificFields", typeSpecificFields);
         return StringSubstitutor.replace(response, params, "${", "}");
     }
 
@@ -153,7 +152,7 @@ public class ContractStorageServiceTest {
         ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(messageQueueService, "rabbitTemplate", rabbitTemplate);
 
-        template1 = new ContractTemplate();
+        template1 = new SaasContractTemplate();
         template1.setConsumerId("Participant:10");
         template1.setProviderId("Participant:20");
         template1.setOfferingId("ServiceOffering:1234");
@@ -161,7 +160,7 @@ public class ContractStorageServiceTest {
         template1.setProviderTncUrl("http://example.com/");
         contractTemplateRepository.save(template1);
 
-        template2 = new ContractTemplate();
+        template2 = new DataDeliveryContractTemplate();
         template2.setConsumerId("Participant:20");
         template2.setProviderId("Participant:10");
         template2.setOfferingId("ServiceOffering:2345");
@@ -175,6 +174,24 @@ public class ContractStorageServiceTest {
 
     @BeforeEach
     public void beforeEach() {
+        String userCountOption = """
+                ,"userCountOption": [
+                                        {
+                                            "userCountUpTo": 0,
+                                            "userCountUnlimited": true
+                                        }
+                                    ]
+                """;
+
+        String exchangeCountOption = """
+                ,"exchangeCountOption": [
+                                        {
+                                            "exchangeCountUpTo": 0,
+                                            "exchangeCountUnlimited": true
+                                        }
+                                    ]
+                """;
+
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
                                 + "ServiceOffering:4321"),
                 eq(HttpMethod.GET), any(), eq(String.class)))
@@ -183,7 +200,9 @@ public class ContractStorageServiceTest {
                                 "ServiceOffering:4321",
                                 "4321",
                                 "OfferingName",
-                                "Participant:40"), HttpStatus.OK));
+                                "Participant:40",
+                                "merlot:MerlotServiceOfferingSaaS",
+                                userCountOption), HttpStatus.OK));
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
                                 + template1.getOfferingId()),
@@ -193,7 +212,9 @@ public class ContractStorageServiceTest {
                                 template1.getOfferingId(),
                                 "1234",
                                 template1.getOfferingName(),
-                                template1.getProviderId()), HttpStatus.OK));
+                                template1.getProviderId(),
+                                "merlot:MerlotServiceOfferingSaaS",
+                                userCountOption), HttpStatus.OK));
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "serviceoffering/"
                                 + template2.getOfferingId()),
@@ -203,11 +224,13 @@ public class ContractStorageServiceTest {
                                 template2.getOfferingId(),
                                 "2345",
                                 template2.getOfferingName(),
-                                template2.getProviderId()), HttpStatus.OK));
+                                template2.getProviderId(),
+                                "merlot:MerlotServiceOfferingDataDelivery",
+                                exchangeCountOption), HttpStatus.OK));
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(restTemplate.exchange(
-                eq(organizationsOrchestratorBaseUri + "organization/40"),
+                startsWith(organizationsOrchestratorBaseUri + "organization/"),
                 eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(organizationOrchestratorResponse, HttpStatus.OK));
     }
@@ -266,14 +289,36 @@ public class ContractStorageServiceTest {
     }
 
     @Test
-    void createContractTemplateValidRequest() throws Exception {
+    void createContractTemplateSaasValidRequest() throws Exception {
         ContractCreateRequest request = new ContractCreateRequest();
-        request.setConsumerId("Participant:10");
-        request.setOfferingId("ServiceOffering:4321");
+        request.setConsumerId("Participant:40");
+        request.setOfferingId(template1.getOfferingId());
         ContractTemplate contract = contractStorageService.addContractTemplate(request, "token");
 
-        assertEquals("Participant:40", contract.getProviderId());
-        assertEquals("OfferingName", contract.getOfferingName());
+        assertEquals(template1.getProviderId(), contract.getProviderId());
+        assertEquals(template1.getOfferingName(), contract.getOfferingName());
+    }
+
+    @Test
+    void createContractTemplateDataDeliveryValidRequest() throws Exception {
+        ContractCreateRequest request = new ContractCreateRequest();
+        request.setConsumerId("Participant:40");
+        request.setOfferingId(template2.getOfferingId());
+        ContractTemplate contract = contractStorageService.addContractTemplate(request, "token");
+
+        assertEquals(template2.getProviderId(), contract.getProviderId());
+        assertEquals(template2.getOfferingName(), contract.getOfferingName());
+    }
+
+    @Test
+    void createContractTemplateInvalidConsumerIsProvider() throws Exception {
+        ContractCreateRequest request = new ContractCreateRequest();
+        request.setConsumerId(template1.getProviderId());
+        request.setOfferingId(template1.getOfferingId());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.addContractTemplate(request, "token"));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
     }
 
     @Test
@@ -301,19 +346,71 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
 
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setRuntimeSelection("unlimited");
-        template.setUserCountSelection("unlimited");
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
 
         assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
         assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
         assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
         assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
+        assertInstanceOf(SaasContractTemplate.class, result);
+    }
+
+    @Test
+    @Transactional
+    void updateContractExistingAllowedAsBoth() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
+        SaasContractTemplate template = new SaasContractTemplate(template1);
+
+        template.setProviderMerlotTncAccepted(true);
+        template.setAdditionalAgreements("agreement");
+        template.addAttachment("attachment1");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setRuntimeSelection("unlimited");
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
+
+        assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
+        assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
+        assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
+        assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
+        assertInstanceOf(SaasContractTemplate.class, result);
+    }
+
+    @Test
+    @Transactional
+    void updateContractExistingAllowedAsConsumerSaas() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        SaasContractTemplate template = new SaasContractTemplate(template1);
+
+        template.setUserCountSelection("unlimited");
+        SaasContractTemplate result = (SaasContractTemplate) contractStorageService.updateContractTemplate(
+                template, "token", representedOrgaIds);
+
+        assertEquals(template.getUserCountSelection(), result.getUserCountSelection());
+    }
+
+    @Test
+    @Transactional
+    void updateContractExistingAllowedAsConsumerDataDelivery() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template2.getConsumerId().replace("Participant:", ""));
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+
+        template.setExchangeCountSelection("unlimited");
+        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService.updateContractTemplate(
+                template, "token", representedOrgaIds);
+
+        assertEquals(template.getExchangeCountSelection(), result.getExchangeCountSelection());
     }
 
     @Test
@@ -321,7 +418,7 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsProvider() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
 
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("agreement");
@@ -337,7 +434,7 @@ public class ContractStorageServiceTest {
     void updateContractNonExistent() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
-        ContractTemplate template = new ContractTemplate();
+        SaasContractTemplate template = new SaasContractTemplate();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.updateContractTemplate(template, "token", representedOrgaIds));
@@ -349,7 +446,7 @@ public class ContractStorageServiceTest {
     void updateContractNotAuthorized() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("1234");
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.updateContractTemplate(template, "token", representedOrgaIds));
@@ -368,23 +465,23 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setOfferingId("ServiceOffering:9999");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setOfferingName("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setConsumerId("Participant:99");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setProviderId("Participant:99");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setProviderTncUrl("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
     }
@@ -395,15 +492,15 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setConsumerMerlotTncAccepted(true);
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setConsumerOfferingTncAccepted(true);
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setConsumerProviderTncAccepted(true);
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
     }
@@ -414,15 +511,15 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setProviderMerlotTncAccepted(true);
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.setAdditionalAgreements("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
 
-        template = new ContractTemplate(template1);
+        template = new SaasContractTemplate(template1);
         template.addAttachment("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
     }
@@ -433,12 +530,30 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setRuntimeSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+    }
 
-        template = new ContractTemplate(template1);
+    @Test
+    @Transactional
+    void updateContractSetInvalidSelectionSaas() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setUserCountSelection("garbage");
+        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+    }
+
+    @Test
+    @Transactional
+    void updateContractSetInvalidSelectionDataDelivery() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(template2.getConsumerId().replace("Participant:", ""));
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        template.setExchangeCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
     }
 
@@ -451,7 +566,7 @@ public class ContractStorageServiceTest {
         Set<String> provider = new HashSet<>();
         provider.add(template1.getProviderId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
                 ContractState.SIGNED_CONSUMER ,consumer);
@@ -468,7 +583,7 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("99");
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -483,7 +598,7 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -498,7 +613,7 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
 
-        ContractTemplate template = new ContractTemplate(template1);
+        SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
         contractStorageService.transitionContractTemplateState(templateId,
                 ContractState.SIGNED_CONSUMER ,representedOrgaIds);
