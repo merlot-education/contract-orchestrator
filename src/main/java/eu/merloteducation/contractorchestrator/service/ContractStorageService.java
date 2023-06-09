@@ -123,7 +123,7 @@ public class ContractStorageService {
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
                 && dataDeliveryContract.getExchangeCountSelection() != null
-                && isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
+                && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
                 serviceOfferingJson.getJSONArray("exchangeCountOption"))) {
             return false;
         }
