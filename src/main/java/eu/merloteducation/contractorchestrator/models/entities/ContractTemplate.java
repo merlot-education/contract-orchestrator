@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name="discriminator")
+@JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
     @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
