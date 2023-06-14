@@ -22,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -71,37 +73,6 @@ public class ContractStorageService {
                 organizationsOrchestratorBaseUri + "/organization/" + orgaId,
                 HttpMethod.GET, null, String.class).getBody();
         return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
-    }
-
-    private boolean immutableFieldsValid(ContractTemplate originalContract, ContractTemplate editedContract,
-                                         boolean isConsumer, boolean isProvider) {
-        // make sure the basic fields have not changed
-        if (!originalContract.getProviderId().equals(editedContract.getProviderId())
-                || !originalContract.getConsumerId().equals(editedContract.getConsumerId())
-                || !originalContract.getState().equals(editedContract.getState())
-                || originalContract.getCreationDate().toInstant().toEpochMilli() != editedContract.getCreationDate().toInstant().toEpochMilli()
-                || !originalContract.getOfferingName().equals(editedContract.getOfferingName())
-                || !originalContract.getOfferingId().equals(editedContract.getOfferingId())
-                || !originalContract.getProviderTncUrl().equals(editedContract.getProviderTncUrl())) {
-            return false;
-        }
-
-        // depending on the role some other fields may not be changed either
-        if (isConsumer && !isProvider) {
-            if (originalContract.isProviderMerlotTncAccepted() != editedContract.isProviderMerlotTncAccepted()
-                    || !Objects.equals(originalContract.getAdditionalAgreements(), editedContract.getAdditionalAgreements())
-                    || !Objects.equals(originalContract.getOfferingAttachments(), editedContract.getOfferingAttachments())) {
-                return false;
-            }
-        } else if (isProvider && !isConsumer) {
-            if (originalContract.isConsumerMerlotTncAccepted() != editedContract.isConsumerMerlotTncAccepted()
-                    || originalContract.isConsumerOfferingTncAccepted() != editedContract.isConsumerOfferingTncAccepted()
-                    || originalContract.isConsumerProviderTncAccepted() != editedContract.isConsumerProviderTncAccepted()) {
-                return false;
-            }
-        }
-        // otherwise user both has roles for provider and consumer, hence accept the changes
-        return true;
     }
 
     private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
@@ -171,6 +142,35 @@ public class ContractStorageService {
         return foundMatch;
     }
 
+    private void updateContractDependingOnRole(ContractTemplate targetContract,
+                                                           ContractTemplate editedContract,
+                                                           boolean isConsumer,
+                                                           boolean isProvider) {
+        targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+
+        if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
+                editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
+            targetSaasContractTemplate.setUserCountSelection(editedSaasContractTemplate.getUserCountSelection());
+        }
+
+        if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
+                editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+            targetDataDeliveryContractTemplate.setExchangeCountSelection(
+                    editedDataDeliveryContractTemplate.getExchangeCountSelection());
+        }
+
+        if (isConsumer) {
+            targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
+            targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
+            targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+        }
+        if (isProvider) {
+            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+            targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
+            targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+        }
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -214,10 +214,12 @@ public class ContractStorageService {
         contract.setOfferingName(serviceOfferingJson.getString("name"));
         contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
         if (!serviceOfferingJson.isNull("attachments")) {
+            List<String> attachments = new ArrayList<>();
             JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
             for (int i = 0; i < jsonAttachments.length(); i++) {
-                contract.addAttachment(jsonAttachments.get(0).toString());
+                attachments.add(jsonAttachments.get(0).toString());
             }
+            contract.setOfferingAttachments(attachments);
         }
 
         // check if consumer and provider are equal, and if so abort
@@ -256,8 +258,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        boolean isConsumer = activeRoleOrgaId.equals(editedContract.getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(editedContract.getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -269,18 +271,16 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        // ensure that immutable fields (depending on role) were not modified
-        if (!immutableFieldsValid(contract, editedContract, isConsumer, isProvider)) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
-        }
+        // update the fields that we are allowed to edit in this role, disregard everything else
+        updateContractDependingOnRole(contract, editedContract, isConsumer, isProvider);
 
         // ensure that the selections that were made are valid
-        if (!isValidFieldSelections(editedContract, authToken)) {
+        if (!isValidFieldSelections(contract, authToken)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
         // at this point we have a valid requested update, save it in the db
-        return contractTemplateRepository.save(editedContract);
+        return contractTemplateRepository.save(contract);
     }
 
     /**
