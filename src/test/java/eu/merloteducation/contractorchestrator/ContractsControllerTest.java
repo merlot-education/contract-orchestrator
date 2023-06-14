@@ -66,14 +66,17 @@ public class ContractsControllerTest {
     @BeforeEach
     public void beforeEach() throws JSONException {
         List<ContractTemplate> contractTemplates = new ArrayList<>();
-        contractTemplates.add(new SaasContractTemplate());
+        SaasContractTemplate template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+        contractTemplates.add(template);
         Page<ContractTemplate> contractTemplatesPage = new PageImpl<>(contractTemplates);
 
         lenient().when(contractStorageService.addContractTemplate(any(), any()))
                 .thenReturn(contractTemplates.get(0));
         lenient().when(contractStorageService.getContractDetails(any(), any()))
                 .thenReturn(contractTemplates.get(0));
-        lenient().when(contractStorageService.updateContractTemplate(any(), any(), any()))
+        lenient().when(contractStorageService.updateContractTemplate(any(), any(), any(), any()))
                 .thenReturn(contractTemplates.get(0));
         lenient().when(contractStorageService.getOrganizationContracts(any(), any()))
                 .thenReturn(contractTemplatesPage);
@@ -144,11 +147,14 @@ public class ContractsControllerTest {
     public void putUpdateContractValid() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
+                        .header("Active-Role", "OrgLegRep_10")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))

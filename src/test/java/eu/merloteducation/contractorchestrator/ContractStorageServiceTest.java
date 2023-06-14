@@ -352,31 +352,8 @@ public class ContractStorageServiceTest {
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setRuntimeSelection("unlimited");
-        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
-
-        assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
-        assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
-        assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
-        assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
-        assertInstanceOf(SaasContractTemplate.class, result);
-    }
-
-    @Test
-    @Transactional
-    void updateContractExistingAllowedAsBoth() throws JSONException {
-        Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
-        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
-        SaasContractTemplate template = new SaasContractTemplate(template1);
-
-        template.setProviderMerlotTncAccepted(true);
-        template.setAdditionalAgreements("agreement");
-        template.addAttachment("attachment1");
-        template.setConsumerMerlotTncAccepted(true);
-        template.setConsumerOfferingTncAccepted(true);
-        template.setConsumerProviderTncAccepted(true);
-        template.setRuntimeSelection("unlimited");
-        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
+                representedOrgaIds.iterator().next(), representedOrgaIds);
 
         assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
         assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
@@ -393,8 +370,9 @@ public class ContractStorageServiceTest {
         SaasContractTemplate template = new SaasContractTemplate(template1);
 
         template.setUserCountSelection("unlimited");
-        SaasContractTemplate result = (SaasContractTemplate) contractStorageService.updateContractTemplate(
-                template, "token", representedOrgaIds);
+        SaasContractTemplate result = (SaasContractTemplate) contractStorageService
+                .updateContractTemplate(template, "token",
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
 
         assertEquals(template.getUserCountSelection(), result.getUserCountSelection());
     }
@@ -407,8 +385,9 @@ public class ContractStorageServiceTest {
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
 
         template.setExchangeCountSelection("unlimited");
-        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService.updateContractTemplate(
-                template, "token", representedOrgaIds);
+        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
+                .updateContractTemplate(template, "token",
+                        representedOrgaIds.iterator().next(),  representedOrgaIds);
 
         assertEquals(template.getExchangeCountSelection(), result.getExchangeCountSelection());
     }
@@ -423,7 +402,8 @@ public class ContractStorageServiceTest {
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("agreement");
         template.addAttachment("attachment1");
-        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token", representedOrgaIds);
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
+                representedOrgaIds.iterator().next(),  representedOrgaIds);
         assertEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
@@ -435,9 +415,11 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
         SaasContractTemplate template = new SaasContractTemplate();
+        String activeRoleOrgaId = representedOrgaIds.iterator().next();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.updateContractTemplate(template, "token", representedOrgaIds));
+                () -> contractStorageService.updateContractTemplate(template, "token",
+                        activeRoleOrgaId, representedOrgaIds));
         assertEquals(HttpStatus.NOT_FOUND ,ex.getStatusCode());
     }
 
@@ -447,114 +429,125 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("1234");
         SaasContractTemplate template = new SaasContractTemplate(template1);
+        String activeRoleOrgaId = representedOrgaIds.iterator().next();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.updateContractTemplate(template, "token", representedOrgaIds));
+                () -> contractStorageService.updateContractTemplate(template, "token",
+                        activeRoleOrgaId, representedOrgaIds));
         assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
     }
 
-    private void assertUpdateThrowsUnprocessableEntity(ContractTemplate template, String token, Set<String> representedOrgaIds) {
+    private void assertUpdateThrowsUnprocessableEntity(ContractTemplate template, String token,
+                                                       String activeRoleOrgaId, Set<String> representedOrgaIds) {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.updateContractTemplate(template, token, representedOrgaIds));
+                () -> contractStorageService.updateContractTemplate(template, token,
+                        activeRoleOrgaId,  representedOrgaIds));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
     }
     @Test
     @Transactional
     void updateContractModifyImmutableBaseFields() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        String provider = template1.getProviderId().replace("Participant:", "");
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(provider);
+        representedOrgaIds.add(consumer);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setOfferingId("ServiceOffering:9999");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setOfferingName("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setConsumerId("Participant:99");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setProviderId("Participant:99");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setProviderTncUrl("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
     }
 
     @Test
     @Transactional
     void updateContractModifyForbiddenFieldsAsProvider() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
+        String provider = template1.getProviderId().replace("Participant:", "");
+        representedOrgaIds.add(provider);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setConsumerMerlotTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setConsumerOfferingTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setConsumerProviderTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
     }
 
     @Test
     @Transactional
     void updateContractModifyForbiddenFieldsAsConsumer() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setProviderMerlotTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.setAdditionalAgreements("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
 
         template = new SaasContractTemplate(template1);
         template.addAttachment("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
 
     @Test
     @Transactional
     void updateContractSetInvalidSelection() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setRuntimeSelection("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
 
     @Test
     @Transactional
     void updateContractSetInvalidSelectionSaas() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setUserCountSelection("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
 
     @Test
     @Transactional
     void updateContractSetInvalidSelectionDataDelivery() {
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template2.getConsumerId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
 
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
         template.setExchangeCountSelection("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", representedOrgaIds);
+        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
 
     @Test
