@@ -72,7 +72,6 @@ public abstract class ContractTemplate {
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
-    @Setter(AccessLevel.NONE)
     private List<String> offeringAttachments;
 
     protected ContractTemplate() {
@@ -108,9 +107,5 @@ public abstract class ContractTemplate {
             throw new IllegalStateException(
                     String.format("Cannot transition from state %s to %s", state.name(), targetState.name()));
         }
-    }
-
-    public void addAttachment(String attachment) {
-        this.offeringAttachments.add(attachment);
     }
 }

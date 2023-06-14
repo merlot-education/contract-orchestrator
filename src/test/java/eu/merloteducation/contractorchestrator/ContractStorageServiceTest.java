@@ -30,7 +30,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
@@ -40,7 +39,6 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 
 @SpringBootTest
@@ -194,7 +192,7 @@ public class ContractStorageServiceTest {
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
                                 + "ServiceOffering:4321"),
-                eq(HttpMethod.GET), any(), eq(String.class)))
+                        eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(
                         createServiceOfferingOrchestratorResponse(
                                 "ServiceOffering:4321",
@@ -230,8 +228,8 @@ public class ContractStorageServiceTest {
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(restTemplate.exchange(
-                startsWith(organizationsOrchestratorBaseUri + "/organization/"),
-                eq(HttpMethod.GET), any(), eq(String.class)))
+                        startsWith(organizationsOrchestratorBaseUri + "/organization/"),
+                        eq(HttpMethod.GET), any(), eq(String.class)))
                 .thenReturn(new ResponseEntity<>(organizationOrchestratorResponse, HttpStatus.OK));
     }
 
@@ -275,7 +273,7 @@ public class ContractStorageServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.getContractDetails("Contract:1234", representedOrgaIds));
 
-        assertEquals(HttpStatus.NOT_FOUND ,ex.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
@@ -285,7 +283,7 @@ public class ContractStorageServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.getContractDetails(template1.getId(), representedOrgaIds));
 
-        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
@@ -318,7 +316,7 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "token"));
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
     }
 
     @Test
@@ -328,7 +326,7 @@ public class ContractStorageServiceTest {
         request.setOfferingId("ServiceOffering:4321");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "token"));
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
     }
 
     @Test
@@ -338,7 +336,7 @@ public class ContractStorageServiceTest {
         request.setOfferingId("garbage");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "token"));
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
     }
 
     @Test
@@ -387,7 +385,7 @@ public class ContractStorageServiceTest {
         template.setExchangeCountSelection("unlimited");
         DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
-                        representedOrgaIds.iterator().next(),  representedOrgaIds);
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
 
         assertEquals(template.getExchangeCountSelection(), result.getExchangeCountSelection());
     }
@@ -401,9 +399,11 @@ public class ContractStorageServiceTest {
 
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("agreement");
-        template.addAttachment("attachment1");
+        List<String> attachments = new ArrayList<>();
+        attachments.add("attachment1");
+        template.setOfferingAttachments(attachments);
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
-                representedOrgaIds.iterator().next(),  representedOrgaIds);
+                representedOrgaIds.iterator().next(), representedOrgaIds);
         assertEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
@@ -420,7 +420,7 @@ public class ContractStorageServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.updateContractTemplate(template, "token",
                         activeRoleOrgaId, representedOrgaIds));
-        assertEquals(HttpStatus.NOT_FOUND ,ex.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test
@@ -434,19 +434,20 @@ public class ContractStorageServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.updateContractTemplate(template, "token",
                         activeRoleOrgaId, representedOrgaIds));
-        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     private void assertUpdateThrowsUnprocessableEntity(ContractTemplate template, String token,
                                                        String activeRoleOrgaId, Set<String> representedOrgaIds) {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.updateContractTemplate(template, token,
-                        activeRoleOrgaId,  representedOrgaIds));
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY ,ex.getStatusCode());
+                        activeRoleOrgaId, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
     }
+
     @Test
     @Transactional
-    void updateContractModifyImmutableBaseFields() {
+    void updateContractModifyImmutableBaseFields() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         String provider = template1.getProviderId().replace("Participant:", "");
         String consumer = template1.getConsumerId().replace("Participant:", "");
@@ -455,63 +456,68 @@ public class ContractStorageServiceTest {
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setOfferingId("ServiceOffering:9999");
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setOfferingName("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setConsumerId("Participant:99");
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setProviderId("Participant:99");
-        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setProviderTncUrl("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
+                provider, representedOrgaIds);
+        assertNotEquals(template.getOfferingId(), result.getOfferingId());
+        assertEquals(template1.getOfferingId(), result.getOfferingId());
+        assertNotEquals(template.getOfferingName(), result.getOfferingName());
+        assertEquals(template1.getOfferingName(), result.getOfferingName());
+        assertNotEquals(template.getConsumerId(), result.getConsumerId());
+        assertEquals(template1.getConsumerId(), result.getConsumerId());
+        assertNotEquals(template.getProviderId(), result.getProviderId());
+        assertEquals(template1.getProviderId(), result.getProviderId());
+        assertNotEquals(template.getProviderTncUrl(), result.getProviderTncUrl());
+        assertEquals(template1.getProviderTncUrl(), result.getProviderTncUrl());
     }
 
     @Test
     @Transactional
-    void updateContractModifyForbiddenFieldsAsProvider() {
+    void updateContractModifyForbiddenFieldsAsProvider() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         String provider = template1.getProviderId().replace("Participant:", "");
         representedOrgaIds.add(provider);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setConsumerMerlotTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setConsumerOfferingTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setConsumerProviderTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", provider, representedOrgaIds);
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
+                provider, representedOrgaIds);
+
+        assertNotEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
+        assertEquals(template1.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
+        assertNotEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
+        assertEquals(template1.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
+        assertNotEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
+        assertEquals(template1.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
     }
 
     @Test
     @Transactional
-    void updateContractModifyForbiddenFieldsAsConsumer() {
+    void updateContractModifyForbiddenFieldsAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = template1.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         template.setProviderMerlotTncAccepted(true);
-        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
-
-        template = new SaasContractTemplate(template1);
         template.setAdditionalAgreements("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
+        List<String> attachments = new ArrayList<>();
+        attachments.add("attachment1");
+        template.setOfferingAttachments(attachments);
 
-        template = new SaasContractTemplate(template1);
-        template.addAttachment("garbage");
-        assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
+        ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
+                consumer, representedOrgaIds);
+        assertNotEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
+        assertEquals(template1.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
+        assertNotEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
+        assertEquals(template1.getAdditionalAgreements(), result.getAdditionalAgreements());
+        assertNotEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
+        assertEquals(template1.getOfferingAttachments(), result.getOfferingAttachments());
     }
 
     @Test
@@ -562,11 +568,11 @@ public class ContractStorageServiceTest {
         SaasContractTemplate template = new SaasContractTemplate(template1);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.SIGNED_CONSUMER ,consumer);
+                ContractState.SIGNED_CONSUMER, consumer);
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
-                ContractState.RELEASED ,provider);
+                ContractState.RELEASED, provider);
         assertEquals(ContractState.RELEASED, result.getState());
     }
 
@@ -581,8 +587,8 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER ,representedOrgaIds));
-        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+                        ContractState.SIGNED_CONSUMER, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
@@ -596,8 +602,8 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER ,representedOrgaIds));
-        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+                        ContractState.SIGNED_CONSUMER, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
@@ -609,11 +615,11 @@ public class ContractStorageServiceTest {
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
         contractStorageService.transitionContractTemplateState(templateId,
-                ContractState.SIGNED_CONSUMER ,representedOrgaIds);
+                ContractState.SIGNED_CONSUMER, representedOrgaIds);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED ,representedOrgaIds));
-        assertEquals(HttpStatus.FORBIDDEN ,ex.getStatusCode());
+                        ContractState.RELEASED, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 }
