@@ -509,6 +509,9 @@ public class ContractStorageServiceTest {
         List<String> attachments = new ArrayList<>();
         attachments.add("attachment1");
         template.setOfferingAttachments(attachments);
+        template.setDataAddressName("garbage");
+        template.setDataAddressBaseUrl("garbage");
+        template.setDataAddressDataType("garbage");
 
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 consumer, representedOrgaIds);
@@ -518,6 +521,12 @@ public class ContractStorageServiceTest {
         assertEquals(template1.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertNotEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
         assertEquals(template1.getOfferingAttachments(), result.getOfferingAttachments());
+        assertNotEquals(template.getDataAddressName(), result.getDataAddressName());
+        assertEquals(template1.getDataAddressName(), result.getDataAddressName());
+        assertNotEquals(template.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
+        assertEquals(template1.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
+        assertNotEquals(template.getDataAddressDataType(), result.getDataAddressDataType());
+        assertEquals(template1.getDataAddressDataType(), result.getDataAddressDataType());
     }
 
     @Test
