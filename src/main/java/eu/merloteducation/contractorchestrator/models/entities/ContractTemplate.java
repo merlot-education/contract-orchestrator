@@ -74,6 +74,15 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private List<String> offeringAttachments;
 
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressName;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressBaseUrl;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressDataType;
+
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
