@@ -168,6 +168,9 @@ public class ContractStorageService {
             targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
             targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
             targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+            targetContract.setDataAddressBaseUrl(editedContract.getDataAddressBaseUrl());
+            targetContract.setDataAddressDataType(editedContract.getDataAddressDataType());
+            targetContract.setDataAddressName(editedContract.getDataAddressName());
         }
     }
 
