@@ -25,44 +25,44 @@ import java.util.UUID;
 @JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private String id;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private ContractState state;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private OffsetDateTime creationDate;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String offeringId;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String offeringName;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String providerId;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String consumerId;
 
     @JsonView(ContractViews.DetailedView.class)
     private String runtimeSelection;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerMerlotTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ProviderView.class)
     private boolean providerMerlotTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerOfferingTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerProviderTncAccepted;
 
     @JsonView(ContractViews.DetailedView.class)

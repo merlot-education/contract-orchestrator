@@ -241,11 +241,13 @@ public class ContractStorageService {
      *
      * @param editedContract     contract template with edited fields
      * @param authToken          the OAuth2 Token from the user requesting this action
+     * @param activeRoleOrgaId   the currently selected role of the user
      * @param representedOrgaIds list of organization ids the user represents
      * @return updated contract template from database
      */
     public ContractTemplate updateContractTemplate(ContractTemplate editedContract,
                                                    String authToken,
+                                                   String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) throws JSONException {
 
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
@@ -254,15 +256,15 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        boolean isConsumer = representedOrgaIds.contains(editedContract.getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = representedOrgaIds.contains(editedContract.getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(editedContract.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = activeRoleOrgaId.equals(editedContract.getProviderId().replace(ORGA_PREFIX, ""));
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        // state must be either IN_DRAFT or user must be provider if state is SIGNED_CONSUMER
+        // state must be IN_DRAFT
         if (contract.getState() != ContractState.IN_DRAFT) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
