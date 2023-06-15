@@ -356,6 +356,7 @@ public class ContractStorageService {
      */
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+        messageQueueService.requestOrganizationDetails("10");
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
