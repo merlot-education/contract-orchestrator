@@ -25,7 +25,7 @@ public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBod
         if (bodyContainer.getValue() instanceof ContractTemplate contractTemplate) {
             if (request.getHeaders().containsKey("Active-Role")) {
                 String activeRoleOrgaId = Objects.requireNonNull(request.getHeaders().getFirst("Active-Role"))
-                        .replaceFirst(".+_", "");
+                        .replaceFirst("(OrgLegRep|OrgRep)_", "");
                 if (contractTemplate.getProviderId().replace("Participant:", "")
                         .equals(activeRoleOrgaId)) {
                     bodyContainer.setSerializationView(ContractViews.ProviderView.class);
