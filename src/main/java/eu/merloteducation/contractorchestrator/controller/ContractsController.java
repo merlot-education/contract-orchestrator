@@ -96,7 +96,7 @@ public class ContractsController {
                                                    @RequestHeader(name = "Active-Role") String activeRole,
                                                    Principal principal) throws Exception {
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
-        String activeRoleOrgaId = activeRole.replaceFirst(".+_", "");
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
