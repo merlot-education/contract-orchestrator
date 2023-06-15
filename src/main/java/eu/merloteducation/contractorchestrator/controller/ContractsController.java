@@ -93,8 +93,15 @@ public class ContractsController {
     @PutMapping("")
     public ContractTemplate updateContractTemplate(@Valid @RequestBody ContractTemplate editedContract,
                                                    @RequestHeader(name = "Authorization") String authToken,
+                                                   @RequestHeader(name = "Active-Role") String activeRole,
                                                    Principal principal) throws Exception {
-        return contractStorageService.updateContractTemplate(editedContract, authToken, getRepresentedOrgaIds(principal));
+        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
+
+        return contractStorageService.updateContractTemplate(editedContract, authToken, activeRoleOrgaId, getRepresentedOrgaIds(principal));
     }
 
     /**
@@ -145,7 +152,6 @@ public class ContractsController {
      * @return detailed view of this contract
      */
     @GetMapping("contract/{contractId}")
-    @JsonView(ContractViews.DetailedView.class)
     public ContractTemplate getContractDetails(@PathVariable(value = "contractId") String contractId,
                                                Principal principal) {
 

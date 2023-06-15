@@ -4,6 +4,12 @@ public interface ContractViews {
     public interface BasicView {
     }
 
-    public interface DetailedView {
+    public interface DetailedView extends BasicView {
+    }
+
+    public interface ConsumerView extends DetailedView {
+    }
+
+    public interface ProviderView extends DetailedView {
     }
 }

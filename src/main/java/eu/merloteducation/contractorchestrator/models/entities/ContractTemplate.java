@@ -25,44 +25,44 @@ import java.util.UUID;
 @JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private String id;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private ContractState state;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private OffsetDateTime creationDate;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String offeringId;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String offeringName;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String providerId;
 
-    @JsonView({ContractViews.BasicView.class, ContractViews.DetailedView.class})
+    @JsonView(ContractViews.BasicView.class)
     private String consumerId;
 
     @JsonView(ContractViews.DetailedView.class)
     private String runtimeSelection;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerMerlotTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ProviderView.class)
     private boolean providerMerlotTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerOfferingTncAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerProviderTncAccepted;
 
     @JsonView(ContractViews.DetailedView.class)
@@ -72,8 +72,22 @@ public abstract class ContractTemplate {
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
-    @Setter(AccessLevel.NONE)
     private List<String> offeringAttachments;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressName;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressBaseUrl;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressDataType;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerEdcToken;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerEdcToken;
 
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
@@ -99,6 +113,11 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
+        this.dataAddressBaseUrl = template.getDataAddressBaseUrl();
+        this.dataAddressName = template.getDataAddressName();
+        this.dataAddressDataType = template.getDataAddressDataType();
+        this.consumerEdcToken = template.getConsumerEdcToken();
+        this.providerEdcToken = template.getConsumerEdcToken();
     }
 
     public void transitionState(ContractState targetState) {
@@ -108,9 +127,5 @@ public abstract class ContractTemplate {
             throw new IllegalStateException(
                     String.format("Cannot transition from state %s to %s", state.name(), targetState.name()));
         }
-    }
-
-    public void addAttachment(String attachment) {
-        this.offeringAttachments.add(attachment);
     }
 }
