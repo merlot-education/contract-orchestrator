@@ -146,6 +146,7 @@ public class ContractStorageService {
                                                            ContractTemplate editedContract,
                                                            boolean isConsumer,
                                                            boolean isProvider) {
+        // TODO consider moving this logic into a DTO pattern
         targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
 
         if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
@@ -163,6 +164,7 @@ public class ContractStorageService {
             targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
             targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
             targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+            targetContract.setConsumerEdcToken(editedContract.getConsumerEdcToken());
         }
         if (isProvider) {
             targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
@@ -171,6 +173,7 @@ public class ContractStorageService {
             targetContract.setDataAddressBaseUrl(editedContract.getDataAddressBaseUrl());
             targetContract.setDataAddressDataType(editedContract.getDataAddressDataType());
             targetContract.setDataAddressName(editedContract.getDataAddressName());
+            targetContract.setProviderEdcToken(editedContract.getProviderEdcToken());
         }
     }
 
