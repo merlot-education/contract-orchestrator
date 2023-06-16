@@ -71,6 +71,19 @@ class MessageQueueServiceTest {
         OrganizationDetails details = messageQueueService.remoteRequestOrganizationDetails("10");
         assertNotNull(details);
         assertEquals(orga10.getId(), details.getId());
+        assertEquals(orga10.getMerlotId(), details.getMerlotId());
+        assertEquals(orga10.getOrganizationLegalName(), details.getOrganizationLegalName());
+        assertEquals(orga10.getOrganizationName(), details.getOrganizationName());
+        assertEquals(orga10.getRegistrationNumber(), details.getRegistrationNumber());
+        assertEquals(orga10.getTermsAndConditionsLink(), details.getTermsAndConditionsLink());
+        assertEquals(orga10.getLegalAddress().getAddressCode(), details.getLegalAddress().getAddressCode());
+        assertEquals(orga10.getLegalAddress().getCity(), details.getLegalAddress().getCity());
+        assertEquals(orga10.getLegalAddress().getStreet(), details.getLegalAddress().getStreet());
+        assertEquals(orga10.getLegalAddress().getPostalCode(), details.getLegalAddress().getPostalCode());
+        assertEquals(orga10.getLegalAddress().getCountryCode(), details.getLegalAddress().getCountryCode());
+        assertEquals(orga10.getConnectorBaseUrl(), details.getConnectorBaseUrl());
+        assertEquals(orga10.getConnectorPublicKey(), details.getConnectorPublicKey());
+        assertEquals(orga10.getConnectorId(), details.getConnectorId());
     }
 
     @Test

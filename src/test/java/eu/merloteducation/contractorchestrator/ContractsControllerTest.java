@@ -145,29 +145,9 @@ class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    void putUpdateContractValidSaas() throws Exception
+    void putUpdateContractValid() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
-
-        mvc.perform(MockMvcRequestBuilders
-                        .put("/")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
-                        .header("Active-Role", "OrgLegRep_10")
-                        .content(objectAsJsonString(template))
-                        .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
-                .andDo(print())
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    void putUpdateContractValidDataDelivery() throws Exception
-    {
-        ContractTemplate template = new DataDeliveryContractTemplate();
         template.setProviderId("Participant:10");
         template.setConsumerId("Participant:20");
 
@@ -266,7 +246,6 @@ class ContractsControllerTest {
                         .get("/organization/Participant:99")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
@@ -281,7 +260,20 @@ class ContractsControllerTest {
                         .get("/organization/Participant:10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_20"})
+    void getContractDetailsValidRequestConsumer() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/contract/Contract:1234")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer 1234")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
@@ -290,13 +282,12 @@ class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    void getContractDetailsValidRequest() throws Exception
+    void getContractDetailsValidRequestProvider() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/contract/Contract:1234")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
