@@ -289,6 +289,11 @@ public class ContractStorageService {
         return contractTemplateRepository.save(contract);
     }
 
+    private void orchestrateParticipatingConnectors(ContractTemplate template) {
+        messageQueueService.remoteRequestOrganizationDetails("10");
+        // TODO on RELEASED transfer data to EDC of provider and start negotiation
+    }
+
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
@@ -328,8 +333,7 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
-        messageQueueService.remoteRequestOrganizationDetails("10");
-        // TODO on RELEASED transfer data to EDC of provider and start negotiation
+        orchestrateParticipatingConnectors(contract);
 
         return contractTemplateRepository.save(contract);
     }

@@ -118,8 +118,13 @@ public class ContractsController {
                                                        @PathVariable(value = "status") ContractState status,
                                                        @RequestHeader(name = "Active-Role") String activeRole,
                                                        Principal principal) throws Exception {
-        // TODO call service once implementation is done
-        throw new ResponseStatusException(NOT_IMPLEMENTED, "State transition is not implemented yet");
+        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
+
+        return contractStorageService.transitionContractTemplateState(contractId, status, activeRoleOrgaId);
     }
 
 
