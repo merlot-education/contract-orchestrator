@@ -9,7 +9,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@EqualsAndHashCode
 public class OrganizationDetails {
     private String id;
     private String merlotId;

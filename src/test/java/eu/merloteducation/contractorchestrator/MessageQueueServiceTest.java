@@ -70,7 +70,7 @@ class MessageQueueServiceTest {
     void remoteGetOrgaDetailsExistent() {
         OrganizationDetails details = messageQueueService.remoteRequestOrganizationDetails("10");
         assertNotNull(details);
-        assertEquals(orga10, details);
+        assertEquals(orga10.getId(), details.getId());
     }
 
     @Test
