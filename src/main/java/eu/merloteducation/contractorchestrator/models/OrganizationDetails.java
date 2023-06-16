@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.models;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -8,6 +9,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@EqualsAndHashCode
 public class OrganizationDetails {
     private String id;
     private String merlotId;
