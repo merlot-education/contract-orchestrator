@@ -5,6 +5,7 @@ import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,13 +22,13 @@ public class MessageQueueService {
         );
     }
 
-    public OrganizationDetails requestOrganizationDetails(String orgaId) {
-        OrganizationDetails organizationDetails = (OrganizationDetails) rabbitTemplate.convertSendAndReceive(
+    public OrganizationDetails remoteRequestOrganizationDetails(String orgaId) {
+        return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATION_REQUEST_KEY,
-                orgaId
+                orgaId,
+                new ParameterizedTypeReference<>() {
+                }
         );
-        System.out.println(organizationDetails);
-        return organizationDetails;
     }
 }

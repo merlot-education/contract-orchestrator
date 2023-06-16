@@ -109,12 +109,14 @@ public class ContractsController {
      *
      * @param contractId id of contract template to transition
      * @param status     target state
+     * @param activeRole active user role
      * @param principal  user data
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
     public ContractTemplate transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                        @PathVariable(value = "status") ContractState status,
+                                                       @RequestHeader(name = "Active-Role") String activeRole,
                                                        Principal principal) throws Exception {
         // TODO call service once implementation is done
         throw new ResponseStatusException(NOT_IMPLEMENTED, "State transition is not implemented yet");

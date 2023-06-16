@@ -568,11 +568,8 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionContractConsumerProviderSign() {
-        Set<String> consumer = new HashSet<>();
-        consumer.add(template1.getConsumerId().replace("Participant:", ""));
-
-        Set<String> provider = new HashSet<>();
-        provider.add(template1.getProviderId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        String provider = template1.getProviderId().replace("Participant:", "");
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
 
@@ -588,47 +585,42 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionContractNotAuthorized() {
-        Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add("99");
-
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, representedOrgaIds));
+                        ContractState.SIGNED_CONSUMER, "99"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
     @Transactional
     void transitionContractProviderNotAllowed() {
-        Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
+        String provider = template1.getProviderId().replace("Participant:", "");
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, representedOrgaIds));
+                        ContractState.SIGNED_CONSUMER, provider));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
     @Transactional
     void transitionContractConsumerNotAllowed() {
-        Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
+        String consumer = template1.getConsumerId().replace("Participant:", "");
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
         contractStorageService.transitionContractTemplateState(templateId,
-                ContractState.SIGNED_CONSUMER, representedOrgaIds);
+                ContractState.SIGNED_CONSUMER, consumer);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED, representedOrgaIds));
+                        ContractState.RELEASED, consumer));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 }

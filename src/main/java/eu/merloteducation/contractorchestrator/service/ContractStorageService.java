@@ -294,20 +294,20 @@ public class ContractStorageService {
      *
      * @param contractId         id of the contract template to transition
      * @param targetState        target state of the contract template
-     * @param representedOrgaIds list of organization ids the user represents
+     * @param activeRoleOrgaId   the currently selected role of the user
      * @return updated contract template from database
      */
     public ContractTemplate transitionContractTemplateState(String contractId,
                                                             ContractState targetState,
-                                                            Set<String> representedOrgaIds) {
+                                                            String activeRoleOrgaId) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
 
-        boolean isConsumer = representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -328,6 +328,7 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
+        messageQueueService.remoteRequestOrganizationDetails("10");
         // TODO on RELEASED transfer data to EDC of provider and start negotiation
 
         return contractTemplateRepository.save(contract);
@@ -356,7 +357,6 @@ public class ContractStorageService {
      */
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-        messageQueueService.requestOrganizationDetails("10");
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
