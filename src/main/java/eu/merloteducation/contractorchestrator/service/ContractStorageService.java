@@ -50,6 +50,9 @@ public class ContractStorageService {
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
+    @Autowired
+    private EdcOrchestrationService edcOrchestrationService;
+
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
 
@@ -289,11 +292,6 @@ public class ContractStorageService {
         return contractTemplateRepository.save(contract);
     }
 
-    private void orchestrateParticipatingConnectors(ContractTemplate template) {
-        messageQueueService.remoteRequestOrganizationDetails("10");
-        // TODO on RELEASED transfer data to EDC of provider and start negotiation
-    }
-
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
@@ -333,7 +331,9 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
-        orchestrateParticipatingConnectors(contract);
+        if (contract.getState() == ContractState.RELEASED) {
+            edcOrchestrationService.transferContractToParticipatingConnectors(contract);
+        }
 
         return contractTemplateRepository.save(contract);
     }
