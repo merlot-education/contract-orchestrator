@@ -1,11 +1,14 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
+import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 @RestController
 @CrossOrigin
@@ -31,6 +33,9 @@ public class ContractsController {
 
     @Autowired
     private ContractStorageService contractStorageService;
+
+    @Autowired
+    private EdcOrchestrationService edcOrchestrationService;
 
     // TODO refactor to library
     private Set<String> getMerlotRoles(Principal principal) {
@@ -59,6 +64,14 @@ public class ContractsController {
     @GetMapping("health")
     public void getHealth() {
         // always return code 200
+    }
+
+
+    @GetMapping("initConnectorsTest")
+    public void initConnectorsTest() { // TODO remove this once testing is completed
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
+        edcOrchestrationService.transferContractToParticipatingConnectors(template, "http://localhost",
+                "http://localhost");
     }
 
     /**

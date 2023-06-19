@@ -500,10 +500,10 @@ public class ContractStorageServiceTest {
     @Transactional
     void updateContractModifyForbiddenFieldsAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
-        String consumer = template1.getConsumerId().replace("Participant:", "");
+        String consumer = template2.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("garbage");
         List<String> attachments = new ArrayList<>();
@@ -516,17 +516,20 @@ public class ContractStorageServiceTest {
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 consumer, representedOrgaIds);
         assertNotEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
-        assertEquals(template1.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
+        assertEquals(template2.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertNotEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
-        assertEquals(template1.getAdditionalAgreements(), result.getAdditionalAgreements());
+        assertEquals(template2.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertNotEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
-        assertEquals(template1.getOfferingAttachments(), result.getOfferingAttachments());
-        assertNotEquals(template.getDataAddressName(), result.getDataAddressName());
-        assertEquals(template1.getDataAddressName(), result.getDataAddressName());
-        assertNotEquals(template.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
-        assertEquals(template1.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
-        assertNotEquals(template.getDataAddressDataType(), result.getDataAddressDataType());
-        assertEquals(template1.getDataAddressDataType(), result.getDataAddressDataType());
+        assertEquals(template2.getOfferingAttachments(), result.getOfferingAttachments());
+        if (result instanceof DataDeliveryContractTemplate dataDeliveryResult) {
+            assertNotEquals(template.getDataAddressName(), dataDeliveryResult.getDataAddressName());
+            assertEquals(template2.getDataAddressName(), dataDeliveryResult.getDataAddressName());
+            assertNotEquals(template.getDataAddressBaseUrl(), dataDeliveryResult.getDataAddressBaseUrl());
+            assertEquals(template2.getDataAddressBaseUrl(), dataDeliveryResult.getDataAddressBaseUrl());
+            assertNotEquals(template.getDataAddressDataType(), dataDeliveryResult.getDataAddressDataType());
+            assertEquals(template2.getDataAddressDataType(), dataDeliveryResult.getDataAddressDataType());
+        }
+
     }
 
     @Test

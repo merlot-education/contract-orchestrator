@@ -74,21 +74,6 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private List<String> offeringAttachments;
 
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressName;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressBaseUrl;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressDataType;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private String consumerEdcToken;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String providerEdcToken;
-
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
@@ -113,11 +98,6 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
-        this.dataAddressBaseUrl = template.getDataAddressBaseUrl();
-        this.dataAddressName = template.getDataAddressName();
-        this.dataAddressDataType = template.getDataAddressDataType();
-        this.consumerEdcToken = template.getConsumerEdcToken();
-        this.providerEdcToken = template.getConsumerEdcToken();
     }
 
     public void transitionState(ContractState targetState) {

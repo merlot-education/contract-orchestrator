@@ -17,6 +17,21 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private String exchangeCountSelection;
 
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressName;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressBaseUrl;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressDataType;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerEdcToken;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerEdcToken;
+
     public DataDeliveryContractTemplate() {
         super();
     }
@@ -24,5 +39,10 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     public DataDeliveryContractTemplate(DataDeliveryContractTemplate template) {
         super(template);
         this.exchangeCountSelection = template.getExchangeCountSelection();
+        this.dataAddressBaseUrl = template.getDataAddressBaseUrl();
+        this.dataAddressName = template.getDataAddressName();
+        this.dataAddressDataType = template.getDataAddressDataType();
+        this.consumerEdcToken = template.getConsumerEdcToken();
+        this.providerEdcToken = template.getConsumerEdcToken();
     }
 }
