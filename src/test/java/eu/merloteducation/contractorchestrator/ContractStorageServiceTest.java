@@ -574,12 +574,14 @@ public class ContractStorageServiceTest {
         SaasContractTemplate template = new SaasContractTemplate(template1);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
+        assertEquals("consumerUserId", result.getConsumerSignerUserId());
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
-                ContractState.RELEASED, provider);
+                ContractState.RELEASED, provider, "providerUserId");
         assertEquals(ContractState.RELEASED, result.getState());
+        assertEquals("providerUserId", result.getProviderSignerUserId());
     }
 
     @Test
@@ -590,7 +592,7 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, "99"));
+                        ContractState.SIGNED_CONSUMER, "99", "consumerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -604,7 +606,7 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, provider));
+                        ContractState.SIGNED_CONSUMER, provider, "providerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -616,11 +618,11 @@ public class ContractStorageServiceTest {
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
         contractStorageService.transitionContractTemplateState(templateId,
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED, consumer));
+                        ContractState.RELEASED, consumer, "consumerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 }

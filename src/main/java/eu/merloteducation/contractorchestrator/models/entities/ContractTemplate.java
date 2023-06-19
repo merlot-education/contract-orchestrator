@@ -89,6 +89,12 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.ProviderView.class)
     private String providerEdcToken;
 
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerSignerUserId;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerSignerUserId;
+
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
@@ -118,6 +124,8 @@ public abstract class ContractTemplate {
         this.dataAddressDataType = template.getDataAddressDataType();
         this.consumerEdcToken = template.getConsumerEdcToken();
         this.providerEdcToken = template.getConsumerEdcToken();
+        this.providerSignerUserId = template.getProviderSignerUserId();
+        this.consumerSignerUserId = template.getConsumerSignerUserId();
     }
 
     public void transitionState(ContractState targetState) {
