@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.security.JwtAuthConverter;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
@@ -42,7 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ContractsController.class)
 @AutoConfigureMockMvc(addFilters = false)
-public class ContractsControllerTest {
+class ContractsControllerTest {
 
     @Autowired
     private MockMvc mvc;
@@ -83,14 +84,14 @@ public class ContractsControllerTest {
     }
 
     @Test
-    public void getHealthUnauthenticated() throws Exception {
+    void getHealthUnauthenticated() throws Exception {
         mvc.perform(MockMvcRequestBuilders
                         .get("/health"))
                 .andExpect(status().isOk());
     }
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void postAddContractUnauthorized() throws Exception
+    void postAddContractUnauthorized() throws Exception
     {
         ContractCreateRequest request = new ContractCreateRequest();
         request.setOfferingId("ServiceOffering:1234");
@@ -109,7 +110,7 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void postAddContractAuthorizedValid() throws Exception
+    void postAddContractAuthorizedValid() throws Exception
     {
         ContractCreateRequest request = new ContractCreateRequest();
         request.setOfferingId("ServiceOffering:1234");
@@ -128,7 +129,7 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void postAddContractAuthorizedInvalid() throws Exception
+    void postAddContractAuthorizedInvalid() throws Exception
     {
 
         mvc.perform(MockMvcRequestBuilders
@@ -144,7 +145,7 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void putUpdateContractValid() throws Exception
+    void putUpdateContractValid() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
         template.setProviderId("Participant:10");
@@ -164,10 +165,10 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void putUpdateContractInvalid() throws Exception
+    void putUpdateContractInvalid() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
-                        .post("/")
+                        .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
                         .content("garbage")
@@ -179,13 +180,18 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void getOrganizationContractsUnauthorized() throws Exception
+    void putUpdateContractForbidden() throws Exception
     {
+        ContractTemplate template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+
         mvc.perform(MockMvcRequestBuilders
-                        .get("/organization/Participant:99")
+                        .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
+                        .header("Active-Role", "garbage")
+                        .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
@@ -194,13 +200,38 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void getOrganizationContractsAuthorized() throws Exception
+    void patchTransitionContractForbidden() throws Exception
     {
+        ContractTemplate template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+
         mvc.perform(MockMvcRequestBuilders
-                        .get("/organization/Participant:10")
+                        .patch("/contract/status/1234/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
+                        .header("Active-Role", "garbage")
+                        .content(objectAsJsonString(template))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
+    void patchTransitionContractValid() throws Exception
+    {
+        ContractTemplate template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+
+        mvc.perform(MockMvcRequestBuilders
+                        .patch("/contract/status/1234/IN_DRAFT")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer 1234")
+                        .header("Active-Role", "OrgLegRep_10")
+                        .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
@@ -209,13 +240,54 @@ public class ContractsControllerTest {
 
     @Test
     @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
-    public void getContractDetailsValidRequest() throws Exception
+    void getOrganizationContractsUnauthorized() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/organization/Participant:99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer 1234")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
+    void getOrganizationContractsAuthorized() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/organization/Participant:10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer 1234")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_20"})
+    void getContractDetailsValidRequestConsumer() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/contract/Contract:1234")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer 1234")
-                        .content("garbage")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf()))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
+    void getContractDetailsValidRequestProvider() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/contract/Contract:1234")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer 1234")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf()))
                 .andDo(print())
