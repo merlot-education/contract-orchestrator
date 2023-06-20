@@ -343,4 +343,14 @@ public class EdcOrchestrationService {
         }
 
     }
+
+    public void getAllTransfers(ContractTemplate template, String activeOrgaId) {
+        // TODO fetch data from management endpoint by POSTing at /v2/transferprocesses/request
+    }
+
+    public void getTransferStatus(ContractTemplate template, String activeOrgaId, String transferId) {
+        // TODO fetch data from management endpoint by GETting at /v2/transferprocesses/{id}
+    }
+
+
 }
