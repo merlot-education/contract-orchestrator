@@ -92,8 +92,14 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.ConsumerView.class)
     private String consumerSignerUserId;
 
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerSignature;
+
     @JsonView(ContractViews.ProviderView.class)
     private String providerSignerUserId;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerSignature;
 
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;

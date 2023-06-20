@@ -24,7 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
@@ -46,6 +45,9 @@ public class ContractStorageService {
 
     @Autowired
     private MessageQueueService messageQueueService;
+
+    @Autowired
+    private ContractSignerService contractSignerService;
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
@@ -326,6 +328,7 @@ public class ContractStorageService {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
             contract.setConsumerSignerUserId(userId);
+            contract.setConsumerSignature(contractSignerService.generateContractSignature(contract, userId));
         }
 
         if (targetState == ContractState.RELEASED) {
@@ -333,6 +336,7 @@ public class ContractStorageService {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
             contract.setProviderSignerUserId(userId);
+            contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
         }
 
         try {
