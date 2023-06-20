@@ -74,6 +74,11 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private List<String> offeringAttachments;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "provisioning_id")
+    @JsonView(ContractViews.ProviderView.class)
+    private ServiceContractProvisioning serviceContractProvisioning;
+
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
@@ -98,6 +103,7 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
+        this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
     public void transitionState(ContractState targetState) {

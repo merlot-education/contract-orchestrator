@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.xml.crypto.Data;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class EdcOrchestrationService {
         System.out.println(response);
     }
 
-    private void createAsset(String assetId, String assetName, String assetDescription, String assetVersion, String assetContentType,
+    private IdResponse createAsset(String assetId, String assetName, String assetDescription, String assetVersion, String assetContentType,
                              String dataName, String dataBaseUrl, String dataType,
                              String managementUrl) {
 
@@ -98,9 +99,18 @@ public class EdcOrchestrationService {
                 restTemplate.exchange(managementUrl + "v2/assets",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
+
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        IdResponse idResponse = null;
+        try {
+            idResponse = mapper.readValue(response, IdResponse.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return idResponse;
     }
 
-    private void createPolicyUnrestricted(String policyId, String managementUrl) {
+    private IdResponse createPolicyUnrestricted(String policyId, String managementUrl) {
         PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
         Policy policy = new Policy();
         policy.setId(policyId);
@@ -114,9 +124,18 @@ public class EdcOrchestrationService {
                 restTemplate.exchange(managementUrl + "v2/policydefinitions",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
+
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        IdResponse idResponse = null;
+        try {
+            idResponse = mapper.readValue(response, IdResponse.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return idResponse;
     }
 
-    private void createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
+    private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
                                           String managementUrl) { // TODO add asset selector
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
@@ -131,6 +150,14 @@ public class EdcOrchestrationService {
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
+        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        IdResponse idResponse = null;
+        try {
+            idResponse = mapper.readValue(response, IdResponse.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return idResponse;
     }
 
     private DcatCatalog queryCatalog(String providerProtocolUrl, String managementUrl) {
@@ -260,32 +287,38 @@ public class EdcOrchestrationService {
     public void transferContractToParticipatingConnectors(ContractTemplate template,
                                                           String providerBaseUrl,
                                                           String consumerBaseUrl) {
+
+        String contractUuid = template.getId().replace("Contract:", "");
+
+        String assetId = contractUuid + "-Asset";
+        String assetName = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()
+                + "/contract/" + template.getId();
+        String assetDescription = "Asset automatically generated from MERLOT to execute contract " + template.getId();
+        String policyId = contractUuid + "-Policy";
+        String contractDefinitionId = contractUuid + "-ContractDefinition";
+
         String providerControlUrl = providerBaseUrl + ":19192/control/";
         String providerPublicUrl = providerBaseUrl + ":19291/public/";
         String providerManagementUrl = providerBaseUrl + ":19193/management/";
         String providerProtocolUrl = providerBaseUrl + ":19194/protocol";
 
-        String consumerControlUrl = consumerBaseUrl + ":29192/control/";
-        String consumerPublicUrl = consumerBaseUrl + ":29291/public/";
         String consumerManagementUrl = consumerBaseUrl + ":29193/management/";
-        String consumerProtocolUrl = consumerBaseUrl + ":29194/protocol";
-        //messageQueueService.remoteRequestOrganizationDetails("10");
 
         // provider side
         createDataplane(providerControlUrl + "/transfer", providerPublicUrl, providerManagementUrl);
-        createAsset("assetId", "My Asset", "Description", "v1.2.3",
-                "application/json", "My Asset",
-                "https://jsonplaceholder.typicode.com/users", "HttpData",
-                providerManagementUrl);
-        createPolicyUnrestricted("policy", providerManagementUrl);
-        createContractDefinition("contractDefinition", "policy",
-                "policy", providerManagementUrl);
+        IdResponse assetIdResponse = createAsset(assetId, assetName, assetDescription, "",
+                "", template.getServiceContractProvisioning().getDataAddressName(),
+                template.getServiceContractProvisioning().getDataAddressBaseUrl(),
+                template.getServiceContractProvisioning().getDataAddressType(), providerManagementUrl);
+        IdResponse policyIdResponse = createPolicyUnrestricted(policyId, providerManagementUrl);
+        createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
+                policyIdResponse.getId(), providerManagementUrl);
 
 
         //consumer side
         DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
         IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), "consumer",
-                catalog.getParticipantId(), providerProtocolUrl,catalog.getDataset().getHasPolicy().getId(),
+                catalog.getParticipantId(), providerProtocolUrl, catalog.getDataset().getHasPolicy().getId(),
                 catalog.getDataset().getAssetId(), catalog.getDataset().getHasPolicy(), consumerManagementUrl);
         ContractNegotiation negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         while (!negotiation.getState().equals("FINALIZED")) {
