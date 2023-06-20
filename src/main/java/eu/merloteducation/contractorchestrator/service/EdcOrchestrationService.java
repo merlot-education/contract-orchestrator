@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
@@ -17,7 +16,6 @@ import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateReq
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import org.jetbrains.annotations.Contract;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,8 +65,8 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createAsset(String assetId, String assetName, String assetDescription, String assetVersion, String assetContentType,
-                             String dataName, String dataBaseUrl, String dataType,
-                             String managementUrl) {
+                                   String dataName, String dataBaseUrl, String dataType,
+                                   String managementUrl) {
 
         AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
 
@@ -136,7 +133,7 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
-                                          String managementUrl) { // TODO add asset selector
+                                                String managementUrl) { // TODO add asset selector
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
         createRequest.setAccessPolicyId(accessPolicyId);
@@ -184,7 +181,7 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse negotiateOffer(String connectorId, String consumerId, String providerId, String connectorAddress,
-                                String offerId, String assetId, Policy policy, String managementUrl) {
+                                      String offerId, String assetId, Policy policy, String managementUrl) {
         NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest();
         initiateRequest.setConnectorId(connectorId);
         initiateRequest.setConsumerId(consumerId);
@@ -235,7 +232,7 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse initiateTransfer(String connectorId, String connectorAddress, String agreementId, String assetId,
-                                  String dataDestinationUrl, String managementUrl) {
+                                        String dataDestinationUrl, String managementUrl) {
         TransferRequest transferRequest = new TransferRequest();
         transferRequest.setConnectorId(connectorId);
         transferRequest.setConnectorAddress(connectorAddress);
@@ -284,6 +281,7 @@ public class EdcOrchestrationService {
         }
         return transferProcess;
     }
+
     public void transferContractToParticipatingConnectors(ContractTemplate template,
                                                           String providerBaseUrl,
                                                           String consumerBaseUrl) {
@@ -334,7 +332,7 @@ public class EdcOrchestrationService {
                 consumerManagementUrl);
 
 
-        TransferProcess transferProcess =  checkTransferStatus(transfer.getId(), consumerManagementUrl);
+        TransferProcess transferProcess = checkTransferStatus(transfer.getId(), consumerManagementUrl);
         while (!transferProcess.getState().equals("COMPLETED")) {
             try {
                 TimeUnit.SECONDS.sleep(1);
@@ -345,6 +343,4 @@ public class EdcOrchestrationService {
         }
 
     }
-
-
 }

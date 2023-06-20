@@ -23,10 +23,13 @@ public class ServiceContractProvisioning {
     @Setter(AccessLevel.NONE)
     private String id;
 
+    @JsonView(ContractViews.ProviderView.class)
     private String dataAddressName;
 
+    @JsonView(ContractViews.ProviderView.class)
     private String dataAddressBaseUrl;
 
+    @JsonView(ContractViews.ProviderView.class)
     private String dataAddressType;
 
     @OneToOne(mappedBy = "serviceContractProvisioning")
