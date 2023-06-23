@@ -7,6 +7,7 @@ import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
+import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatDataset;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.ContractDefinitionCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.Criterion;
@@ -20,16 +21,15 @@ import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProce
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class EdcOrchestrationService {
@@ -328,11 +328,18 @@ public class EdcOrchestrationService {
                 policyIdResponse.getId(), assetIdResponse.getId(), providerManagementUrl);
 
 
-        //consumer side
+        // consumer side
+        // find the offering we are interested in
         DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
+        if(matches.size() != 1) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
+        }
+        DcatDataset dataset = matches.get(0);
+
         IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), consumerDetails.getConnectorId(),
-                catalog.getParticipantId(), providerProtocolUrl, catalog.getDataset().get(0).getHasPolicy().get(0).getId(),
-                catalog.getDataset().get(0).getAssetId(), catalog.getDataset().get(0).getHasPolicy().get(0), consumerManagementUrl);
+                catalog.getParticipantId(), providerProtocolUrl, dataset.getHasPolicy().get(0).getId(),
+                dataset.getAssetId(), dataset.getHasPolicy().get(0), consumerManagementUrl);
         ContractNegotiation negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         while (!negotiation.getState().equals("FINALIZED")) {
             try {
