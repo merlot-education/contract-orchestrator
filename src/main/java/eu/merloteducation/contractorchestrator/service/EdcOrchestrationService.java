@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
@@ -146,16 +147,6 @@ public class EdcOrchestrationService {
         //assetCriterion.setOperandRight(assetId);
         //assetSelector.add(assetCriterion);
         createRequest.setAssetsSelector(assetSelector);
-
-        /*try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            String json = mapper.writeValueAsString(createRequest);
-            System.out.println(json);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<ContractDefinitionCreateRequest> request = new HttpEntity<>(createRequest, headers);
@@ -301,11 +292,13 @@ public class EdcOrchestrationService {
     }
 
     public void transferContractToParticipatingConnectors(ContractTemplate template) {
+        OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getProviderId().replace("Participant:", ""));
+        OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", ""));
 
-        String providerBaseUrl = messageQueueService.remoteRequestOrganizationDetails(
-                template.getProviderId().replace("Participant:", "")).getConnectorBaseUrl();
-        String consumerBaseUrl = messageQueueService.remoteRequestOrganizationDetails(
-                template.getConsumerId().replace("Participant:", "")).getConnectorBaseUrl();
+        String providerBaseUrl = providerDetails.getConnectorBaseUrl();
+        String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
 
         String contractUuid = template.getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
@@ -337,7 +330,7 @@ public class EdcOrchestrationService {
 
         //consumer side
         DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
-        IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), "consumer",
+        IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), consumerDetails.getConnectorId(),
                 catalog.getParticipantId(), providerProtocolUrl, catalog.getDataset().get(0).getHasPolicy().get(0).getId(),
                 catalog.getDataset().get(0).getAssetId(), catalog.getDataset().get(0).getHasPolicy().get(0), consumerManagementUrl);
         ContractNegotiation negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
