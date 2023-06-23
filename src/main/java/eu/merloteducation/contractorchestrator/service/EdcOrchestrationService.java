@@ -310,7 +310,7 @@ public class EdcOrchestrationService {
         String policyId = instanceUuid + "_Policy";
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
-        String providerControlUrl = providerBaseUrl + ":19192/control/";
+        String providerControlUrl = providerBaseUrl + ":19192/control/"; // TODO these port mappings need to be replaced with url mappings once they are hosted in the cloud
         String providerPublicUrl = providerBaseUrl + ":19291/public/";
         String providerManagementUrl = providerBaseUrl + ":19193/management/";
         String providerProtocolUrl = providerBaseUrl + ":19194/protocol";
