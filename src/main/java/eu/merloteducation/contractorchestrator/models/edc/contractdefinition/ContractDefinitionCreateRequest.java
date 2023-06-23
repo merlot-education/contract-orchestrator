@@ -16,7 +16,7 @@ public class ContractDefinitionCreateRequest {
 
     private static final String TYPE = EdcConstants.EDC_PREFIX + "ContractDefinition";
 
-    private static final List<String> assetsSelector = Collections.emptyList(); // TODO replace this with proper selector
+    private List<Criterion> assetsSelector;
 
     @JsonProperty("@id")
     private String id;

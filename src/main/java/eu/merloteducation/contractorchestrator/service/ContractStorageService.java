@@ -343,8 +343,7 @@ public class ContractStorageService {
 
         if (contract.getState() == ContractState.RELEASED) {
             // TODO fetch connector urls from organization orchestrator
-            edcOrchestrationService.transferContractToParticipatingConnectors(contract, "http://localhost/",
-                    "http://localhost");  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
+            edcOrchestrationService.transferContractToParticipatingConnectors(contract);  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
         }
 
         return contractTemplateRepository.save(contract);

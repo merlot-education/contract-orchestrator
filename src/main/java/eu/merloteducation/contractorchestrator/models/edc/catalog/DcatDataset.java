@@ -1,10 +1,13 @@
 package eu.merloteducation.contractorchestrator.models.edc.catalog;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,8 +18,9 @@ public class DcatDataset {
     @JsonProperty("@type")
     private String type;
 
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @JsonProperty(EdcConstants.ODRL_PREFIX + "hasPolicy")
-    private Policy hasPolicy;
+    private List<Policy> hasPolicy;
 
     @JsonProperty(EdcConstants.DCAT_PREFIX + "distribution")
     private DcatDistribution distribution;

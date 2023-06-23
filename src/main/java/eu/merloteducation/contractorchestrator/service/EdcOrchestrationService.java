@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
@@ -7,6 +8,7 @@ import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.ContractDefinitionCreateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.Criterion;
 import eu.merloteducation.contractorchestrator.models.edc.dataplane.DataPlaneCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractOffer;
@@ -25,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -133,11 +132,29 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
-                                                String managementUrl) { // TODO add asset selector
+                                                String assetId, String managementUrl) { // TODO add asset selector
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
         createRequest.setAccessPolicyId(accessPolicyId);
         createRequest.setContractPolicyId(contractPolicyid);
+        List<Criterion> assetSelector = new ArrayList<>();
+        //Criterion assetCriterion = new Criterion();
+        //assetCriterion.setOperator("=");
+        //assetCriterion.setOperandLeft("asset:prop:id");
+        //List<String> targetAssets = new ArrayList<>();
+        //targetAssets.add(assetId);
+        //assetCriterion.setOperandRight(assetId);
+        //assetSelector.add(assetCriterion);
+        createRequest.setAssetsSelector(assetSelector);
+
+        /*try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            String json = mapper.writeValueAsString(createRequest);
+            System.out.println(json);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -158,6 +175,7 @@ public class EdcOrchestrationService {
     }
 
     private DcatCatalog queryCatalog(String providerProtocolUrl, String managementUrl) {
+        System.out.println("Query Catalog");
         CatalogRequest catalogRequest = new CatalogRequest();
         catalogRequest.setProviderUrl(providerProtocolUrl);
 
@@ -282,18 +300,22 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
-    public void transferContractToParticipatingConnectors(ContractTemplate template,
-                                                          String providerBaseUrl,
-                                                          String consumerBaseUrl) {
+    public void transferContractToParticipatingConnectors(ContractTemplate template) {
+
+        String providerBaseUrl = messageQueueService.remoteRequestOrganizationDetails(
+                template.getProviderId().replace("Participant:", "")).getConnectorBaseUrl();
+        String consumerBaseUrl = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", "")).getConnectorBaseUrl();
 
         String contractUuid = template.getId().replace("Contract:", "");
+        String instanceUuid = contractUuid + "_" + UUID.randomUUID();
 
-        String assetId = contractUuid + "-Asset";
+        String assetId = instanceUuid + "_Asset";
         String assetName = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()
                 + "/contract/" + template.getId();
         String assetDescription = "Asset automatically generated from MERLOT to execute contract " + template.getId();
-        String policyId = contractUuid + "-Policy";
-        String contractDefinitionId = contractUuid + "-ContractDefinition";
+        String policyId = instanceUuid + "_Policy";
+        String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
         String providerControlUrl = providerBaseUrl + ":19192/control/";
         String providerPublicUrl = providerBaseUrl + ":19291/public/";
@@ -310,14 +332,14 @@ public class EdcOrchestrationService {
                 template.getServiceContractProvisioning().getDataAddressType(), providerManagementUrl);
         IdResponse policyIdResponse = createPolicyUnrestricted(policyId, providerManagementUrl);
         createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
-                policyIdResponse.getId(), providerManagementUrl);
+                policyIdResponse.getId(), assetIdResponse.getId(), providerManagementUrl);
 
 
         //consumer side
         DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
         IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), "consumer",
-                catalog.getParticipantId(), providerProtocolUrl, catalog.getDataset().getHasPolicy().getId(),
-                catalog.getDataset().getAssetId(), catalog.getDataset().getHasPolicy(), consumerManagementUrl);
+                catalog.getParticipantId(), providerProtocolUrl, catalog.getDataset().get(0).getHasPolicy().get(0).getId(),
+                catalog.getDataset().get(0).getAssetId(), catalog.getDataset().get(0).getHasPolicy().get(0), consumerManagementUrl);
         ContractNegotiation negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         while (!negotiation.getState().equals("FINALIZED")) {
             try {
@@ -328,7 +350,7 @@ public class EdcOrchestrationService {
             negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         }
         IdResponse transfer = initiateTransfer(catalog.getParticipantId(), providerProtocolUrl, negotiation.getContractAgreementId(),
-                catalog.getDataset().getAssetId(), "http://localhost:4000/api/consumer/store",
+                catalog.getDataset().get(0).getAssetId(), "http://localhost:4000/api/consumer/store",
                 consumerManagementUrl);
 
 

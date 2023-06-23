@@ -76,8 +76,9 @@ public class ContractsController {
         serviceContractProvisioning.setDataAddressType("HttpData");
         serviceContractProvisioning.setDataAddressBaseUrl("https://jsonplaceholder.typicode.com/users");
         template.setServiceContractProvisioning(serviceContractProvisioning);
-        edcOrchestrationService.transferContractToParticipatingConnectors(template, "http://localhost",
-                "http://localhost");
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+        edcOrchestrationService.transferContractToParticipatingConnectors(template);
     }
 
     /**

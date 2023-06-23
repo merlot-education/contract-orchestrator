@@ -1,10 +1,12 @@
 package eu.merloteducation.contractorchestrator.models.edc.catalog;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -22,9 +24,11 @@ public class DcatCatalog {
     @JsonProperty("@context")
     private Map<String, String> context;
 
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @JsonProperty(EdcConstants.DCAT_PREFIX + "dataset")
-    private DcatDataset dataset;
+    private List<DcatDataset> dataset;
 
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @JsonProperty(EdcConstants.DCAT_PREFIX + "service")
-    private DcatService service;
+    private List<DcatService> service;
 }
