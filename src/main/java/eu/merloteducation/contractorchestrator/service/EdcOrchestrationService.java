@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
@@ -64,28 +63,8 @@ public class EdcOrchestrationService {
         System.out.println(response);
     }
 
-    private IdResponse createAsset(String assetId, String assetName, String assetDescription, String assetVersion, String assetContentType,
-                                   String dataName, String dataBaseUrl, String dataType,
-                                   String managementUrl) {
-
+    private IdResponse createAsset(Asset asset, DataAddress dataAddress, String managementUrl) {
         AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
-
-        Asset asset = new Asset();
-        asset.setId(assetId);
-        AssetProperties assetProperties = new AssetProperties();
-        assetProperties.setName(assetName);
-        assetProperties.setDescription(assetDescription);
-        assetProperties.setVersion(assetVersion);
-        assetProperties.setContenttype(assetContentType);
-        asset.setProperties(assetProperties);
-
-        DataAddress dataAddress = new DataAddress();
-        DataAddressProperties dataAddressProperties = new DataAddressProperties();
-        dataAddressProperties.setName(dataName);
-        dataAddressProperties.setBaseUrl(dataBaseUrl);
-        dataAddressProperties.setType(dataType);
-        dataAddress.setProperties(dataAddressProperties);
-
         assetCreateRequest.setAsset(asset);
         assetCreateRequest.setDataAddress(dataAddress);
 
@@ -107,12 +86,10 @@ public class EdcOrchestrationService {
         return idResponse;
     }
 
-    private IdResponse createPolicyUnrestricted(String policyId, String managementUrl) {
+    private IdResponse createPolicyUnrestricted(Policy policy, String managementUrl) {
         PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
-        Policy policy = new Policy();
-        policy.setId(policyId);
         policyCreateRequest.setPolicy(policy);
-        policyCreateRequest.setId(policyId);
+        policyCreateRequest.setId(policy.getId());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -190,17 +167,12 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse negotiateOffer(String connectorId, String consumerId, String providerId, String connectorAddress,
-                                      String offerId, String assetId, Policy policy, String managementUrl) {
+                                      ContractOffer offer, String managementUrl) {
         NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest();
         initiateRequest.setConnectorId(connectorId);
         initiateRequest.setConsumerId(consumerId);
         initiateRequest.setProviderId(providerId);
         initiateRequest.setConnectorAddress(connectorAddress);
-
-        ContractOffer offer = new ContractOffer();
-        offer.setOfferId(offerId);
-        offer.setAssetId(assetId);
-        offer.setPolicy(policy);
         initiateRequest.setOffer(offer);
 
         HttpHeaders headers = new HttpHeaders();
@@ -247,11 +219,7 @@ public class EdcOrchestrationService {
         transferRequest.setConnectorAddress(connectorAddress);
         transferRequest.setContractId(agreementId);
         transferRequest.setAssetId(assetId);
-        DataAddress dataDestination = new DataAddress();
-        DataAddressProperties dataDestinationProperties = new DataAddressProperties();
-        dataDestinationProperties.setType("HttpData");
-        dataDestinationProperties.setBaseUrl(dataDestinationUrl);
-        dataDestination.setProperties(dataDestinationProperties);
+        DataAddress dataDestination = new DataAddress(new DataAddressProperties(null, dataDestinationUrl, "HttpData"));
         transferRequest.setDataDestination(dataDestination);
 
         HttpHeaders headers = new HttpHeaders();
@@ -319,11 +287,15 @@ public class EdcOrchestrationService {
 
         // provider side
         createDataplane(providerControlUrl + "/transfer", providerPublicUrl, providerManagementUrl);
-        IdResponse assetIdResponse = createAsset(assetId, assetName, assetDescription, "",
-                "", template.getServiceContractProvisioning().getDataAddressName(),
-                template.getServiceContractProvisioning().getDataAddressBaseUrl(),
-                template.getServiceContractProvisioning().getDataAddressType(), providerManagementUrl);
-        IdResponse policyIdResponse = createPolicyUnrestricted(policyId, providerManagementUrl);
+        IdResponse assetIdResponse = createAsset(
+                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
+                new DataAddress(new DataAddressProperties(
+                        template.getServiceContractProvisioning().getDataAddressName(),
+                        template.getServiceContractProvisioning().getDataAddressBaseUrl(),
+                        template.getServiceContractProvisioning().getDataAddressType())),
+                providerManagementUrl
+        );
+        IdResponse policyIdResponse = createPolicyUnrestricted(new Policy(policyId), providerManagementUrl);
         createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
                 policyIdResponse.getId(), assetIdResponse.getId(), providerManagementUrl);
 
@@ -338,8 +310,9 @@ public class EdcOrchestrationService {
         DcatDataset dataset = matches.get(0);
 
         IdResponse negotiationResponse = negotiateOffer(catalog.getParticipantId(), consumerDetails.getConnectorId(),
-                catalog.getParticipantId(), providerProtocolUrl, dataset.getHasPolicy().get(0).getId(),
-                dataset.getAssetId(), dataset.getHasPolicy().get(0), consumerManagementUrl);
+                catalog.getParticipantId(), providerProtocolUrl,
+                new ContractOffer(dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)),
+                consumerManagementUrl);
         ContractNegotiation negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         while (!negotiation.getState().equals("FINALIZED")) {
             try {
