@@ -295,8 +295,8 @@ public class EdcOrchestrationService {
         IdResponse assetIdResponse = createAsset(
                 new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
                 new IonosS3DataAddress(provisioning.getDataAddressName(), provisioning.getDataAddressSourceBucketName(),
-                        providerDetails.getMerlotId(), provisioning.getDataAddressSourceFileName(), null,
-                        "s3-eu-central-1.ionoscloud.com"),
+                        providerDetails.getMerlotId(), provisioning.getDataAddressSourceFileName(),
+                        provisioning.getDataAddressSourceFileName(),"s3-eu-central-1.ionoscloud.com"),
                 providerManagementUrl
         );
         IdResponse policyIdResponse = createPolicyUnrestricted(new Policy(policyId), providerManagementUrl);
@@ -329,8 +329,8 @@ public class EdcOrchestrationService {
         IdResponse transfer = initiateTransfer(catalog.getParticipantId(), providerProtocolUrl, negotiation.getContractAgreementId(),
                 catalog.getDataset().get(0).getAssetId(), new IonosS3DataAddress(
                         provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
-                        consumerDetails.getMerlotId(), null, provisioning.getDataAddressTargetFileName(),
-                        "s3-eu-central-1.ionoscloud.com"),
+                        consumerDetails.getMerlotId(), provisioning.getDataAddressTargetFileName(),
+                        provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com"),
                 consumerManagementUrl);
 
 
