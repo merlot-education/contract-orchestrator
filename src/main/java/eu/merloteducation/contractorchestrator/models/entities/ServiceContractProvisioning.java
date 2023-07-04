@@ -27,7 +27,16 @@ public class ServiceContractProvisioning {
     private String dataAddressName;
 
     @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressBaseUrl;
+    private String dataAddressSourceBucketName;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressSourceFileName;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String dataAddressTargetBucketName;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String dataAddressTargetFileName;
 
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressType;

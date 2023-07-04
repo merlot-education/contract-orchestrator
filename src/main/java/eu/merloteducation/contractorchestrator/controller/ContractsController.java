@@ -73,8 +73,11 @@ public class ContractsController {
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
         ServiceContractProvisioning serviceContractProvisioning = new ServiceContractProvisioning();
         serviceContractProvisioning.setDataAddressName("My Data");
-        serviceContractProvisioning.setDataAddressType("HttpData");
-        serviceContractProvisioning.setDataAddressBaseUrl("https://jsonplaceholder.typicode.com/users");
+        serviceContractProvisioning.setDataAddressType("IonosS3");
+        serviceContractProvisioning.setDataAddressSourceBucketName("merlotedcprovider");
+        serviceContractProvisioning.setDataAddressSourceFileName("device1-data.csv");
+        serviceContractProvisioning.setDataAddressTargetBucketName("merlotedcconsumer");
+        serviceContractProvisioning.setDataAddressTargetFileName("device1-data.csv");
         template.setServiceContractProvisioning(serviceContractProvisioning);
         template.setProviderId("Participant:10");
         template.setConsumerId("Participant:20");

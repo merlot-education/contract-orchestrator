@@ -22,8 +22,9 @@ public class DcatDataset {
     @JsonProperty(EdcConstants.ODRL_PREFIX + "hasPolicy")
     private List<Policy> hasPolicy;
 
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @JsonProperty(EdcConstants.DCAT_PREFIX + "distribution")
-    private DcatDistribution distribution;
+    private List<DcatDistribution> distribution;
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "version")
     private String version;

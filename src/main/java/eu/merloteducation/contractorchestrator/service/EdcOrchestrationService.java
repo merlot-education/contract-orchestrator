@@ -17,9 +17,11 @@ import eu.merloteducation.contractorchestrator.models.edc.negotiation.Negotiatio
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.HttpTransferProcess;
+import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -155,6 +157,8 @@ public class EdcOrchestrationService {
                 restTemplate.exchange(managementUrl + "v2/catalog/request",
                         HttpMethod.POST, request, String.class).getBody();
 
+        System.out.println(response);
+
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         DcatCatalog catalogResponse = null;
         try {
@@ -214,14 +218,15 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse initiateTransfer(String connectorId, String connectorAddress, String agreementId, String assetId,
-                                        String dataDestinationUrl, String managementUrl) {
+                                        DataAddress dataDestination, String managementUrl) {
         TransferRequest transferRequest = new TransferRequest();
         transferRequest.setConnectorId(connectorId);
         transferRequest.setConnectorAddress(connectorAddress);
         transferRequest.setContractId(agreementId);
         transferRequest.setAssetId(assetId);
-        DataAddress dataDestination = new HttpDataAddress(new HttpDataAddressProperties(null, dataDestinationUrl, "HttpData"));
         transferRequest.setDataDestination(dataDestination);
+
+        System.out.println((IonosS3DataAddress) transferRequest.getDataDestination());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -241,7 +246,7 @@ public class EdcOrchestrationService {
         return idResponse;
     }
 
-    private HttpTransferProcess checkTransferStatus(String transferId, String managementUrl) {
+    private IonosS3TransferProcess checkTransferStatus(String transferId, String managementUrl) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
@@ -251,9 +256,9 @@ public class EdcOrchestrationService {
         System.out.println(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        HttpTransferProcess transferProcess = null;
+        IonosS3TransferProcess transferProcess = null;
         try {
-            transferProcess = mapper.readValue(response, HttpTransferProcess.class);
+            transferProcess = mapper.readValue(response, IonosS3TransferProcess.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -265,6 +270,7 @@ public class EdcOrchestrationService {
                 template.getProviderId().replace("Participant:", ""));
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
+        ServiceContractProvisioning provisioning = template.getServiceContractProvisioning();
 
         String providerBaseUrl = providerDetails.getConnectorBaseUrl();
         String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
@@ -279,21 +285,18 @@ public class EdcOrchestrationService {
         String policyId = instanceUuid + "_Policy";
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
-        String providerControlUrl = providerBaseUrl + ":19192/control/"; // TODO these port mappings need to be replaced with url mappings once they are hosted in the cloud
-        String providerPublicUrl = providerBaseUrl + ":19291/public/";
-        String providerManagementUrl = providerBaseUrl + ":19193/management/";
-        String providerProtocolUrl = providerBaseUrl + ":19194/protocol";
+        // TODO these port mappings need to be replaced with url mappings once they are hosted in the cloud
+        String providerManagementUrl = providerBaseUrl + ":8182/management/";
+        String providerProtocolUrl = providerBaseUrl + ":8282/protocol";
 
-        String consumerManagementUrl = consumerBaseUrl + ":29193/management/";
+        String consumerManagementUrl = consumerBaseUrl + ":9192/management/";
 
         // provider side
-        createDataplane(providerControlUrl + "/transfer", providerPublicUrl, providerManagementUrl);
         IdResponse assetIdResponse = createAsset(
                 new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
-                new HttpDataAddress(new HttpDataAddressProperties(
-                        template.getServiceContractProvisioning().getDataAddressName(),
-                        template.getServiceContractProvisioning().getDataAddressBaseUrl(),
-                        template.getServiceContractProvisioning().getDataAddressType())),
+                new IonosS3DataAddress(provisioning.getDataAddressName(), provisioning.getDataAddressSourceBucketName(),
+                        providerDetails.getMerlotId(), provisioning.getDataAddressSourceFileName(), null,
+                        "s3-eu-central-1.ionoscloud.com"),
                 providerManagementUrl
         );
         IdResponse policyIdResponse = createPolicyUnrestricted(new Policy(policyId), providerManagementUrl);
@@ -324,7 +327,10 @@ public class EdcOrchestrationService {
             negotiation = checkOfferStatus(negotiationResponse.getId(), consumerManagementUrl);
         }
         IdResponse transfer = initiateTransfer(catalog.getParticipantId(), providerProtocolUrl, negotiation.getContractAgreementId(),
-                catalog.getDataset().get(0).getAssetId(), "http://localhost:4000/api/consumer/store",
+                catalog.getDataset().get(0).getAssetId(), new IonosS3DataAddress(
+                        provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
+                        consumerDetails.getMerlotId(), null, provisioning.getDataAddressTargetFileName(),
+                        "s3-eu-central-1.ionoscloud.com"),
                 consumerManagementUrl);
 
 
