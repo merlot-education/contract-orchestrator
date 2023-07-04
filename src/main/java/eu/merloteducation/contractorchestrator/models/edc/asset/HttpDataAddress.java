@@ -11,13 +11,15 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DataAddressProperties {
-    @JsonProperty(EdcConstants.EDC_PREFIX + "name")
-    private String name;
+public class HttpDataAddress extends DataAddress {
 
-    @JsonProperty(EdcConstants.EDC_PREFIX + "baseUrl")
-    private String baseUrl;
+    private static final String TYPE = "HttpData";
+
+    @JsonProperty(EdcConstants.EDC_PREFIX + "properties")
+    private HttpDataAddressProperties properties;
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "type")
-    private String type;
+    public String getDataType() {
+        return TYPE;
+    }
 }

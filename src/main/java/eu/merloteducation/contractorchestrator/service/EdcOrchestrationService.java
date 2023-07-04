@@ -16,6 +16,7 @@ import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractOf
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.NegotiationInitiateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.transfer.HttpTransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
@@ -219,7 +220,7 @@ public class EdcOrchestrationService {
         transferRequest.setConnectorAddress(connectorAddress);
         transferRequest.setContractId(agreementId);
         transferRequest.setAssetId(assetId);
-        DataAddress dataDestination = new DataAddress(new DataAddressProperties(null, dataDestinationUrl, "HttpData"));
+        DataAddress dataDestination = new HttpDataAddress(new HttpDataAddressProperties(null, dataDestinationUrl, "HttpData"));
         transferRequest.setDataDestination(dataDestination);
 
         HttpHeaders headers = new HttpHeaders();
@@ -240,7 +241,7 @@ public class EdcOrchestrationService {
         return idResponse;
     }
 
-    private TransferProcess checkTransferStatus(String transferId, String managementUrl) {
+    private HttpTransferProcess checkTransferStatus(String transferId, String managementUrl) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
@@ -250,9 +251,9 @@ public class EdcOrchestrationService {
         System.out.println(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        TransferProcess transferProcess = null;
+        HttpTransferProcess transferProcess = null;
         try {
-            transferProcess = mapper.readValue(response, TransferProcess.class);
+            transferProcess = mapper.readValue(response, HttpTransferProcess.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -289,7 +290,7 @@ public class EdcOrchestrationService {
         createDataplane(providerControlUrl + "/transfer", providerPublicUrl, providerManagementUrl);
         IdResponse assetIdResponse = createAsset(
                 new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
-                new DataAddress(new DataAddressProperties(
+                new HttpDataAddress(new HttpDataAddressProperties(
                         template.getServiceContractProvisioning().getDataAddressName(),
                         template.getServiceContractProvisioning().getDataAddressBaseUrl(),
                         template.getServiceContractProvisioning().getDataAddressType())),
