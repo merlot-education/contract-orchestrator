@@ -23,20 +23,18 @@ public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBod
         ServletServerHttpRequest request = (ServletServerHttpRequest)req;
 
         if (bodyContainer.getValue() instanceof ContractTemplate contractTemplate) {
+            bodyContainer.setSerializationView(ContractViews.DetailedView.class);
             if (request.getHeaders().containsKey("Active-Role")) {
                 String activeRoleOrgaId = Objects.requireNonNull(request.getHeaders().getFirst("Active-Role"))
                         .replaceFirst("(OrgLegRep|OrgRep)_", "");
                 if (contractTemplate.getProviderId().replace("Participant:", "")
                         .equals(activeRoleOrgaId)) {
                     bodyContainer.setSerializationView(ContractViews.ProviderView.class);
-                    return;
                 } else if (contractTemplate.getConsumerId().replace("Participant:", "")
                         .equals(activeRoleOrgaId)) {
                     bodyContainer.setSerializationView(ContractViews.ConsumerView.class);
-                    return;
                 }
             }
-            bodyContainer.setSerializationView(ContractViews.DetailedView.class);
         }
     }
 }

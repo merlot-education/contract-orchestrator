@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
@@ -49,6 +50,9 @@ public class ContractStorageService {
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
+
+    @Autowired
+    private EdcOrchestrationService edcOrchestrationService;
 
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
@@ -158,22 +162,31 @@ public class ContractStorageService {
                 editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
             targetDataDeliveryContractTemplate.setExchangeCountSelection(
                     editedDataDeliveryContractTemplate.getExchangeCountSelection());
+            if (isConsumer) {
+                targetDataDeliveryContractTemplate.setConsumerEdcToken(
+                        editedDataDeliveryContractTemplate.getConsumerEdcToken());
+            }
+            if (isProvider) {
+                targetDataDeliveryContractTemplate.setDataAddressBaseUrl(
+                        editedDataDeliveryContractTemplate.getDataAddressBaseUrl());
+                targetDataDeliveryContractTemplate.setDataAddressDataType(
+                        editedDataDeliveryContractTemplate.getDataAddressDataType());
+                targetDataDeliveryContractTemplate.setDataAddressName(
+                        editedDataDeliveryContractTemplate.getDataAddressName());
+                targetDataDeliveryContractTemplate.setProviderEdcToken(
+                        editedDataDeliveryContractTemplate.getProviderEdcToken());
+            }
         }
 
         if (isConsumer) {
             targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
             targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
             targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
-            targetContract.setConsumerEdcToken(editedContract.getConsumerEdcToken());
         }
         if (isProvider) {
             targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
             targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
             targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
-            targetContract.setDataAddressBaseUrl(editedContract.getDataAddressBaseUrl());
-            targetContract.setDataAddressDataType(editedContract.getDataAddressDataType());
-            targetContract.setDataAddressName(editedContract.getDataAddressName());
-            targetContract.setProviderEdcToken(editedContract.getProviderEdcToken());
         }
     }
 
@@ -289,11 +302,6 @@ public class ContractStorageService {
         return contractTemplateRepository.save(contract);
     }
 
-    private void orchestrateParticipatingConnectors(ContractTemplate template) {
-        messageQueueService.remoteRequestOrganizationDetails("10");
-        // TODO on RELEASED transfer data to EDC of provider and start negotiation
-    }
-
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
@@ -333,7 +341,10 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
-        orchestrateParticipatingConnectors(contract);
+        if (contract.getState() == ContractState.RELEASED) {
+            // TODO fetch connector urls from organization orchestrator
+            edcOrchestrationService.transferContractToParticipatingConnectors(contract);  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
+        }
 
         return contractTemplateRepository.save(contract);
     }
