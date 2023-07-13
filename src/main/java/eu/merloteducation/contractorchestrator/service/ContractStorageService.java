@@ -200,7 +200,6 @@ public class ContractStorageService {
                         editedContract.getServiceContractProvisioning().getDataAddressSourceFileName());
             }
         }
-
     }
 
     /**
