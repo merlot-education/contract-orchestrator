@@ -151,43 +151,56 @@ public class ContractStorageService {
                                                            boolean isConsumer,
                                                            boolean isProvider) {
         // TODO consider moving this logic into a DTO pattern
-        targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+        if (targetContract.getState() == ContractState.IN_DRAFT) {
+            targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
 
-        if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
-                editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
-            targetSaasContractTemplate.setUserCountSelection(editedSaasContractTemplate.getUserCountSelection());
-        }
+            if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
+                    editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
+                targetSaasContractTemplate.setUserCountSelection(editedSaasContractTemplate.getUserCountSelection());
+            }
 
-        if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
-                editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
-            targetDataDeliveryContractTemplate.setExchangeCountSelection(
-                    editedDataDeliveryContractTemplate.getExchangeCountSelection());
+            if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
+                    editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                targetDataDeliveryContractTemplate.setExchangeCountSelection(
+                        editedDataDeliveryContractTemplate.getExchangeCountSelection());
+            }
+
             if (isConsumer) {
-                targetDataDeliveryContractTemplate.setConsumerEdcToken(
-                        editedDataDeliveryContractTemplate.getConsumerEdcToken());
+                targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
+                targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
+                targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+                targetContract.getServiceContractProvisioning().setDataAddressTargetBucketName(
+                        editedContract.getServiceContractProvisioning().getDataAddressTargetBucketName());
+                targetContract.getServiceContractProvisioning().setDataAddressTargetFileName(
+                        editedContract.getServiceContractProvisioning().getDataAddressTargetFileName());
             }
             if (isProvider) {
-                targetDataDeliveryContractTemplate.setDataAddressBaseUrl(
-                        editedDataDeliveryContractTemplate.getDataAddressBaseUrl());
-                targetDataDeliveryContractTemplate.setDataAddressDataType(
-                        editedDataDeliveryContractTemplate.getDataAddressDataType());
-                targetDataDeliveryContractTemplate.setDataAddressName(
-                        editedDataDeliveryContractTemplate.getDataAddressName());
-                targetDataDeliveryContractTemplate.setProviderEdcToken(
-                        editedDataDeliveryContractTemplate.getProviderEdcToken());
+                targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+                targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
+                targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+                targetContract.getServiceContractProvisioning().setDataAddressName(
+                        editedContract.getServiceContractProvisioning().getDataAddressName());
+                targetContract.getServiceContractProvisioning().setDataAddressType(
+                        editedContract.getServiceContractProvisioning().getDataAddressType());
+                targetContract.getServiceContractProvisioning().setDataAddressSourceBucketName(
+                        editedContract.getServiceContractProvisioning().getDataAddressSourceBucketName());
+                targetContract.getServiceContractProvisioning().setDataAddressSourceFileName(
+                        editedContract.getServiceContractProvisioning().getDataAddressSourceFileName());
+            }
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER) { // if consumer already signed, we may only edit very few fields
+            if (isProvider) {
+                targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+                targetContract.getServiceContractProvisioning().setDataAddressName(
+                        editedContract.getServiceContractProvisioning().getDataAddressName());
+                targetContract.getServiceContractProvisioning().setDataAddressType(
+                        editedContract.getServiceContractProvisioning().getDataAddressType());
+                targetContract.getServiceContractProvisioning().setDataAddressSourceBucketName(
+                        editedContract.getServiceContractProvisioning().getDataAddressSourceBucketName());
+                targetContract.getServiceContractProvisioning().setDataAddressSourceFileName(
+                        editedContract.getServiceContractProvisioning().getDataAddressSourceFileName());
             }
         }
 
-        if (isConsumer) {
-            targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
-            targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
-            targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
-        }
-        if (isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
-            targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
-            targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
-        }
     }
 
     /**
@@ -285,8 +298,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        // state must be IN_DRAFT
-        if (contract.getState() != ContractState.IN_DRAFT) {
+        // state must be IN_DRAFT (or SIGNED_CONSUMER with restricted options)
+        if (contract.getState() != ContractState.IN_DRAFT &&  contract.getState() != ContractState.SIGNED_CONSUMER ) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
@@ -328,10 +341,12 @@ public class ContractStorageService {
         }
 
         if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
+            // TODO ensure that contract has all mandatory consumer fields filled
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         if (targetState == ContractState.RELEASED && !isProvider) {
+            // TODO ensure that contract has all mandatory provider fields filled
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
@@ -343,7 +358,7 @@ public class ContractStorageService {
 
         if (contract.getState() == ContractState.RELEASED) {
             // TODO fetch connector urls from organization orchestrator
-            edcOrchestrationService.transferContractToParticipatingConnectors(contract);  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
+            //edcOrchestrationService.transferContractToParticipatingConnectors(contract);  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
         }
 
         return contractTemplateRepository.save(contract);

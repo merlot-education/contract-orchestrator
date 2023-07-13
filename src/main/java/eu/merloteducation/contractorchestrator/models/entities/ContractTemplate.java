@@ -76,7 +76,7 @@ public abstract class ContractTemplate {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
-    @JsonView(ContractViews.ProviderView.class)
+    @JsonView(ContractViews.DetailedView.class)
     private ServiceContractProvisioning serviceContractProvisioning;
 
     protected ContractTemplate() {
@@ -85,6 +85,7 @@ public abstract class ContractTemplate {
         this.creationDate = OffsetDateTime.now();
         this.offeringAttachments = new ArrayList<>();
         this.additionalAgreements = "";
+        this.serviceContractProvisioning = new ServiceContractProvisioning();
     }
 
     protected ContractTemplate(ContractTemplate template) {
@@ -108,6 +109,32 @@ public abstract class ContractTemplate {
 
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
+            if (targetState == ContractState.SIGNED_CONSUMER) {
+                if (runtimeSelection == null || runtimeSelection.isEmpty() ||
+                        !consumerMerlotTncAccepted  || !consumerOfferingTncAccepted || !consumerProviderTncAccepted ||
+                        serviceContractProvisioning == null ||
+                        serviceContractProvisioning.getDataAddressTargetFileName() == null ||
+                        serviceContractProvisioning.getDataAddressTargetFileName().isEmpty() ||
+                        serviceContractProvisioning.getDataAddressTargetBucketName() == null ||
+                        serviceContractProvisioning.getDataAddressTargetBucketName().isEmpty()) {
+                    throw new IllegalStateException(
+                            String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                    state.name(), targetState.name()));
+                }
+            } else if (targetState == ContractState.RELEASED) {
+                if (serviceContractProvisioning.getDataAddressSourceFileName() == null ||
+                        serviceContractProvisioning.getDataAddressSourceFileName().isEmpty() ||
+                        serviceContractProvisioning.getDataAddressSourceBucketName() == null ||
+                        serviceContractProvisioning.getDataAddressSourceBucketName().isEmpty() ||
+                        serviceContractProvisioning.getDataAddressName() == null ||
+                        serviceContractProvisioning.getDataAddressName().isEmpty() ||
+                        serviceContractProvisioning.getDataAddressType() == null ||
+                        serviceContractProvisioning.getDataAddressType().isEmpty()) {
+                    throw new IllegalStateException(
+                            String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                    state.name(), targetState.name()));
+                }
+            }
             state = targetState;
         } else {
             throw new IllegalStateException(

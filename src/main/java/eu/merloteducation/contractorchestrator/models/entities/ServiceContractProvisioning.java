@@ -9,7 +9,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.jetbrains.annotations.Contract;
+
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -27,6 +28,9 @@ public class ServiceContractProvisioning {
     private String dataAddressName;
 
     @JsonView(ContractViews.ProviderView.class)
+    private String dataAddressType;
+
+    @JsonView(ContractViews.ProviderView.class)
     private String dataAddressSourceBucketName;
 
     @JsonView(ContractViews.ProviderView.class)
@@ -38,9 +42,17 @@ public class ServiceContractProvisioning {
     @JsonView(ContractViews.ConsumerView.class)
     private String dataAddressTargetFileName;
 
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressType;
-
     @OneToOne(mappedBy = "serviceContractProvisioning")
+    @JsonView(ContractViews.InternalView.class)
     private ContractTemplate contractTemplate;
+
+    public ServiceContractProvisioning() {
+        this.id = "ServiceContractProvisioning:" + UUID.randomUUID();
+        this.dataAddressName = "";
+        this.dataAddressType = "";
+        this.dataAddressSourceBucketName = "";
+        this.dataAddressSourceFileName = "";
+        this.dataAddressTargetBucketName = "";
+        this.dataAddressTargetFileName = "";
+    }
 }

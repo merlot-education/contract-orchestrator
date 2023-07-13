@@ -68,7 +68,7 @@ public class ContractsController {
     }
 
 
-    @GetMapping("initConnectorsTest")
+    //@GetMapping("initConnectorsTest")
     public void initConnectorsTest() { // TODO remove this once testing is completed
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
         ServiceContractProvisioning serviceContractProvisioning = new ServiceContractProvisioning();
@@ -94,7 +94,7 @@ public class ContractsController {
      * @return basic view of the created contract
      */
     @PostMapping("")
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     public ContractTemplate addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
                                                 @RequestHeader(name = "Authorization") String authToken,
                                                 Principal principal) throws Exception {
