@@ -1,6 +1,8 @@
 package eu.merloteducation.contractorchestrator.models.views;
 
 public interface ContractViews {
+    public interface InternalView {
+    }
     public interface BasicView {
     }
 

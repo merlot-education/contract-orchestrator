@@ -45,4 +45,16 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
         this.consumerEdcToken = template.getConsumerEdcToken();
         this.providerEdcToken = template.getConsumerEdcToken();
     }
+
+    @Override
+    public void transitionState(ContractState targetState) {
+        if (targetState == ContractState.SIGNED_CONSUMER) {
+            if (exchangeCountSelection == null || exchangeCountSelection.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                getState().name(), targetState.name()));
+            }
+        }
+        super.transitionState(targetState);
+    }
 }

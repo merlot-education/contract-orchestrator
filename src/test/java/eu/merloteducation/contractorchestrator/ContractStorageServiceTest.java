@@ -509,9 +509,7 @@ public class ContractStorageServiceTest {
         List<String> attachments = new ArrayList<>();
         attachments.add("attachment1");
         template.setOfferingAttachments(attachments);
-        template.setDataAddressName("garbage");
-        template.setDataAddressBaseUrl("garbage");
-        template.setDataAddressDataType("garbage");
+        // TODO provisioning fields
 
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 consumer, representedOrgaIds);
@@ -521,14 +519,6 @@ public class ContractStorageServiceTest {
         assertEquals(template2.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertNotEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
         assertEquals(template2.getOfferingAttachments(), result.getOfferingAttachments());
-        if (result instanceof DataDeliveryContractTemplate dataDeliveryResult) {
-            assertNotEquals(template.getDataAddressName(), dataDeliveryResult.getDataAddressName());
-            assertEquals(template2.getDataAddressName(), dataDeliveryResult.getDataAddressName());
-            assertNotEquals(template.getDataAddressBaseUrl(), dataDeliveryResult.getDataAddressBaseUrl());
-            assertEquals(template2.getDataAddressBaseUrl(), dataDeliveryResult.getDataAddressBaseUrl());
-            assertNotEquals(template.getDataAddressDataType(), dataDeliveryResult.getDataAddressDataType());
-            assertEquals(template2.getDataAddressDataType(), dataDeliveryResult.getDataAddressDataType());
-        }
 
     }
 
@@ -576,9 +566,27 @@ public class ContractStorageServiceTest {
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
 
+        String templateId = template.getId();
+        template.setUserCountSelection("unlimited");
+        template.setRuntimeSelection("unlimited");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.getServiceContractProvisioning().setDataAddressTargetFileName("MyFile.json");
+        template.getServiceContractProvisioning().setDataAddressTargetBucketName("MyBucket");
+        contractTemplateRepository.save(template);
+
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
                 ContractState.SIGNED_CONSUMER, consumer);
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
+
+        template = (SaasContractTemplate) contractTemplateRepository.findById(templateId).orElse(null);
+        template.setProviderMerlotTncAccepted(true);
+        template.getServiceContractProvisioning().setDataAddressName("MyFile.json");
+        template.getServiceContractProvisioning().setDataAddressType("IonosS3");
+        template.getServiceContractProvisioning().setDataAddressSourceBucketName("MyBucket2");
+        template.getServiceContractProvisioning().setDataAddressSourceFileName("MyFile2..json");
+        contractTemplateRepository.save(template);
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
                 ContractState.RELEASED, provider);
@@ -618,12 +626,20 @@ public class ContractStorageServiceTest {
 
         SaasContractTemplate template = new SaasContractTemplate(template1);
         String templateId = template.getId();
+        template.setUserCountSelection("unlimited");
+        template.setRuntimeSelection("unlimited");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.getServiceContractProvisioning().setDataAddressTargetFileName("MyFile.json");
+        template.getServiceContractProvisioning().setDataAddressTargetBucketName("MyBucket");
+        contractTemplateRepository.save(template);
         contractStorageService.transitionContractTemplateState(templateId,
                 ContractState.SIGNED_CONSUMER, consumer);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED, consumer));
+                        ContractState.SIGNED_CONSUMER, consumer));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 }

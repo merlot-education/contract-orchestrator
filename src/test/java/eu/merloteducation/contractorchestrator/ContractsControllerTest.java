@@ -10,6 +10,7 @@ import eu.merloteducation.contractorchestrator.models.entities.SaasContractTempl
 import eu.merloteducation.contractorchestrator.security.JwtAuthConverter;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
+import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,9 @@ class ContractsControllerTest {
 
     @MockBean
     private ContractStorageService contractStorageService;
+
+    @MockBean
+    private EdcOrchestrationService edcOrchestrationService;
 
     @MockBean
     private JwtAuthConverter jwtAuthConverter;
