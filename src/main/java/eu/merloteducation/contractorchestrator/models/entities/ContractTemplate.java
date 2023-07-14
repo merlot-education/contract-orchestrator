@@ -21,7 +21,7 @@ import java.util.UUID;
 @ToString
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name="discriminator")
+@DiscriminatorColumn(name = "discriminator")
 @JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
@@ -109,13 +109,13 @@ public abstract class ContractTemplate {
 
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
-            if (targetState == ContractState.SIGNED_CONSUMER) {
-                if (runtimeSelection == null || runtimeSelection.isEmpty() ||
-                        !consumerMerlotTncAccepted  || !consumerOfferingTncAccepted || !consumerProviderTncAccepted) {
-                    throw new IllegalStateException(
-                            String.format("Cannot transition from state %s to %s as mandatory fields are not set",
-                                    state.name(), targetState.name()));
-                }
+            if (targetState == ContractState.SIGNED_CONSUMER &&
+                    (runtimeSelection == null || runtimeSelection.isEmpty() ||
+                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) {
+                throw new IllegalStateException(
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                state.name(), targetState.name()));
+
             }
             state = targetState;
         } else {
