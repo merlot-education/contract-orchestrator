@@ -138,7 +138,7 @@ public abstract class ContractTemplate {
             state = targetState;
         } else {
             throw new IllegalStateException(
-                    String.format("Cannot transition from state %s to %s", state.name(), targetState.name()));
+                    String.format("Not allowed to transition from state %s to %s", state.name(), targetState.name()));
         }
     }
 }

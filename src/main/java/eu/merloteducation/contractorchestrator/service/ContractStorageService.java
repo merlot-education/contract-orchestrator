@@ -340,19 +340,17 @@ public class ContractStorageService {
         }
 
         if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
-            // TODO ensure that contract has all mandatory consumer fields filled
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         if (targetState == ContractState.RELEASED && !isProvider) {
-            // TODO ensure that contract has all mandatory provider fields filled
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
 
         try {
             contract.transitionState(targetState);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+            throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
         if (contract.getState() == ContractState.RELEASED) {
