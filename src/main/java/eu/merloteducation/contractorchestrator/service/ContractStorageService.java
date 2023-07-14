@@ -163,41 +163,51 @@ public class ContractStorageService {
                     editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
                 targetDataDeliveryContractTemplate.setExchangeCountSelection(
                         editedDataDeliveryContractTemplate.getExchangeCountSelection());
+                if (isConsumer) {
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressTargetBucketName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressTargetBucketName());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressTargetFileName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressTargetFileName());
+                }
+                if (isProvider) {
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressName());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressType(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressType());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceBucketName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceBucketName());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceFileName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceFileName());
+                }
             }
 
             if (isConsumer) {
                 targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
                 targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
                 targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
-                targetContract.getServiceContractProvisioning().setDataAddressTargetBucketName(
-                        editedContract.getServiceContractProvisioning().getDataAddressTargetBucketName());
-                targetContract.getServiceContractProvisioning().setDataAddressTargetFileName(
-                        editedContract.getServiceContractProvisioning().getDataAddressTargetFileName());
+
             }
             if (isProvider) {
                 targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
                 targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
-                targetContract.getServiceContractProvisioning().setDataAddressName(
-                        editedContract.getServiceContractProvisioning().getDataAddressName());
-                targetContract.getServiceContractProvisioning().setDataAddressType(
-                        editedContract.getServiceContractProvisioning().getDataAddressType());
-                targetContract.getServiceContractProvisioning().setDataAddressSourceBucketName(
-                        editedContract.getServiceContractProvisioning().getDataAddressSourceBucketName());
-                targetContract.getServiceContractProvisioning().setDataAddressSourceFileName(
-                        editedContract.getServiceContractProvisioning().getDataAddressSourceFileName());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER) { // if consumer already signed, we may only edit very few fields
+            if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
+                    editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                if (isProvider) {
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressName());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressType(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressType());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceBucketName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceBucketName());
+                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceFileName(
+                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceFileName());
+                }
+            }
             if (isProvider) {
                 targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
-                targetContract.getServiceContractProvisioning().setDataAddressName(
-                        editedContract.getServiceContractProvisioning().getDataAddressName());
-                targetContract.getServiceContractProvisioning().setDataAddressType(
-                        editedContract.getServiceContractProvisioning().getDataAddressType());
-                targetContract.getServiceContractProvisioning().setDataAddressSourceBucketName(
-                        editedContract.getServiceContractProvisioning().getDataAddressSourceBucketName());
-                targetContract.getServiceContractProvisioning().setDataAddressSourceFileName(
-                        editedContract.getServiceContractProvisioning().getDataAddressSourceFileName());
             }
         }
     }

@@ -21,6 +21,7 @@ import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3Transf
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -265,7 +266,7 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
-    public void transferContractToParticipatingConnectors(ContractTemplate template) {
+    public void transferContractToParticipatingConnectors(DataDeliveryContractTemplate template) {
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getProviderId().replace("Participant:", ""));
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(

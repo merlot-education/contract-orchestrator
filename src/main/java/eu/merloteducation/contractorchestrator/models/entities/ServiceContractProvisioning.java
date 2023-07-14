@@ -44,7 +44,7 @@ public class ServiceContractProvisioning {
 
     @OneToOne(mappedBy = "serviceContractProvisioning")
     @JsonView(ContractViews.InternalView.class)
-    private ContractTemplate contractTemplate;
+    private DataDeliveryContractTemplate contractTemplate;
 
     public ServiceContractProvisioning() {
         this.id = "ServiceContractProvisioning:" + UUID.randomUUID();
