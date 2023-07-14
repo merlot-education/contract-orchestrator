@@ -179,8 +179,7 @@ public class ContractStorageService {
                 targetProvisioning.setDataAddressSourceFileName(
                         editedProvisioning.getDataAddressSourceFileName());
             }
-        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER) { // if consumer already signed, we may only edit very few fields
-            if (isProvider) {
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
                 targetProvisioning.setDataAddressName(
                         editedProvisioning.getDataAddressName());
                 targetProvisioning.setDataAddressType(
@@ -189,7 +188,6 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
                         editedProvisioning.getDataAddressSourceFileName());
-            }
         }
     }
 
