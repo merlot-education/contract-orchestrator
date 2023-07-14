@@ -3,10 +3,7 @@ package eu.merloteducation.contractorchestrator.models.entities;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -20,24 +17,21 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private String exchangeCountSelection;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "provisioning_id")
-    @JsonView(ContractViews.DetailedView.class)
-    private DataDeliveryServiceContractProvisioning serviceContractProvisioning;
-
     public DataDeliveryContractTemplate() {
         super();
-        this.serviceContractProvisioning = new DataDeliveryServiceContractProvisioning();
+        setServiceContractProvisioning(new DataDeliveryProvisioning());
     }
 
     public DataDeliveryContractTemplate(DataDeliveryContractTemplate template) {
         super(template);
         this.exchangeCountSelection = template.getExchangeCountSelection();
-        this.serviceContractProvisioning = template.getServiceContractProvisioning();
+        setServiceContractProvisioning(template.getServiceContractProvisioning());
     }
 
     @Override
     public void transitionState(ContractState targetState) {
+        DataDeliveryProvisioning serviceContractProvisioning =
+                (DataDeliveryProvisioning) getServiceContractProvisioning();
         if (targetState == ContractState.SIGNED_CONSUMER) {
             if (exchangeCountSelection == null || exchangeCountSelection.isEmpty() ||
                     serviceContractProvisioning == null ||

@@ -11,7 +11,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Entity
-public class DataDeliveryServiceContractProvisioning extends ServiceContractProvisioning {
+public class DataDeliveryProvisioning extends ServiceContractProvisioning {
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressName;
 
@@ -30,7 +30,7 @@ public class DataDeliveryServiceContractProvisioning extends ServiceContractProv
     @JsonView(ContractViews.ConsumerView.class)
     private String dataAddressTargetFileName;
 
-    public DataDeliveryServiceContractProvisioning() {
+    public DataDeliveryProvisioning() {
         super();
         this.dataAddressName = "";
         this.dataAddressType = "";

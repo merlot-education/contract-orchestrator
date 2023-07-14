@@ -1,11 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
@@ -28,7 +24,6 @@ import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
@@ -150,9 +145,9 @@ public class ContractStorageService {
     }
 
     private void updateContractDependingOnRole(ContractTemplate targetContract,
-                                                           ContractTemplate editedContract,
-                                                           boolean isConsumer,
-                                                           boolean isProvider) {
+                                               ContractTemplate editedContract,
+                                               boolean isConsumer,
+                                               boolean isProvider) {
         // TODO consider moving this logic into a DTO pattern
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
@@ -164,23 +159,27 @@ public class ContractStorageService {
 
             if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
                     editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                DataDeliveryProvisioning targetProvisioning =
+                        (DataDeliveryProvisioning) targetDataDeliveryContractTemplate.getServiceContractProvisioning();
+                DataDeliveryProvisioning editedProvisioning =
+                        (DataDeliveryProvisioning) editedContract.getServiceContractProvisioning();
                 targetDataDeliveryContractTemplate.setExchangeCountSelection(
                         editedDataDeliveryContractTemplate.getExchangeCountSelection());
                 if (isConsumer) {
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressTargetBucketName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressTargetBucketName());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressTargetFileName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressTargetFileName());
+                    targetProvisioning.setDataAddressTargetBucketName(
+                            editedProvisioning.getDataAddressTargetBucketName());
+                    targetProvisioning.setDataAddressTargetFileName(
+                            editedProvisioning.getDataAddressTargetFileName());
                 }
                 if (isProvider) {
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressName());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressType(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressType());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceBucketName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceBucketName());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceFileName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceFileName());
+                    targetProvisioning.setDataAddressName(
+                            editedProvisioning.getDataAddressName());
+                    targetProvisioning.setDataAddressType(
+                            editedProvisioning.getDataAddressType());
+                    targetProvisioning.setDataAddressSourceBucketName(
+                            editedProvisioning.getDataAddressSourceBucketName());
+                    targetProvisioning.setDataAddressSourceFileName(
+                            editedProvisioning.getDataAddressSourceFileName());
                 }
             }
 
@@ -198,15 +197,19 @@ public class ContractStorageService {
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER) { // if consumer already signed, we may only edit very few fields
             if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
                     editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                DataDeliveryProvisioning targetProvisioning =
+                        (DataDeliveryProvisioning) targetDataDeliveryContractTemplate.getServiceContractProvisioning();
+                DataDeliveryProvisioning editedProvisioning =
+                        (DataDeliveryProvisioning) editedContract.getServiceContractProvisioning();
                 if (isProvider) {
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressName());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressType(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressType());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceBucketName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceBucketName());
-                    targetDataDeliveryContractTemplate.getServiceContractProvisioning().setDataAddressSourceFileName(
-                            editedDataDeliveryContractTemplate.getServiceContractProvisioning().getDataAddressSourceFileName());
+                    targetProvisioning.setDataAddressName(
+                            editedProvisioning.getDataAddressName());
+                    targetProvisioning.setDataAddressType(
+                            editedProvisioning.getDataAddressType());
+                    targetProvisioning.setDataAddressSourceBucketName(
+                            editedProvisioning.getDataAddressSourceBucketName());
+                    targetProvisioning.setDataAddressSourceFileName(
+                            editedProvisioning.getDataAddressSourceFileName());
                 }
             }
             if (isProvider) {
@@ -325,7 +328,7 @@ public class ContractStorageService {
         }
 
         // state must be IN_DRAFT (or SIGNED_CONSUMER with restricted options)
-        if (contract.getState() != ContractState.IN_DRAFT &&  contract.getState() != ContractState.SIGNED_CONSUMER ) {
+        if (contract.getState() != ContractState.IN_DRAFT && contract.getState() != ContractState.SIGNED_CONSUMER) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
@@ -344,9 +347,9 @@ public class ContractStorageService {
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
-     * @param contractId         id of the contract template to transition
-     * @param targetState        target state of the contract template
-     * @param activeRoleOrgaId   the currently selected role of the user
+     * @param contractId       id of the contract template to transition
+     * @param targetState      target state of the contract template
+     * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
     public ContractTemplate transitionContractTemplateState(String contractId,
