@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Getter
@@ -25,7 +26,7 @@ public class ServiceContractProvisioning {
     private String id;
 
     @JsonView(ContractViews.DetailedView.class)
-    private String validUntil;
+    private OffsetDateTime validUntil;
 
     @OneToOne(mappedBy = "serviceContractProvisioning")
     @JsonView(ContractViews.InternalView.class)

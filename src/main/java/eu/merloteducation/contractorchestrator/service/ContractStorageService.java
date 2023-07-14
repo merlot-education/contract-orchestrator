@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -212,6 +215,20 @@ public class ContractStorageService {
         }
     }
 
+    private OffsetDateTime computeValidityTimestamp(String runtimeSelection) {
+        String[] runtimeParts = runtimeSelection.split(" ");
+        long numPart = Long.parseLong(runtimeParts[0]);
+        TemporalAmount temporalAmount = switch (runtimeParts[1]) {
+            case "hour(s)" -> Duration.ofHours(numPart);
+            case "day(s)" -> Duration.ofDays(numPart);
+            case "week(s)" -> Duration.ofDays(numPart * 7);
+            case "month(s)" -> Duration.ofDays(numPart * 30);
+            case "year(s)" -> Duration.ofDays(numPart * 365);
+            default -> throw new IllegalArgumentException("Unknown metric: " + runtimeParts[1]);
+        };
+        return OffsetDateTime.now().plus(temporalAmount);
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -364,6 +381,12 @@ public class ContractStorageService {
         }
 
         if (contract.getState() == ContractState.RELEASED) {
+            // set validity date if required
+            if (!contract.getRuntimeSelection().equals(SELECTION_INFINITE)) {
+                contract.getServiceContractProvisioning().setValidUntil(
+                        this.computeValidityTimestamp(contract.getRuntimeSelection()));
+            }
+
             // TODO fetch connector urls from organization orchestrator
             //edcOrchestrationService.transferContractToParticipatingConnectors(contract);  // TODO this must be moved, we instantiate the contract on the edc upon each data transfer
         }
