@@ -10,7 +10,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -85,7 +84,7 @@ public abstract class ContractTemplate {
         this.creationDate = OffsetDateTime.now();
         this.offeringAttachments = new ArrayList<>();
         this.additionalAgreements = "";
-        this.serviceContractProvisioning = new ServiceContractProvisioning();
+        this.serviceContractProvisioning = new DefaultProvisioning();
     }
 
     protected ContractTemplate(ContractTemplate template) {

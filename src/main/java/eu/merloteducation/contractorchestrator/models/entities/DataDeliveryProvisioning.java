@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import jakarta.persistence.Entity;
 import lombok.Getter;
@@ -11,6 +12,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Entity
+@JsonDeserialize
 public class DataDeliveryProvisioning extends ServiceContractProvisioning {
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressName;
