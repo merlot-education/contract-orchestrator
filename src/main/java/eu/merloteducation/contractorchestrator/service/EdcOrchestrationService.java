@@ -16,12 +16,12 @@ import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractOf
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.NegotiationInitiateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.HttpTransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -265,12 +265,13 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
-    public void transferContractToParticipatingConnectors(ContractTemplate template) {
+    public void transferContractToParticipatingConnectors(DataDeliveryContractTemplate template) {
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getProviderId().replace("Participant:", ""));
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
-        ServiceContractProvisioning provisioning = template.getServiceContractProvisioning();
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
         String providerBaseUrl = providerDetails.getConnectorBaseUrl();
         String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
