@@ -22,6 +22,7 @@ import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProce
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryServiceContractProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -271,7 +272,7 @@ public class EdcOrchestrationService {
                 template.getProviderId().replace("Participant:", ""));
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
-        ServiceContractProvisioning provisioning = template.getServiceContractProvisioning();
+        DataDeliveryServiceContractProvisioning provisioning = template.getServiceContractProvisioning();
 
         String providerBaseUrl = providerDetails.getConnectorBaseUrl();
         String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();

@@ -3,10 +3,7 @@ package eu.merloteducation.contractorchestrator.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
@@ -71,7 +68,7 @@ public class ContractsController {
     //@GetMapping("initConnectorsTest")
     public void initConnectorsTest() { // TODO remove this once testing is completed
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
-        ServiceContractProvisioning serviceContractProvisioning = new ServiceContractProvisioning();
+        DataDeliveryServiceContractProvisioning serviceContractProvisioning = new DataDeliveryServiceContractProvisioning();
         serviceContractProvisioning.setDataAddressName("My Data");
         serviceContractProvisioning.setDataAddressType("IonosS3");
         serviceContractProvisioning.setDataAddressSourceBucketName("merlotedcprovider");
