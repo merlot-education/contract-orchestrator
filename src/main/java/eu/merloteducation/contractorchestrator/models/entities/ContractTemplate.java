@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.models.entities;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
+import io.netty.util.internal.StringUtil;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -107,9 +108,10 @@ public abstract class ContractTemplate {
 
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
-            if (targetState == ContractState.SIGNED_CONSUMER &&
-                    (runtimeSelection == null || runtimeSelection.isEmpty() ||
-                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) {
+            if ((targetState == ContractState.SIGNED_CONSUMER &&
+                    (StringUtil.isNullOrEmpty(runtimeSelection) ||
+                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
+                    (targetState == ContractState.RELEASED && !providerMerlotTncAccepted)) {
                 throw new IllegalStateException(
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",
                                 state.name(), targetState.name()));
