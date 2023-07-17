@@ -564,8 +564,9 @@ public class ContractStorageServiceTest {
 
     private void assertTransitionThrowsForbidden(ContractTemplate template, ContractState state,
                                                  String activeRoleOrgaId) {
+        String templateId = template.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.transitionContractTemplateState(template.getId(),
+                () -> contractStorageService.transitionContractTemplateState(templateId,
                         state, activeRoleOrgaId));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
