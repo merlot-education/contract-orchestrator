@@ -10,7 +10,6 @@ import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
 @Entity
 @JsonDeserialize
 public class DataDeliveryProvisioning extends ServiceContractProvisioning {
