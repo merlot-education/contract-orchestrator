@@ -17,7 +17,6 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@ToString
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "discriminator")
