@@ -52,6 +52,7 @@ server:
     context-path: /api
   error:
     include-stacktrace: "never"
+    include-message: "always"
 
 serviceoffering-orchestrator:
   base-uri: http://localhost:8084/api

@@ -26,4 +26,16 @@ public class SaasContractTemplate extends ContractTemplate {
         super(template);
         this.userCountSelection = template.getUserCountSelection();
     }
+
+    @Override
+    public void transitionState(ContractState targetState) {
+        if (targetState == ContractState.SIGNED_CONSUMER) {
+            if (userCountSelection == null || userCountSelection.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                getState().name(), targetState.name()));
+            }
+        }
+        super.transitionState(targetState);
+    }
 }

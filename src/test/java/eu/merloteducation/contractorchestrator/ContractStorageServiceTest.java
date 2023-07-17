@@ -1,13 +1,11 @@
 package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
+import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import org.apache.commons.text.StringSubstitutor;
 import org.json.JSONException;
@@ -45,6 +43,7 @@ import static org.mockito.Mockito.lenient;
 @ExtendWith(MockitoExtension.class)
 @EnableConfigurationProperties
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Transactional
 public class ContractStorageServiceTest {
     @Mock
     private RestTemplate restTemplate;
@@ -102,6 +101,11 @@ public class ContractStorageServiceTest {
                             "runtimeCount": 0,
                             "runtimeMeasurement": null,
                             "runtimeUnlimited": true
+                        },
+                       {
+                            "runtimeCount": 5,
+                            "runtimeMeasurement": "day(s)",
+                            "runtimeUnlimited": false
                         }
                     ],
                     "merlotTermsAndConditionsAccepted": true,
@@ -500,33 +504,26 @@ public class ContractStorageServiceTest {
     @Transactional
     void updateContractModifyForbiddenFieldsAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
-        String consumer = template1.getConsumerId().replace("Participant:", "");
+        String consumer = template2.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("garbage");
         List<String> attachments = new ArrayList<>();
         attachments.add("attachment1");
         template.setOfferingAttachments(attachments);
-        template.setDataAddressName("garbage");
-        template.setDataAddressBaseUrl("garbage");
-        template.setDataAddressDataType("garbage");
+        // TODO provisioning fields
 
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 consumer, representedOrgaIds);
         assertNotEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
-        assertEquals(template1.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
+        assertEquals(template2.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertNotEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
-        assertEquals(template1.getAdditionalAgreements(), result.getAdditionalAgreements());
+        assertEquals(template2.getAdditionalAgreements(), result.getAdditionalAgreements());
         assertNotEquals(template.getOfferingAttachments(), result.getOfferingAttachments());
-        assertEquals(template1.getOfferingAttachments(), result.getOfferingAttachments());
-        assertNotEquals(template.getDataAddressName(), result.getDataAddressName());
-        assertEquals(template1.getDataAddressName(), result.getDataAddressName());
-        assertNotEquals(template.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
-        assertEquals(template1.getDataAddressBaseUrl(), result.getDataAddressBaseUrl());
-        assertNotEquals(template.getDataAddressDataType(), result.getDataAddressDataType());
-        assertEquals(template1.getDataAddressDataType(), result.getDataAddressDataType());
+        assertEquals(template2.getOfferingAttachments(), result.getOfferingAttachments());
+
     }
 
     @Test
@@ -565,18 +562,111 @@ public class ContractStorageServiceTest {
         assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
 
+    private void assertTransitionThrowsForbidden(ContractTemplate template, ContractState state,
+                                                 String activeRoleOrgaId) {
+        String templateId = template.getId();
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.transitionContractTemplateState(templateId,
+                        state, activeRoleOrgaId));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
     @Test
     @Transactional
-    void transitionContractConsumerProviderSign() {
-        String consumer = template1.getConsumerId().replace("Participant:", "");
-        String provider = template1.getProviderId().replace("Participant:", "");
+    void transitionDataDeliveryConsumerIncompleteToComplete() {
+        String consumer = template2.getConsumerId().replace("Participant:", "");
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
+
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+        template.setConsumerMerlotTncAccepted(true);
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        template.setConsumerProviderTncAccepted(true);
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        template.setConsumerOfferingTncAccepted(true);
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        template.setExchangeCountSelection("unlimited");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        template.setRuntimeSelection("unlimited");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        provisioning.setDataAddressTargetFileName("MyFile.json");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        provisioning.setDataAddressTargetBucketName("MyBucket");
+        contractTemplateRepository.save(template);
+        ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
+                ContractState.SIGNED_CONSUMER, consumer);
+        assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
+    }
+
+    @Test
+    @Transactional
+    void transitionDataDeliveryProviderIncompleteToComplete() {
+        String consumer = template2.getConsumerId().replace("Participant:", "");
+        String provider = template2.getProviderId().replace("Participant:", "");
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
+
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
+        String templateId = template.getId();
+        template.setExchangeCountSelection("unlimited");
+        template.setRuntimeSelection("unlimited");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        provisioning.setDataAddressTargetFileName("MyFile.json");
+        provisioning.setDataAddressTargetBucketName("MyBucket");
+        contractTemplateRepository.save(template);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
         assertEquals("consumerUserId", result.getConsumerSignerUserId());
+
+        template = (DataDeliveryContractTemplate) contractTemplateRepository.findById(templateId).orElse(null);
+        assertNotNull(template);
+
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        template.setProviderMerlotTncAccepted(true);
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+        provisioning.setDataAddressName("MyFile.json");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        provisioning.setDataAddressType("IonosS3");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        provisioning.setDataAddressSourceBucketName("MyBucket2");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        provisioning.setDataAddressSourceFileName("MyFile2..json");
+        contractTemplateRepository.save(template);
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
                 ContractState.RELEASED, provider, "providerUserId");
@@ -613,10 +703,20 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionContractConsumerNotAllowed() {
-        String consumer = template1.getConsumerId().replace("Participant:", "");
+        String consumer = template2.getConsumerId().replace("Participant:", "");
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         String templateId = template.getId();
+        template.setExchangeCountSelection("unlimited");
+        template.setRuntimeSelection("unlimited");
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        provisioning.setDataAddressTargetFileName("MyFile.json");
+        provisioning.setDataAddressTargetBucketName("MyBucket");
+        contractTemplateRepository.save(template);
         contractStorageService.transitionContractTemplateState(templateId,
                 ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
 
@@ -624,5 +724,67 @@ public class ContractStorageServiceTest {
                 () -> contractStorageService.transitionContractTemplateState(templateId,
                         ContractState.RELEASED, consumer, "consumerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    @Transactional
+    void updateDataDeliveryFieldsAfterTransition() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template2.getConsumerId().replace("Participant:", "");
+        String provider = template2.getProviderId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        representedOrgaIds.add(provider);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning());
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.setExchangeCountSelection("unlimited");
+        template.setRuntimeSelection("5 day(s)");
+        provisioning.setDataAddressTargetBucketName("MyBucket");
+        provisioning.setDataAddressTargetFileName("MyFile.json");
+
+        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
+                .updateContractTemplate(template, "token",
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
+        DataDeliveryProvisioning resultProvisioning = (DataDeliveryProvisioning) result.getServiceContractProvisioning();
+
+        assertEquals(template.isConsumerMerlotTncAccepted(), result.isConsumerMerlotTncAccepted());
+        assertEquals(template.isConsumerOfferingTncAccepted(), result.isConsumerOfferingTncAccepted());
+        assertEquals(template.isConsumerProviderTncAccepted(), result.isConsumerProviderTncAccepted());
+        assertEquals(template.getExchangeCountSelection(), result.getExchangeCountSelection());
+        assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
+        assertEquals(provisioning.getDataAddressTargetBucketName(), resultProvisioning.getDataAddressTargetBucketName());
+        assertEquals(provisioning.getDataAddressTargetFileName(), resultProvisioning.getDataAddressTargetFileName());
+
+        result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.SIGNED_CONSUMER, consumer);
+        resultProvisioning = (DataDeliveryProvisioning) result.getServiceContractProvisioning();
+
+        result.setProviderMerlotTncAccepted(true);
+        resultProvisioning.setDataAddressName("MyFile.json");
+        resultProvisioning.setDataAddressType("IonosS3");
+        resultProvisioning.setDataAddressSourceBucketName("MyBucket2");
+        resultProvisioning.setDataAddressSourceFileName("MyFile2..json");
+
+        DataDeliveryContractTemplate result2 = (DataDeliveryContractTemplate) contractStorageService
+                .updateContractTemplate(result, "token",
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
+        DataDeliveryProvisioning result2Provisioning = (DataDeliveryProvisioning) result2.getServiceContractProvisioning();
+
+        assertEquals(result.isProviderMerlotTncAccepted(), result2.isProviderMerlotTncAccepted());
+        assertEquals(resultProvisioning.getDataAddressType(), result2Provisioning.getDataAddressType());
+        assertEquals(resultProvisioning.getDataAddressName(), result2Provisioning.getDataAddressName());
+        assertEquals(resultProvisioning.getDataAddressSourceFileName(), result2Provisioning.getDataAddressSourceFileName());
+        assertEquals(resultProvisioning.getDataAddressSourceBucketName(), result2Provisioning.getDataAddressSourceBucketName());
+
+        result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.RELEASED, provider);
+
+        assertNotNull(result.getServiceContractProvisioning().getValidUntil());
+
     }
 }

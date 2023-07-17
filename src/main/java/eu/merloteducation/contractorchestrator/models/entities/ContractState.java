@@ -9,7 +9,8 @@ public enum ContractState {
     RELEASED(40, 4, 40),
     REVOKED(60, 8, 0),
     DELETED(70, 16, 0),
-    ARCHIVED(80, 32, 0);
+    ARCHIVED(80, 32, 0),
+    PURGED(90, 64, 0);
 
     private final int numVal;
     private final int stateBit;

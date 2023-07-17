@@ -1,11 +1,11 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
+import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.HttpStatus.NOT_IMPLEMENTED;
 
 @RestController
 @CrossOrigin
@@ -34,6 +33,9 @@ public class ContractsController {
 
     @Autowired
     private ContractStorageService contractStorageService;
+
+    @Autowired
+    private EdcOrchestrationService edcOrchestrationService;
 
     // TODO refactor to library
     private Set<String> getMerlotRoles(Principal principal) {
@@ -65,6 +67,23 @@ public class ContractsController {
         // always return code 200
     }
 
+
+    //@GetMapping("initConnectorsTest")
+    public void initConnectorsTest() { // TODO remove this once testing is completed
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
+        DataDeliveryProvisioning serviceContractProvisioning = new DataDeliveryProvisioning();
+        serviceContractProvisioning.setDataAddressName("My Data");
+        serviceContractProvisioning.setDataAddressType("IonosS3");
+        serviceContractProvisioning.setDataAddressSourceBucketName("merlotedcprovider");
+        serviceContractProvisioning.setDataAddressSourceFileName("device1-data.csv");
+        serviceContractProvisioning.setDataAddressTargetBucketName("merlotedcconsumer");
+        serviceContractProvisioning.setDataAddressTargetFileName("device1-data.csv");
+        template.setServiceContractProvisioning(serviceContractProvisioning);
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+        edcOrchestrationService.transferContractToParticipatingConnectors(template);
+    }
+
     /**
      * POST endpoint for creating a new contract in draft state.
      * The user specifies a ContractCreateRequest which gets saved in the system.
@@ -75,7 +94,7 @@ public class ContractsController {
      * @return basic view of the created contract
      */
     @PostMapping("")
-    @JsonView(ContractViews.DetailedView.class)
+    @JsonView(ContractViews.ConsumerView.class)
     public ContractTemplate addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
                                                 @RequestHeader(name = "Authorization") String authToken,
                                                 Principal principal) throws Exception {

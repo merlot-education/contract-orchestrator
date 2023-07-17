@@ -1,11 +1,8 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
+import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +51,9 @@ public class ContractStorageService {
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
+
+    @Autowired
+    private EdcOrchestrationService edcOrchestrationService;
 
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
@@ -144,39 +147,99 @@ public class ContractStorageService {
         return foundMatch;
     }
 
+    private void updateSaasContract(SaasContractTemplate targetContract,
+                                    SaasContractTemplate editedContract) {
+        if (targetContract.getState() == ContractState.IN_DRAFT) {
+            targetContract.setUserCountSelection(editedContract.getUserCountSelection());
+        }
+    }
+
+    private void updateDataDeliveryContract(DataDeliveryContractTemplate targetContract,
+                                            DataDeliveryContractTemplate editedContract,
+                                            boolean isConsumer,
+                                            boolean isProvider) {
+        DataDeliveryProvisioning targetProvisioning =
+                (DataDeliveryProvisioning) targetContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning editedProvisioning =
+                (DataDeliveryProvisioning) editedContract.getServiceContractProvisioning();
+
+        if (targetContract.getState() == ContractState.IN_DRAFT) {
+            targetContract.setExchangeCountSelection(
+                    editedContract.getExchangeCountSelection());
+            if (isConsumer) {
+                targetProvisioning.setDataAddressTargetBucketName(
+                        editedProvisioning.getDataAddressTargetBucketName());
+                targetProvisioning.setDataAddressTargetFileName(
+                        editedProvisioning.getDataAddressTargetFileName());
+            }
+            if (isProvider) {
+                targetProvisioning.setDataAddressName(
+                        editedProvisioning.getDataAddressName());
+                targetProvisioning.setDataAddressType(
+                        editedProvisioning.getDataAddressType());
+                targetProvisioning.setDataAddressSourceBucketName(
+                        editedProvisioning.getDataAddressSourceBucketName());
+                targetProvisioning.setDataAddressSourceFileName(
+                        editedProvisioning.getDataAddressSourceFileName());
+            }
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
+                targetProvisioning.setDataAddressName(
+                        editedProvisioning.getDataAddressName());
+                targetProvisioning.setDataAddressType(
+                        editedProvisioning.getDataAddressType());
+                targetProvisioning.setDataAddressSourceBucketName(
+                        editedProvisioning.getDataAddressSourceBucketName());
+                targetProvisioning.setDataAddressSourceFileName(
+                        editedProvisioning.getDataAddressSourceFileName());
+        }
+    }
+
     private void updateContractDependingOnRole(ContractTemplate targetContract,
-                                                           ContractTemplate editedContract,
-                                                           boolean isConsumer,
-                                                           boolean isProvider) {
+                                               ContractTemplate editedContract,
+                                               boolean isConsumer,
+                                               boolean isProvider) {
         // TODO consider moving this logic into a DTO pattern
-        targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+        if (targetContract.getState() == ContractState.IN_DRAFT) {
+            targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+            if (isConsumer) {
+                targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
+                targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
+                targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+            }
+            if (isProvider) {
+                targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+                targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
+                targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+            }
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
+            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+
+        }
 
         if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
                 editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
-            targetSaasContractTemplate.setUserCountSelection(editedSaasContractTemplate.getUserCountSelection());
+            updateSaasContract(targetSaasContractTemplate, editedSaasContractTemplate);
         }
 
         if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
                 editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
-            targetDataDeliveryContractTemplate.setExchangeCountSelection(
-                    editedDataDeliveryContractTemplate.getExchangeCountSelection());
+            updateDataDeliveryContract(targetDataDeliveryContractTemplate, editedDataDeliveryContractTemplate,
+                    isConsumer, isProvider);
         }
+    }
 
-        if (isConsumer) {
-            targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
-            targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
-            targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
-            targetContract.setConsumerEdcToken(editedContract.getConsumerEdcToken());
-        }
-        if (isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
-            targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
-            targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
-            targetContract.setDataAddressBaseUrl(editedContract.getDataAddressBaseUrl());
-            targetContract.setDataAddressDataType(editedContract.getDataAddressDataType());
-            targetContract.setDataAddressName(editedContract.getDataAddressName());
-            targetContract.setProviderEdcToken(editedContract.getProviderEdcToken());
-        }
+    private OffsetDateTime computeValidityTimestamp(String runtimeSelection) {
+        String[] runtimeParts = runtimeSelection.split(" ");
+        long numPart = Long.parseLong(runtimeParts[0]);
+        TemporalAmount temporalAmount = switch (runtimeParts[1]) {
+            case "hour(s)" -> Duration.ofHours(numPart);
+            case "day(s)" -> Duration.ofDays(numPart);
+            case "week(s)" -> Duration.ofDays(numPart * 7);
+            case "month(s)" -> Duration.ofDays(numPart * 30);
+            case "year(s)" -> Duration.ofDays(numPart * 365);
+            default -> throw new IllegalArgumentException("Unknown metric: " + runtimeParts[1]);
+        };
+        return OffsetDateTime.now().plus(temporalAmount);
     }
 
     /**
@@ -241,7 +304,7 @@ public class ContractStorageService {
 
         contract = contractTemplateRepository.save(contract);
 
-        messageQueueService.sendContractCreatedMessage(new ContractTemplateCreated(contract));
+        messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
 
         return contract;
     }
@@ -274,8 +337,8 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        // state must be IN_DRAFT
-        if (contract.getState() != ContractState.IN_DRAFT) {
+        // state must be IN_DRAFT (or SIGNED_CONSUMER with restricted options)
+        if (contract.getState() != ContractState.IN_DRAFT && contract.getState() != ContractState.SIGNED_CONSUMER) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
@@ -289,11 +352,6 @@ public class ContractStorageService {
 
         // at this point we have a valid requested update, save it in the db
         return contractTemplateRepository.save(contract);
-    }
-
-    private void orchestrateParticipatingConnectors(ContractTemplate template) {
-        messageQueueService.remoteRequestOrganizationDetails("10");
-        // TODO on RELEASED transfer data to EDC of provider and start negotiation
     }
 
     /**
@@ -323,6 +381,12 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
+        if (contract.getState() == ContractState.DELETED && targetState == ContractState.PURGED && isProvider) {
+            contractTemplateRepository.delete(contract);
+            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
+            return contract;
+        }
+
         if (targetState == ContractState.SIGNED_CONSUMER) {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
@@ -342,10 +406,13 @@ public class ContractStorageService {
         try {
             contract.transitionState(targetState);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+            throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
-        orchestrateParticipatingConnectors(contract);
+        if (contract.getState() == ContractState.RELEASED && !contract.getRuntimeSelection().equals(SELECTION_INFINITE)) {
+            contract.getServiceContractProvisioning().setValidUntil(
+                    this.computeValidityTimestamp(contract.getRuntimeSelection()));
+        }
 
         return contractTemplateRepository.save(contract);
     }

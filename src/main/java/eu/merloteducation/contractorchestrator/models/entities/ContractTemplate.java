@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.models.entities;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
+import io.netty.util.internal.StringUtil;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -10,7 +11,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -18,10 +18,9 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@ToString
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name="discriminator")
+@DiscriminatorColumn(name = "discriminator")
 @JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
@@ -74,20 +73,10 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private List<String> offeringAttachments;
 
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressName;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressBaseUrl;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressDataType;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private String consumerEdcToken;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private String providerEdcToken;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "provisioning_id")
+    @JsonView(ContractViews.DetailedView.class)
+    private ServiceContractProvisioning serviceContractProvisioning;
 
     @JsonView(ContractViews.ConsumerView.class)
     private String consumerSignerUserId;
@@ -107,6 +96,7 @@ public abstract class ContractTemplate {
         this.creationDate = OffsetDateTime.now();
         this.offeringAttachments = new ArrayList<>();
         this.additionalAgreements = "";
+        this.serviceContractProvisioning = new DefaultProvisioning();
     }
 
     protected ContractTemplate(ContractTemplate template) {
@@ -125,21 +115,26 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
-        this.dataAddressBaseUrl = template.getDataAddressBaseUrl();
-        this.dataAddressName = template.getDataAddressName();
-        this.dataAddressDataType = template.getDataAddressDataType();
-        this.consumerEdcToken = template.getConsumerEdcToken();
-        this.providerEdcToken = template.getConsumerEdcToken();
         this.providerSignerUserId = template.getProviderSignerUserId();
         this.consumerSignerUserId = template.getConsumerSignerUserId();
+        this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
+            if ((targetState == ContractState.SIGNED_CONSUMER &&
+                    (StringUtil.isNullOrEmpty(runtimeSelection) ||
+                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
+                    (targetState == ContractState.RELEASED && !providerMerlotTncAccepted)) {
+                throw new IllegalStateException(
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                state.name(), targetState.name()));
+
+            }
             state = targetState;
         } else {
             throw new IllegalStateException(
-                    String.format("Cannot transition from state %s to %s", state.name(), targetState.name()));
+                    String.format("Not allowed to transition from state %s to %s", state.name(), targetState.name()));
         }
     }
 }

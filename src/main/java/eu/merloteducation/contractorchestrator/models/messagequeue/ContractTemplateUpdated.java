@@ -5,14 +5,14 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
-public class ContractTemplateCreated {
+public class ContractTemplateUpdated {
     @NotNull
     private final String contractId;
 
     @NotNull
     private final String serviceOfferingId;
 
-    public ContractTemplateCreated(ContractTemplate contract) {
+    public ContractTemplateUpdated(ContractTemplate contract) {
         this.contractId = contract.getId();
         this.serviceOfferingId = contract.getOfferingId();
     }
