@@ -376,6 +376,12 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
+        if (contract.getState() == ContractState.DELETED && targetState == ContractState.PURGED && isProvider) {
+            contractTemplateRepository.delete(contract);
+            // TODO notify Service Offering orchestrator about deleted contract
+            return contract;
+        }
+
         if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
             throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
         }
