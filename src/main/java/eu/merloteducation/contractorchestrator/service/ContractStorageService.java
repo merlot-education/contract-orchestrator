@@ -2,7 +2,7 @@ package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateCreated;
+import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -301,7 +301,7 @@ public class ContractStorageService {
 
         contract = contractTemplateRepository.save(contract);
 
-        messageQueueService.sendContractCreatedMessage(new ContractTemplateCreated(contract));
+        messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
 
         return contract;
     }
@@ -378,7 +378,7 @@ public class ContractStorageService {
 
         if (contract.getState() == ContractState.DELETED && targetState == ContractState.PURGED && isProvider) {
             contractTemplateRepository.delete(contract);
-            // TODO notify Service Offering orchestrator about deleted contract
+            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
             return contract;
         }
 
