@@ -353,7 +353,8 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
 
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
@@ -374,7 +375,8 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumerSaas() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getConsumerId().replace("Participant:", ""));
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
 
         template.setUserCountSelection("unlimited");
         SaasContractTemplate result = (SaasContractTemplate) contractStorageService
@@ -389,7 +391,8 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumerDataDelivery() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template2.getConsumerId().replace("Participant:", ""));
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
 
         template.setExchangeCountSelection("unlimited");
         DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
@@ -404,7 +407,8 @@ public class ContractStorageServiceTest {
     void updateContractExistingAllowedAsProvider() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(template1.getProviderId().replace("Participant:", ""));
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
 
         template.setProviderMerlotTncAccepted(true);
         template.setAdditionalAgreements("agreement");
@@ -437,7 +441,8 @@ public class ContractStorageServiceTest {
     void updateContractNotAuthorized() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("1234");
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         String activeRoleOrgaId = representedOrgaIds.iterator().next();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -463,7 +468,8 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(provider);
         representedOrgaIds.add(consumer);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         template.setOfferingId("ServiceOffering:9999");
         template.setOfferingName("garbage");
         template.setConsumerId("Participant:99");
@@ -490,7 +496,8 @@ public class ContractStorageServiceTest {
         String provider = template1.getProviderId().replace("Participant:", "");
         representedOrgaIds.add(provider);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
@@ -512,8 +519,11 @@ public class ContractStorageServiceTest {
         String consumer = template2.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
+        assertNotEquals(template.isProviderMerlotTncAccepted(), true);
         template.setProviderMerlotTncAccepted(true);
+        assertNotEquals(template.getAdditionalAgreements(), "garbage");
         template.setAdditionalAgreements("garbage");
         List<String> attachments = new ArrayList<>();
         attachments.add("attachment1");
@@ -522,6 +532,10 @@ public class ContractStorageServiceTest {
 
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 consumer, representedOrgaIds);
+
+        DataDeliveryContractTemplate templateTest =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
+
         assertNotEquals(template.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertEquals(template2.isProviderMerlotTncAccepted(), result.isProviderMerlotTncAccepted());
         assertNotEquals(template.getAdditionalAgreements(), result.getAdditionalAgreements());
@@ -538,7 +552,8 @@ public class ContractStorageServiceTest {
         String consumer = template1.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         template.setRuntimeSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
@@ -550,7 +565,8 @@ public class ContractStorageServiceTest {
         String consumer = template1.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         template.setUserCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
@@ -562,7 +578,8 @@ public class ContractStorageServiceTest {
         String consumer = template1.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
 
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
         template.setExchangeCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(template, "token", consumer, representedOrgaIds);
     }
@@ -579,9 +596,11 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionDataDeliveryConsumerIncompleteToComplete() {
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
+
         String consumer = template2.getConsumerId().replace("Participant:", "");
 
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
         template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
         contractTemplateRepository.save(template);
 
@@ -626,7 +645,8 @@ public class ContractStorageServiceTest {
         String consumer = template2.getConsumerId().replace("Participant:", "");
         String provider = template2.getProviderId().replace("Participant:", "");
 
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
         template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
         contractTemplateRepository.save(template);
 
@@ -682,7 +702,8 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionContractNotAuthorized() {
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -696,7 +717,8 @@ public class ContractStorageServiceTest {
     void transitionContractProviderNotAllowed() {
         String provider = template1.getProviderId().replace("Participant:", "");
 
-        SaasContractTemplate template = new SaasContractTemplate(template1);
+        SaasContractTemplate template =
+                (SaasContractTemplate) contractTemplateRepository.findById(template1.getId()).orElse(null);
         String templateId = template.getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -710,7 +732,8 @@ public class ContractStorageServiceTest {
     void transitionContractConsumerNotAllowed() {
         String consumer = template2.getConsumerId().replace("Participant:", "");
 
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
         DataDeliveryProvisioning provisioning =
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         String templateId = template.getId();
@@ -739,7 +762,8 @@ public class ContractStorageServiceTest {
         String provider = template2.getProviderId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         representedOrgaIds.add(provider);
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2);
+        DataDeliveryContractTemplate template =
+                (DataDeliveryContractTemplate) contractTemplateRepository.findById(template2.getId()).orElse(null);
         template.setServiceContractProvisioning(new DataDeliveryProvisioning());
         DataDeliveryProvisioning provisioning =
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
