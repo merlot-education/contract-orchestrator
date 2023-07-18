@@ -183,14 +183,14 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressSourceFileName());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-                targetProvisioning.setDataAddressName(
-                        editedProvisioning.getDataAddressName());
-                targetProvisioning.setDataAddressType(
-                        editedProvisioning.getDataAddressType());
-                targetProvisioning.setDataAddressSourceBucketName(
-                        editedProvisioning.getDataAddressSourceBucketName());
-                targetProvisioning.setDataAddressSourceFileName(
-                        editedProvisioning.getDataAddressSourceFileName());
+            targetProvisioning.setDataAddressName(
+                    editedProvisioning.getDataAddressName());
+            targetProvisioning.setDataAddressType(
+                    editedProvisioning.getDataAddressType());
+            targetProvisioning.setDataAddressSourceBucketName(
+                    editedProvisioning.getDataAddressSourceBucketName());
+            targetProvisioning.setDataAddressSourceFileName(
+                    editedProvisioning.getDataAddressSourceFileName());
         }
     }
 
@@ -310,6 +310,46 @@ public class ContractStorageService {
     }
 
     /**
+     * For a given contract id this attempts to find the corresponding contract, check access and create a new contract
+     * with a copy of all editable fields. A new ID is generated as well as the signatures are reset.
+     *
+     * @param contractId         id of the contract to copy
+     * @param representedOrgaIds list of organization ids the user represents
+     * @return newly generated contract
+     */
+    public ContractTemplate regenerateContract(String contractId, Set<String> representedOrgaIds) {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
+        }
+
+        // user must be either consumer or provider of contract
+        if (!(representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""))
+                || representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, "")))) {
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
+        }
+
+        if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
+            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
+        }
+
+        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
+            contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
+            contract.setServiceContractProvisioning(
+                    new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
+        } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
+            contract = new SaasContractTemplate(saasContractTemplate, true);
+            contract.setServiceContractProvisioning(
+                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
+        } else {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
+        }
+        contractTemplateRepository.save(contract);
+        return contract;
+    }
+
+    /**
      * Given an edited ContractTemplate, this function verifies the updated fields and writes them to the database if allowed.
      *
      * @param editedContract     contract template with edited fields
@@ -357,10 +397,10 @@ public class ContractStorageService {
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
-     * @param contractId         id of the contract template to transition
-     * @param targetState        target state of the contract template
-     * @param activeRoleOrgaId   the currently selected role of the user
-     * @param userId             the id of the user that requested this action
+     * @param contractId       id of the contract template to transition
+     * @param targetState      target state of the contract template
+     * @param activeRoleOrgaId the currently selected role of the user
+     * @param userId           the id of the user that requested this action
      * @return updated contract template from database
      */
     public ContractTemplate transitionContractTemplateState(String contractId,

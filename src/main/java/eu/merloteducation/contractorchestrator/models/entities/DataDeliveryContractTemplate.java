@@ -23,8 +23,8 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
         setServiceContractProvisioning(new DataDeliveryProvisioning());
     }
 
-    public DataDeliveryContractTemplate(DataDeliveryContractTemplate template) {
-        super(template);
+    public DataDeliveryContractTemplate(DataDeliveryContractTemplate template, boolean regenerate) {
+        super(template, regenerate);
         this.exchangeCountSelection = template.getExchangeCountSelection();
         setServiceContractProvisioning(template.getServiceContractProvisioning());
     }
