@@ -116,7 +116,9 @@ public abstract class ContractTemplate {
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
         this.providerSignerUserId = template.getProviderSignerUserId();
+        this.providerSignature = template.getProviderSignature();
         this.consumerSignerUserId = template.getConsumerSignerUserId();
+        this.consumerSignature = template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
