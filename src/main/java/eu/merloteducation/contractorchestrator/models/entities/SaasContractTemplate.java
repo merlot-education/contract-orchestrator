@@ -22,8 +22,8 @@ public class SaasContractTemplate extends ContractTemplate {
         super();
     }
 
-    public SaasContractTemplate(SaasContractTemplate template) {
-        super(template);
+    public SaasContractTemplate(SaasContractTemplate template, boolean regenerate) {
+        super(template, regenerate);
         this.userCountSelection = template.getUserCountSelection();
     }
 

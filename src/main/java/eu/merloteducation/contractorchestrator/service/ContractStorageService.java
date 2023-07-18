@@ -327,11 +327,11 @@ public class ContractStorageService {
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
-            contract = new DataDeliveryContractTemplate(dataDeliveryContract);
+            contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
             contract.setServiceContractProvisioning(
                     new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
         } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
-            contract = new SaasContractTemplate(saasContractTemplate);
+            contract = new SaasContractTemplate(saasContractTemplate, true);
             contract.setServiceContractProvisioning(
                     new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
         } else {

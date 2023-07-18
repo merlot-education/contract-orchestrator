@@ -99,9 +99,9 @@ public abstract class ContractTemplate {
         this.serviceContractProvisioning = new DefaultProvisioning();
     }
 
-    protected ContractTemplate(ContractTemplate template) {
-        this.state = ContractState.IN_DRAFT;
-        this.id = "Contract:" + UUID.randomUUID();
+    protected ContractTemplate(ContractTemplate template, boolean regenerate) {
+        this.state = regenerate ? ContractState.IN_DRAFT : template.getState();
+        this.id = regenerate ? "Contract:" + UUID.randomUUID() : template.getId();
         this.creationDate = OffsetDateTime.now();
         this.offeringId = template.getOfferingId();
         this.offeringName = template.getOfferingName();
@@ -115,10 +115,10 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
-        this.providerSignerUserId = null;
-        this.providerSignature = null;
-        this.consumerSignerUserId = null;
-        this.consumerSignature = null;
+        this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
+        this.providerSignature = regenerate ? null : template.getProviderSignature();
+        this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
+        this.consumerSignature = regenerate ? null : template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
