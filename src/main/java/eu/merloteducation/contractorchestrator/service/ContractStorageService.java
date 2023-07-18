@@ -183,14 +183,14 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressSourceFileName());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-                targetProvisioning.setDataAddressName(
-                        editedProvisioning.getDataAddressName());
-                targetProvisioning.setDataAddressType(
-                        editedProvisioning.getDataAddressType());
-                targetProvisioning.setDataAddressSourceBucketName(
-                        editedProvisioning.getDataAddressSourceBucketName());
-                targetProvisioning.setDataAddressSourceFileName(
-                        editedProvisioning.getDataAddressSourceFileName());
+            targetProvisioning.setDataAddressName(
+                    editedProvisioning.getDataAddressName());
+            targetProvisioning.setDataAddressType(
+                    editedProvisioning.getDataAddressType());
+            targetProvisioning.setDataAddressSourceBucketName(
+                    editedProvisioning.getDataAddressSourceBucketName());
+            targetProvisioning.setDataAddressSourceFileName(
+                    editedProvisioning.getDataAddressSourceFileName());
         }
     }
 
@@ -309,6 +309,14 @@ public class ContractStorageService {
         return contract;
     }
 
+    /**
+     * For a given contract id this attempts to find the corresponding contract, check access and create a new contract
+     * with a copy of all editable fields. A new ID is generated as well as the signatures are reset.
+     *
+     * @param contractId         id of the contract to copy
+     * @param representedOrgaIds list of organization ids the user represents
+     * @return newly generated contract
+     */
     public ContractTemplate regenerateContract(String contractId, Set<String> representedOrgaIds) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
@@ -389,10 +397,10 @@ public class ContractStorageService {
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
-     * @param contractId         id of the contract template to transition
-     * @param targetState        target state of the contract template
-     * @param activeRoleOrgaId   the currently selected role of the user
-     * @param userId             the id of the user that requested this action
+     * @param contractId       id of the contract template to transition
+     * @param targetState      target state of the contract template
+     * @param activeRoleOrgaId the currently selected role of the user
+     * @param userId           the id of the user that requested this action
      * @return updated contract template from database
      */
     public ContractTemplate transitionContractTemplateState(String contractId,

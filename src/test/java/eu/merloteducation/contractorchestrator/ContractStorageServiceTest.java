@@ -801,4 +801,49 @@ public class ContractStorageServiceTest {
         assertFalse(StringUtil.isNullOrEmpty(result.getProviderSignature()));
 
     }
+
+    @Test
+    void regenerateContractValid() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template2.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        ContractTemplate template = this.contractStorageService.transitionContractTemplateState(template2.getId(), ContractState.DELETED, consumer, "1234");
+        template = this.contractStorageService.regenerateContract(template2.getId(), representedOrgaIds);
+
+        assertNotEquals(template.getId(), template2.getId());
+        assertEquals(ContractState.IN_DRAFT, template.getState());
+        assertNull(template.getConsumerSignerUserId());
+        assertNull(template.getConsumerSignature());
+        assertNull(template.getProviderSignature());
+        assertNull(template.getProviderSignerUserId());
+        assertNotEquals(template.getServiceContractProvisioning().getId(),
+                template2.getServiceContractProvisioning().getId());
+    }
+
+    @Test
+    void regenerateContractNotAllowedState() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template2.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () ->this.contractStorageService.regenerateContract(template2.getId(), representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    void regenerateContractNotAllowedNotRepresenting() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add("garbage");
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () ->this.contractStorageService.regenerateContract(template2.getId(), representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    void regenerateContractNonExistent() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () ->this.contractStorageService.regenerateContract("garbage", representedOrgaIds));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
 }
