@@ -845,8 +845,9 @@ public class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = template2.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
+        String templateId = template2.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->this.contractStorageService.regenerateContract(template2.getId(), representedOrgaIds));
+                () ->this.contractStorageService.regenerateContract(templateId, representedOrgaIds));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -854,8 +855,9 @@ public class ContractStorageServiceTest {
     void regenerateContractNotAllowedNotRepresenting() {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("garbage");
+        String templateId = template2.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->this.contractStorageService.regenerateContract(template2.getId(), representedOrgaIds));
+                () ->this.contractStorageService.regenerateContract(templateId, representedOrgaIds));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 

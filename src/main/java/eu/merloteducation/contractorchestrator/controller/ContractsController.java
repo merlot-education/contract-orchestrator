@@ -131,7 +131,7 @@ public class ContractsController {
     @PostMapping("/contract/regenerate/{contractId}")
     public ContractTemplate regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                        @RequestHeader(name = "Active-Role") String activeRole,
-                                                   Principal principal) throws Exception {
+                                                   Principal principal) {
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
 
         return contractStorageService.regenerateContract(contractId, orgaIds);
