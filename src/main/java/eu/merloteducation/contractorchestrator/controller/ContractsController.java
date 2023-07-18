@@ -128,6 +128,15 @@ public class ContractsController {
         return contractStorageService.updateContractTemplate(editedContract, authToken, activeRoleOrgaId, getRepresentedOrgaIds(principal));
     }
 
+    @PostMapping("/contract/regenerate/{contractId}")
+    public ContractTemplate regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
+                                                       @RequestHeader(name = "Active-Role") String activeRole,
+                                                   Principal principal) throws Exception {
+        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+
+        return contractStorageService.regenerateContract(contractId, orgaIds);
+    }
+
     /**
      * PATCH mapping for transitioning the contract template with the given id to the given state.
      *

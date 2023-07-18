@@ -9,4 +9,8 @@ public class DefaultProvisioning extends ServiceContractProvisioning {
     public DefaultProvisioning() {
         super();
     }
+
+    public DefaultProvisioning(DefaultProvisioning provisioning) {
+        super(provisioning);
+    }
 }
