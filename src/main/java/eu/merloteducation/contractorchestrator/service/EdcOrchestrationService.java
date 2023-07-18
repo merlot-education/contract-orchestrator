@@ -265,6 +265,79 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
+    public IdResponse initiateConnectorNegotiation(DataDeliveryContractTemplate template) {
+        OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getProviderId().replace("Participant:", ""));
+        OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", ""));
+        DataDeliveryProvisioning provisioning =
+                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
+        String providerBaseUrl = providerDetails.getConnectorBaseUrl();
+        String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
+
+        String contractUuid = template.getId().replace("Contract:", "");
+        String instanceUuid = contractUuid + "_" + UUID.randomUUID();
+
+        String assetId = instanceUuid + "_Asset";
+        String assetName = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()
+                + "/contract/" + template.getId();
+        String assetDescription = "Asset automatically generated from MERLOT to execute contract " + template.getId();
+        String policyId = instanceUuid + "_Policy";
+        String contractDefinitionId = instanceUuid + "_ContractDefinition";
+
+        // TODO these port mappings need to be replaced with url mappings once they are hosted in the cloud
+        String providerManagementUrl = providerBaseUrl + ":8182/management/";
+        String providerProtocolUrl = providerBaseUrl + ":8282/protocol";
+
+        String consumerManagementUrl = consumerBaseUrl + ":9192/management/";
+
+        // provider side
+        IdResponse assetIdResponse = createAsset(
+                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
+                new IonosS3DataAddress(provisioning.getDataAddressName(), provisioning.getDataAddressSourceBucketName(),
+                        providerDetails.getMerlotId(), provisioning.getDataAddressSourceFileName(),
+                        provisioning.getDataAddressSourceFileName(),"s3-eu-central-1.ionoscloud.com"),
+                providerManagementUrl
+        );
+        IdResponse policyIdResponse = createPolicyUnrestricted(new Policy(policyId), providerManagementUrl);
+        createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
+                policyIdResponse.getId(), assetIdResponse.getId(), providerManagementUrl);
+
+
+        // consumer side
+        // find the offering we are interested in
+        DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
+        if(matches.size() != 1) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
+        }
+        DcatDataset dataset = matches.get(0);
+
+        return negotiateOffer(catalog.getParticipantId(), consumerDetails.getConnectorId(),
+                catalog.getParticipantId(), providerProtocolUrl,
+                new ContractOffer(dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)),
+                consumerManagementUrl);
+    }
+
+    public ContractNegotiation getNegotationStatus(String negotiationId, DataDeliveryContractTemplate template) {
+        OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", ""));
+        String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
+        String consumerManagementUrl = consumerBaseUrl + ":9192/management/";
+
+        return checkOfferStatus(negotiationId, consumerManagementUrl);
+    }
+
+    /*public IdResponse initiateConnectorTransfer(String negotiationId, DataDeliveryContractTemplate template) {
+        return initiateTransfer(catalog.getParticipantId(), providerProtocolUrl, negotiation.getContractAgreementId(),
+                catalog.getDataset().get(0).getAssetId(), new IonosS3DataAddress(
+                        provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
+                        consumerDetails.getMerlotId(), provisioning.getDataAddressTargetFileName(),
+                        provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com"),
+                consumerManagementUrl);
+    }*/
+
     public void transferContractToParticipatingConnectors(DataDeliveryContractTemplate template) {
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getProviderId().replace("Participant:", ""));

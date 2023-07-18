@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
@@ -27,6 +28,12 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private String id;
+
+    @Column(name="discriminator", insertable = false, updatable = false)
+    @JsonView(ContractViews.BasicView.class)
+    @Setter(AccessLevel.NONE)
+    @JsonProperty("type")
+    private String discriminator;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)
