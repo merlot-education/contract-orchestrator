@@ -78,6 +78,18 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private ServiceContractProvisioning serviceContractProvisioning;
 
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerSignerUserId;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String consumerSignature;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerSignerUserId;
+
+    @JsonView(ContractViews.ProviderView.class)
+    private String providerSignature;
+
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
@@ -103,15 +115,24 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
+        this.providerSignerUserId = template.getProviderSignerUserId();
+        this.providerSignature = template.getProviderSignature();
+        this.consumerSignerUserId = template.getConsumerSignerUserId();
+        this.consumerSignature = template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
             if ((targetState == ContractState.SIGNED_CONSUMER &&
-                    (StringUtil.isNullOrEmpty(runtimeSelection) ||
-                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
-                    (targetState == ContractState.RELEASED && !providerMerlotTncAccepted)) {
+                    (StringUtil.isNullOrEmpty(runtimeSelection)
+                            || StringUtil.isNullOrEmpty(consumerSignerUserId)
+                            || StringUtil.isNullOrEmpty(consumerSignature)
+                            || !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
+                    (targetState == ContractState.RELEASED &&
+                            (StringUtil.isNullOrEmpty(providerSignerUserId)
+                                    || StringUtil.isNullOrEmpty(providerSignature) ||
+                                    !providerMerlotTncAccepted))) {
                 throw new IllegalStateException(
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",
                                 state.name(), targetState.name()));

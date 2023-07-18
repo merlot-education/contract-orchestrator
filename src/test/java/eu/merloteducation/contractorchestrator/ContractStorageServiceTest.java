@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.contractorchestrator.service.ContractSignerService;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import io.netty.util.internal.StringUtil;
@@ -62,6 +63,9 @@ public class ContractStorageServiceTest {
 
     @Autowired
     private MessageQueueService messageQueueService;
+
+    @Autowired
+    private ContractSignerService contractSignerService;
 
     @InjectMocks
     private ContractStorageService contractStorageService;
@@ -152,6 +156,7 @@ public class ContractStorageServiceTest {
         ReflectionTestUtils.setField(contractStorageService, "organizationsOrchestratorBaseUri", organizationsOrchestratorBaseUri);
         ReflectionTestUtils.setField(contractStorageService, "contractTemplateRepository", contractTemplateRepository);
         ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
+        ReflectionTestUtils.setField(contractStorageService, "contractSignerService", contractSignerService);
         ReflectionTestUtils.setField(messageQueueService, "rabbitTemplate", rabbitTemplate);
 
         template1 = new SaasContractTemplate();
@@ -567,7 +572,7 @@ public class ContractStorageServiceTest {
         String templateId = template.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        state, activeRoleOrgaId));
+                        state, activeRoleOrgaId, "userId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -611,7 +616,7 @@ public class ContractStorageServiceTest {
         provisioning.setDataAddressTargetBucketName("MyBucket");
         contractTemplateRepository.save(template);
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "userId");
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
     }
 
@@ -639,8 +644,9 @@ public class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
+        assertEquals("consumerUserId", result.getConsumerSignerUserId());
 
         template = (DataDeliveryContractTemplate) contractTemplateRepository.findById(templateId).orElse(null);
         assertNotNull(template);
@@ -668,8 +674,9 @@ public class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
-                ContractState.RELEASED, provider);
+                ContractState.RELEASED, provider, "providerUserId");
         assertEquals(ContractState.RELEASED, result.getState());
+        assertEquals("providerUserId", result.getProviderSignerUserId());
     }
 
     @Test
@@ -680,7 +687,7 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, "99"));
+                        ContractState.SIGNED_CONSUMER, "99", "consumerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -694,7 +701,7 @@ public class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, provider));
+                        ContractState.SIGNED_CONSUMER, provider, "providerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -716,11 +723,11 @@ public class ContractStorageServiceTest {
         provisioning.setDataAddressTargetBucketName("MyBucket");
         contractTemplateRepository.save(template);
         contractStorageService.transitionContractTemplateState(templateId,
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED, consumer));
+                        ContractState.RELEASED, consumer, "consumerUserId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -759,8 +766,13 @@ public class ContractStorageServiceTest {
         assertEquals(provisioning.getDataAddressTargetFileName(), resultProvisioning.getDataAddressTargetFileName());
 
         result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
-                ContractState.SIGNED_CONSUMER, consumer);
+                ContractState.SIGNED_CONSUMER, consumer, "userId");
         resultProvisioning = (DataDeliveryProvisioning) result.getServiceContractProvisioning();
+
+        assertFalse(StringUtil.isNullOrEmpty(result.getConsumerSignerUserId()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getConsumerSignature()));
+        assertTrue(StringUtil.isNullOrEmpty(result.getProviderSignerUserId()));
+        assertTrue(StringUtil.isNullOrEmpty(result.getProviderSignature()));
 
         result.setProviderMerlotTncAccepted(true);
         resultProvisioning.setDataAddressName("MyFile.json");
@@ -780,9 +792,13 @@ public class ContractStorageServiceTest {
         assertEquals(resultProvisioning.getDataAddressSourceBucketName(), result2Provisioning.getDataAddressSourceBucketName());
 
         result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
-                ContractState.RELEASED, provider);
+                ContractState.RELEASED, provider, "userId");
 
         assertNotNull(result.getServiceContractProvisioning().getValidUntil());
+        assertFalse(StringUtil.isNullOrEmpty(result.getConsumerSignerUserId()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getConsumerSignature()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getProviderSignerUserId()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getProviderSignature()));
 
     }
 }

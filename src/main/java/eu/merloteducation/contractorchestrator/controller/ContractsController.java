@@ -13,7 +13,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,6 +42,7 @@ public class ContractsController {
     private Set<String> getMerlotRoles(Principal principal) {
         // get roles from the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
 
         return authentication.getAuthorities()
                 .stream()
@@ -138,12 +143,16 @@ public class ContractsController {
                                                        @RequestHeader(name = "Active-Role") String activeRole,
                                                        Principal principal) throws Exception {
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
+        Jwt jwt = (Jwt) authenticationToken.getCredentials();
+        String userId = (String) jwt.getClaims().get("sub");
+
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
 
-        return contractStorageService.transitionContractTemplateState(contractId, status, activeRoleOrgaId);
+        return contractStorageService.transitionContractTemplateState(contractId, status, activeRoleOrgaId, userId);
     }
 
 

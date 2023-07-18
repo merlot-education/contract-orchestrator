@@ -47,6 +47,9 @@ public class ContractStorageService {
     private MessageQueueService messageQueueService;
 
     @Autowired
+    private ContractSignerService contractSignerService;
+
+    @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
     @Autowired
@@ -354,14 +357,16 @@ public class ContractStorageService {
     /**
      * Transition the contract template attached to the given id to the target state if allowed.
      *
-     * @param contractId       id of the contract template to transition
-     * @param targetState      target state of the contract template
-     * @param activeRoleOrgaId the currently selected role of the user
+     * @param contractId         id of the contract template to transition
+     * @param targetState        target state of the contract template
+     * @param activeRoleOrgaId   the currently selected role of the user
+     * @param userId             the id of the user that requested this action
      * @return updated contract template from database
      */
     public ContractTemplate transitionContractTemplateState(String contractId,
                                                             ContractState targetState,
-                                                            String activeRoleOrgaId) {
+                                                            String activeRoleOrgaId,
+                                                            String userId) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -382,12 +387,20 @@ public class ContractStorageService {
             return contract;
         }
 
-        if (targetState == ContractState.SIGNED_CONSUMER && !isConsumer) {
-            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+        if (targetState == ContractState.SIGNED_CONSUMER) {
+            if (!isConsumer) {
+                throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+            }
+            contract.setConsumerSignerUserId(userId);
+            contract.setConsumerSignature(contractSignerService.generateContractSignature(contract, userId));
         }
 
-        if (targetState == ContractState.RELEASED && !isProvider) {
-            throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+        if (targetState == ContractState.RELEASED) {
+            if (!isProvider) {
+                throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
+            }
+            contract.setProviderSignerUserId(userId);
+            contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
         }
 
         try {

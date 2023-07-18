@@ -8,6 +8,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.security.JwtAuthConverter;
+import eu.merloteducation.contractorchestrator.security.JwtAuthConverterProperties;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
@@ -22,6 +23,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
@@ -30,8 +34,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -39,11 +41,12 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(ContractsController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WebMvcTest({ContractsController.class, WebSecurityConfig.class})
+@AutoConfigureMockMvc()
 class ContractsControllerTest {
 
     @Autowired
@@ -55,8 +58,12 @@ class ContractsControllerTest {
     @MockBean
     private EdcOrchestrationService edcOrchestrationService;
 
-    @MockBean
+    @Autowired
     private JwtAuthConverter jwtAuthConverter;
+
+    @MockBean
+    private JwtAuthConverterProperties jwtAuthConverterProperties;
+
 
     private String objectAsJsonString(final Object obj) {
         try {
@@ -94,7 +101,6 @@ class ContractsControllerTest {
                 .andExpect(status().isOk());
     }
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void postAddContractUnauthorized() throws Exception
     {
         ContractCreateRequest request = new ContractCreateRequest();
@@ -104,16 +110,18 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .post("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .content(objectAsJsonString(request))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void postAddContractAuthorizedValid() throws Exception
     {
         ContractCreateRequest request = new ContractCreateRequest();
@@ -123,32 +131,36 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .post("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .content(objectAsJsonString(request))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void postAddContractAuthorizedInvalid() throws Exception
     {
 
         mvc.perform(MockMvcRequestBuilders
                         .post("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .content(objectAsJsonString("garbage"))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void putUpdateContractValid() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
@@ -158,32 +170,36 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .header("Active-Role", "OrgLegRep_10")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void putUpdateContractInvalid() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .content("garbage")
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void putUpdateContractForbidden() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
@@ -193,17 +209,19 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .header("Active-Role", "garbage")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void patchTransitionContractForbidden() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
@@ -213,17 +231,18 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .patch("/contract/status/1234/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .header("Active-Role", "garbage")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
-                .andDo(print())
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void patchTransitionContractValid() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
@@ -233,67 +252,78 @@ class ContractsControllerTest {
         mvc.perform(MockMvcRequestBuilders
                         .patch("/contract/status/1234/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .header("Active-Role", "OrgLegRep_10")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void getOrganizationContractsUnauthorized() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/organization/Participant:99")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void getOrganizationContractsAuthorized() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/organization/Participant:10")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_20"})
     void getContractDetailsValidRequestConsumer() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/contract/Contract:1234")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_20")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
     @Test
-    @WithMockUser(username = "user", roles={"USER", "ADMIN", "OrgLegRep_10"})
     void getContractDetailsValidRequestProvider() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
                         .get("/contract/Contract:1234")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer 1234")
+                        .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
-                        .with(csrf()))
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
