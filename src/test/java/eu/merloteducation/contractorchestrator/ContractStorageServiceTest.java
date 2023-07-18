@@ -803,7 +803,7 @@ public class ContractStorageServiceTest {
     }
 
     @Test
-    void regenerateContractValid() {
+    void regenerateDataDeliveryContractValid() {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = template2.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
@@ -818,6 +818,26 @@ public class ContractStorageServiceTest {
         assertNull(template.getProviderSignerUserId());
         assertNotEquals(template.getServiceContractProvisioning().getId(),
                 template2.getServiceContractProvisioning().getId());
+        assertInstanceOf(DataDeliveryProvisioning.class, template.getServiceContractProvisioning());
+    }
+
+    @Test
+    void regenerateSaasContractValid() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        ContractTemplate template = this.contractStorageService.transitionContractTemplateState(template1.getId(), ContractState.DELETED, consumer, "1234");
+        template = this.contractStorageService.regenerateContract(template1.getId(), representedOrgaIds);
+
+        assertNotEquals(template.getId(), template1.getId());
+        assertEquals(ContractState.IN_DRAFT, template.getState());
+        assertNull(template.getConsumerSignerUserId());
+        assertNull(template.getConsumerSignature());
+        assertNull(template.getProviderSignature());
+        assertNull(template.getProviderSignerUserId());
+        assertNotEquals(template.getServiceContractProvisioning().getId(),
+                template1.getServiceContractProvisioning().getId());
+        assertInstanceOf(DefaultProvisioning.class, template.getServiceContractProvisioning());
     }
 
     @Test
