@@ -309,38 +309,6 @@ public class ContractStorageService {
         return contract;
     }
 
-    public ContractTemplate regenerateContract(String contractId, Set<String> representedOrgaIds) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
-
-        // user must be either consumer or provider of contract
-        if (!(representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""))
-                || representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, "")))) {
-            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
-        }
-
-        if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
-            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
-        }
-
-        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
-            contract = new DataDeliveryContractTemplate(dataDeliveryContract);
-            contract.setServiceContractProvisioning(
-                    new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
-        } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
-            contract = new SaasContractTemplate(saasContractTemplate);
-            contract.setServiceContractProvisioning(
-                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
-        } else {
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
-        }
-        contractTemplateRepository.save(contract);
-        return contract;
-    }
-
     /**
      * Given an edited ContractTemplate, this function verifies the updated fields and writes them to the database if allowed.
      *

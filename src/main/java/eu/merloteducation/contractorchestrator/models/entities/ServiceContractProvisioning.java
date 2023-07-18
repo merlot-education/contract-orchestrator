@@ -37,8 +37,4 @@ public abstract class ServiceContractProvisioning {
     protected ServiceContractProvisioning() {
         this.id = "ServiceContractProvisioning:" + UUID.randomUUID();
     }
-
-    public ServiceContractProvisioning(ServiceContractProvisioning provisioning) {
-        this();
-    }
 }

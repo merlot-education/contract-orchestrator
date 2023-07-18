@@ -40,14 +40,4 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
         this.dataAddressTargetBucketName = "";
         this.dataAddressTargetFileName = "";
     }
-
-    public DataDeliveryProvisioning(DataDeliveryProvisioning provisioning) {
-        super(provisioning);
-        this.dataAddressName = provisioning.getDataAddressName();
-        this.dataAddressType = provisioning.getDataAddressType();
-        this.dataAddressSourceBucketName = provisioning.getDataAddressSourceBucketName();
-        this.dataAddressSourceFileName = provisioning.getDataAddressSourceFileName();
-        this.dataAddressTargetBucketName = provisioning.getDataAddressTargetBucketName();
-        this.dataAddressTargetFileName = provisioning.getDataAddressTargetFileName();
-    }
 }

@@ -100,9 +100,9 @@ public abstract class ContractTemplate {
     }
 
     protected ContractTemplate(ContractTemplate template) {
-        this.state = ContractState.IN_DRAFT;
-        this.id = "Contract:" + UUID.randomUUID();
-        this.creationDate = OffsetDateTime.now();
+        this.id = template.getId();
+        this.state = template.getState();
+        this.creationDate = template.getCreationDate();
         this.offeringId = template.getOfferingId();
         this.offeringName = template.getOfferingName();
         this.providerId = template.getProviderId();
@@ -115,10 +115,10 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
-        this.providerSignerUserId = null;
-        this.providerSignature = null;
-        this.consumerSignerUserId = null;
-        this.consumerSignature = null;
+        this.providerSignerUserId = template.getProviderSignerUserId();
+        this.providerSignature = template.getProviderSignature();
+        this.consumerSignerUserId = template.getConsumerSignerUserId();
+        this.consumerSignature = template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
