@@ -125,9 +125,14 @@ public abstract class ContractTemplate {
     public void transitionState(ContractState targetState) {
         if (state.checkTransitionAllowed(targetState)) {
             if ((targetState == ContractState.SIGNED_CONSUMER &&
-                    (StringUtil.isNullOrEmpty(runtimeSelection) ||
-                            !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
-                    (targetState == ContractState.RELEASED && !providerMerlotTncAccepted)) {
+                    (StringUtil.isNullOrEmpty(runtimeSelection)
+                            || StringUtil.isNullOrEmpty(consumerSignerUserId)
+                            || StringUtil.isNullOrEmpty(consumerSignature)
+                            || !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
+                    (targetState == ContractState.RELEASED &&
+                            (StringUtil.isNullOrEmpty(providerSignerUserId)
+                                    || StringUtil.isNullOrEmpty(providerSignature) ||
+                                    !providerMerlotTncAccepted))) {
                 throw new IllegalStateException(
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",
                                 state.name(), targetState.name()));
