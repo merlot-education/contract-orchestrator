@@ -363,7 +363,7 @@ public class EdcOrchestrationService {
         }
         DcatDataset dataset = matches.get(0);
 
-        return negotiateOffer(catalog.getParticipantId(), consumerConnector.getId(),
+        return negotiateOffer(catalog.getParticipantId(), consumerConnector.getConnectorId(),
                 catalog.getParticipantId(), providerProtocolUrl,
                 new ContractOffer(dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)),
                 consumerManagementUrl,
@@ -399,7 +399,7 @@ public class EdcOrchestrationService {
 
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, representedOrgaIds);
         // agreement id is always formatted as {contract_definition_id}:{assetId}:{random_uuid}
-        String connectorId = providerConnector.getId();
+        String connectorId = providerConnector.getConnectorId();
         String connectorAddress = negotiation.getCounterPartyAddress();
         String agreementId = negotiation.getContractAgreementId();
         String assetId = negotiation.getContractAgreementId().split(":")[1];
