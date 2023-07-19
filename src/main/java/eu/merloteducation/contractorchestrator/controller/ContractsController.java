@@ -129,6 +129,24 @@ public class ContractsController {
     }
 
     /**
+     * POST mapping for copying an existing deleted/archived contract into a new template with the same filled fields
+     * but a new id and signature.
+     *
+     * @param contractId id of contract to copy
+     * @param activeRole currently selected role
+     * @param principal  user data
+     * @return newly generated contract
+     */
+    @PostMapping("/contract/regenerate/{contractId}")
+    public ContractTemplate regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
+                                                       @RequestHeader(name = "Active-Role") String activeRole,
+                                                       Principal principal) {
+        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+
+        return contractStorageService.regenerateContract(contractId, orgaIds);
+    }
+
+    /**
      * PATCH mapping for transitioning the contract template with the given id to the given state.
      *
      * @param contractId id of contract template to transition
