@@ -377,7 +377,7 @@ public class EdcOrchestrationService {
 
         String consumerManagementUrl = consumerDetails.getConnectorBaseUrl() + ":9192/management/";
 
-        ContractNegotiation negotiation = getNegotationStatus(negotiationId, template);
+        ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, representedOrgaIds);
         // agreement id is always formatted as {contract_definition_id}:{assetId}:{random_uuid}
         String connectorId = providerDetails.getConnectorId();
         String connectorAddress = negotiation.getCounterPartyAddress();
