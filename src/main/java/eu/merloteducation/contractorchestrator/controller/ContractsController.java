@@ -68,23 +68,6 @@ public class ContractsController {
         // always return code 200
     }
 
-
-    //@GetMapping("initConnectorsTest")
-    public void initConnectorsTest() { // TODO remove this once testing is completed
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
-        DataDeliveryProvisioning serviceContractProvisioning = new DataDeliveryProvisioning();
-        serviceContractProvisioning.setDataAddressName("My Data");
-        serviceContractProvisioning.setDataAddressType("IonosS3");
-        serviceContractProvisioning.setDataAddressSourceBucketName("merlotedcprovider");
-        serviceContractProvisioning.setDataAddressSourceFileName("device1-data.csv");
-        serviceContractProvisioning.setDataAddressTargetBucketName("merlotedcconsumer");
-        serviceContractProvisioning.setDataAddressTargetFileName("device1-data.csv");
-        template.setServiceContractProvisioning(serviceContractProvisioning);
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
-        edcOrchestrationService.transferContractToParticipatingConnectors(template);
-    }
-
     /**
      * POST endpoint for creating a new contract in draft state.
      * The user specifies a ContractCreateRequest which gets saved in the system.
