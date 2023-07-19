@@ -191,6 +191,7 @@ public class ContractStorageServiceTest {
                 """;
 
         String exchangeCountOption = """
+                ,"dataTransferType": "Pull"
                 ,"exchangeCountOption": [
                                         {
                                             "exchangeCountUpTo": 0,
