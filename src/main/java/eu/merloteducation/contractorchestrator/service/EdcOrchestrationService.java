@@ -36,8 +36,12 @@ import java.util.stream.Collectors;
 @Service
 public class EdcOrchestrationService {
 
+    private static final String ORGA_PREFIX = "Participant:";
     @Autowired
     private MessageQueueService messageQueueService;
+
+    @Autowired
+    private ContractStorageService contractStorageService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -265,13 +269,38 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
-    public IdResponse initiateConnectorNegotiation(DataDeliveryContractTemplate template) {
+    private DataDeliveryContractTemplate validateContractType(ContractTemplate template) {
+        if (!(template instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate)){
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
+        }
+        return dataDeliveryContractTemplate;
+    }
+
+    private void checkTransferAuthorization(DataDeliveryContractTemplate template, String activeRoleOrgaId) {
+        boolean isConsumer = activeRoleOrgaId.equals(template.getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = activeRoleOrgaId.equals(template.getProviderId().replace(ORGA_PREFIX, ""));
+
+        if (!(
+                (template.getDataTransferType().equals("Push") && isProvider) ||
+                        (template.getDataTransferType().equals("Pull")&& isConsumer)
+        )) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your role is not authorized to perform the data transfer");
+        }
+    }
+
+    public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
+                                                   Set<String> representedOrgaIds) {
+        DataDeliveryContractTemplate template = validateContractType(
+                contractStorageService.getContractDetails(contractId, representedOrgaIds));
+        checkTransferAuthorization(template, activeRoleOrgaId);
+        DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
+
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getProviderId().replace("Participant:", ""));
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
-        DataDeliveryProvisioning provisioning =
-                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+
 
         String providerBaseUrl = providerDetails.getConnectorBaseUrl();
         String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
@@ -320,7 +349,12 @@ public class EdcOrchestrationService {
                 consumerManagementUrl);
     }
 
-    public ContractNegotiation getNegotationStatus(String negotiationId, DataDeliveryContractTemplate template) {
+    public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
+                                                   Set<String> representedOrgaIds) {
+        DataDeliveryContractTemplate template = validateContractType(
+                contractStorageService.getContractDetails(contractId, representedOrgaIds));
+        checkTransferAuthorization(template, activeRoleOrgaId);
+
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
         String consumerBaseUrl = consumerDetails.getConnectorBaseUrl();
@@ -329,7 +363,12 @@ public class EdcOrchestrationService {
         return checkOfferStatus(negotiationId, consumerManagementUrl);
     }
 
-    public IdResponse initiateConnectorTransfer(String negotiationId, DataDeliveryContractTemplate template) {
+    public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
+                                                Set<String> representedOrgaIds) {
+        DataDeliveryContractTemplate template = validateContractType(
+                contractStorageService.getContractDetails(contractId, representedOrgaIds));
+        checkTransferAuthorization(template, activeRoleOrgaId);
+
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getProviderId().replace("Participant:", ""));
@@ -352,7 +391,12 @@ public class EdcOrchestrationService {
         return initiateTransfer(connectorId, connectorAddress, agreementId, assetId, destination, consumerManagementUrl);
     }
 
-    public IonosS3TransferProcess getTransferStatus(String transferId, DataDeliveryContractTemplate template) {
+    public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
+                                                    Set<String> representedOrgaIds) {
+        DataDeliveryContractTemplate template = validateContractType(
+                contractStorageService.getContractDetails(contractId, representedOrgaIds));
+        checkTransferAuthorization(template, activeRoleOrgaId);
+
         OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
                 template.getConsumerId().replace("Participant:", ""));
         String consumerManagementUrl = consumerDetails.getConnectorBaseUrl() + ":9192/management/";

@@ -52,9 +52,6 @@ public class ContractStorageService {
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
-    private EdcOrchestrationService edcOrchestrationService;
-
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
 
@@ -274,6 +271,8 @@ public class ContractStorageService {
             contract = new SaasContractTemplate();
         } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingDataDelivery")) {
             contract = new DataDeliveryContractTemplate();
+            // also store a copy of the data transfer type to later decide who can initiate a transfer
+            ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
