@@ -2,6 +2,9 @@ package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.EdcIdResponse;
+import eu.merloteducation.contractorchestrator.models.EdcNegotiationStatus;
+import eu.merloteducation.contractorchestrator.models.EdcTransferStatus;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
@@ -53,37 +56,42 @@ public class DataTransferController {
     }
 
     @PostMapping("/contract/{contractId}/negotiation/start")
-    public IdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
+    public EdcIdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
                                                @RequestHeader(name = "Active-Role") String activeRole,
                                                Principal principal) throws Exception {
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
-        return edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRole, orgaIds);
+        return new EdcIdResponse(edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRoleOrgaId, orgaIds));
     }
 
     @GetMapping("/contract/{contractId}/negotiation/{negotiationId}/status")
-    public ContractNegotiation getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
-                                                            @PathVariable(value = "negotiationId") String negotiationId,
-                                                            @RequestHeader(name = "Active-Role") String activeRole,
-                                                            Principal principal) throws Exception {
+    public EdcNegotiationStatus getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
+                                                             @PathVariable(value = "negotiationId") String negotiationId,
+                                                             @RequestHeader(name = "Active-Role") String activeRole,
+                                                             Principal principal) throws Exception {
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
-        return edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRole, orgaIds);
+        return new EdcNegotiationStatus(
+                edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
 
     @PostMapping("/contract/{contractId}/negotiation/{negotiationId}/transfer/start")
-    public IdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
+    public EdcIdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
                                               @PathVariable(value = "negotiationId") String negotiationId,
                                                @RequestHeader(name = "Active-Role") String activeRole,
                                                Principal principal) throws Exception {
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
-        return edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId, activeRole, orgaIds);
+        return new EdcIdResponse(edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
 
     @GetMapping("/contract/{contractId}/transfer/{transferId}/status")
-    public IonosS3TransferProcess getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
-                                                       @PathVariable(value = "transferId") String transferId,
-                                                       @RequestHeader(name = "Active-Role") String activeRole,
-                                                       Principal principal) throws Exception {
+    public EdcTransferStatus getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
+                                                  @PathVariable(value = "transferId") String transferId,
+                                                  @RequestHeader(name = "Active-Role") String activeRole,
+                                                  Principal principal) throws Exception {
+        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
-        return edcOrchestrationService.getTransferStatus(transferId, contractId, activeRole, orgaIds);
+        return new EdcTransferStatus(edcOrchestrationService.getTransferStatus(transferId, contractId, activeRoleOrgaId, orgaIds));
     }
 }

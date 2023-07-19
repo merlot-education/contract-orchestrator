@@ -30,6 +30,7 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     public DataDeliveryContractTemplate(DataDeliveryContractTemplate template, boolean regenerate) {
         super(template, regenerate);
         this.exchangeCountSelection = template.getExchangeCountSelection();
+        this.dataTransferType = template.getDataTransferType();
         setServiceContractProvisioning(template.getServiceContractProvisioning());
     }
 
