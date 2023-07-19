@@ -329,14 +329,44 @@ public class EdcOrchestrationService {
         return checkOfferStatus(negotiationId, consumerManagementUrl);
     }
 
-    /*public IdResponse initiateConnectorTransfer(String negotiationId, DataDeliveryContractTemplate template) {
-        return initiateTransfer(catalog.getParticipantId(), providerProtocolUrl, negotiation.getContractAgreementId(),
-                catalog.getDataset().get(0).getAssetId(), new IonosS3DataAddress(
-                        provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
-                        consumerDetails.getMerlotId(), provisioning.getDataAddressTargetFileName(),
-                        provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com"),
-                consumerManagementUrl);
-    }*/
+    public IdResponse initiateConnectorTransfer(String negotiationId, DataDeliveryContractTemplate template) {
+        DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+        OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getProviderId().replace("Participant:", ""));
+        OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", ""));
+
+        String consumerManagementUrl = consumerDetails.getConnectorBaseUrl() + ":9192/management/";
+
+        ContractNegotiation negotiation = getNegotationStatus(negotiationId, template);
+        // agreement id is always formatted as {contract_definition_id}:{assetId}:{random_uuid}
+        String connectorId = providerDetails.getConnectorId();
+        String connectorAddress = negotiation.getCounterPartyAddress();
+        String agreementId = negotiation.getContractAgreementId();
+        String assetId = negotiation.getContractAgreementId().split(":")[1];
+        DataAddress destination =  new IonosS3DataAddress(
+                provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
+                template.getConsumerId(), provisioning.getDataAddressTargetFileName(),
+                provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com");
+
+        return initiateTransfer(connectorId, connectorAddress, agreementId, assetId, destination, consumerManagementUrl);
+    }
+
+    public IonosS3TransferProcess getTransferStatus(String transferId, DataDeliveryContractTemplate template) {
+        OrganizationDetails consumerDetails = messageQueueService.remoteRequestOrganizationDetails(
+                template.getConsumerId().replace("Participant:", ""));
+        String consumerManagementUrl = consumerDetails.getConnectorBaseUrl() + ":9192/management/";
+
+        return checkTransferStatus(transferId, consumerManagementUrl);
+    }
+
+    public void getAllTransfers(ContractTemplate template, String activeOrgaId) {
+        // TODO fetch data from management endpoint by POSTing at /v2/transferprocesses/request
+    }
+
+    public void getAllNegotiations(ContractTemplate template, String activeOrgaId) {
+        // TODO fetch data from management endpoint by POSTing at /v2/contractnegotiations/request
+    }
 
     public void transferContractToParticipatingConnectors(DataDeliveryContractTemplate template) {
         OrganizationDetails providerDetails = messageQueueService.remoteRequestOrganizationDetails(
@@ -381,7 +411,7 @@ public class EdcOrchestrationService {
         // consumer side
         // find the offering we are interested in
         DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl);
-        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).toList();
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
@@ -420,13 +450,8 @@ public class EdcOrchestrationService {
 
     }
 
-    public void getAllTransfers(ContractTemplate template, String activeOrgaId) {
-        // TODO fetch data from management endpoint by POSTing at /v2/transferprocesses/request
-    }
 
-    public void getTransferStatus(ContractTemplate template, String activeOrgaId, String transferId) {
-        // TODO fetch data from management endpoint by GETting at /v2/transferprocesses/{id}
-    }
+
 
 
 }
