@@ -13,8 +13,6 @@ import lombok.ToString;
 @Entity
 @JsonDeserialize
 public class DataDeliveryProvisioning extends ServiceContractProvisioning {
-    @JsonView(ContractViews.ProviderView.class)
-    private String dataAddressName;
 
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressType;
@@ -39,7 +37,6 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
 
     public DataDeliveryProvisioning() {
         super();
-        this.dataAddressName = "";
         this.dataAddressType = "";
         this.dataAddressSourceBucketName = "";
         this.dataAddressSourceFileName = "";
@@ -49,7 +46,6 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
 
     public DataDeliveryProvisioning(DataDeliveryProvisioning provisioning) {
         super(provisioning);
-        this.dataAddressName = provisioning.getDataAddressName();
         this.dataAddressType = provisioning.getDataAddressType();
         this.dataAddressSourceBucketName = provisioning.getDataAddressSourceBucketName();
         this.dataAddressSourceFileName = provisioning.getDataAddressSourceFileName();

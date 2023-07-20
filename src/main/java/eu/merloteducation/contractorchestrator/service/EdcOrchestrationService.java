@@ -329,7 +329,7 @@ public class EdcOrchestrationService {
         // provider side
         IdResponse assetIdResponse = createAsset(
                 new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
-                new IonosS3DataAddress(provisioning.getDataAddressName(), provisioning.getDataAddressSourceBucketName(),
+                new IonosS3DataAddress(provisioning.getDataAddressSourceBucketName(), provisioning.getDataAddressSourceBucketName(),
                         providerConnector.getOrgaId(), provisioning.getDataAddressSourceFileName(),
                         provisioning.getDataAddressSourceFileName(),"s3-eu-central-1.ionoscloud.com"),
                 providerConnector.getManagementBaseUrl(), providerConnector.getConnectorAccessToken()
@@ -391,7 +391,7 @@ public class EdcOrchestrationService {
         String agreementId = negotiation.getContractAgreementId();
         String assetId = negotiation.getContractAgreementId().split(":")[1];
         DataAddress destination =  new IonosS3DataAddress(
-                provisioning.getDataAddressName(), provisioning.getDataAddressTargetBucketName(),
+                provisioning.getDataAddressTargetBucketName(), provisioning.getDataAddressTargetBucketName(),
                 template.getConsumerId(), provisioning.getDataAddressTargetFileName(),
                 provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com");
 

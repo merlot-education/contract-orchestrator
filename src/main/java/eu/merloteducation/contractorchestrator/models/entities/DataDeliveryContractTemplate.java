@@ -47,7 +47,6 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
                 || (targetState == ContractState.RELEASED &&
                 (StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceFileName()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceBucketName()) ||
-                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressName()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressType())||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getSelectedProviderConnectorId())))) {
             throw new IllegalStateException(

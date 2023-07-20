@@ -664,10 +664,6 @@ public class ContractStorageServiceTest {
         assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
 
         provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
-        provisioning.setDataAddressName("MyFile.json");
-        contractTemplateRepository.save(template);
-        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
-
         provisioning.setDataAddressType("IonosS3");
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
@@ -788,7 +784,6 @@ public class ContractStorageServiceTest {
         assertTrue(StringUtil.isNullOrEmpty(result.getProviderSignature()));
 
         result.setProviderMerlotTncAccepted(true);
-        resultProvisioning.setDataAddressName("MyFile.json");
         resultProvisioning.setDataAddressType("IonosS3");
         resultProvisioning.setDataAddressSourceBucketName("MyBucket2");
         resultProvisioning.setDataAddressSourceFileName("MyFile2..json");
@@ -801,7 +796,6 @@ public class ContractStorageServiceTest {
 
         assertEquals(result.isProviderMerlotTncAccepted(), result2.isProviderMerlotTncAccepted());
         assertEquals(resultProvisioning.getDataAddressType(), result2Provisioning.getDataAddressType());
-        assertEquals(resultProvisioning.getDataAddressName(), result2Provisioning.getDataAddressName());
         assertEquals(resultProvisioning.getDataAddressSourceFileName(), result2Provisioning.getDataAddressSourceFileName());
         assertEquals(resultProvisioning.getDataAddressSourceBucketName(), result2Provisioning.getDataAddressSourceBucketName());
         assertEquals(resultProvisioning.getSelectedProviderConnectorId(), result2Provisioning.getSelectedProviderConnectorId());

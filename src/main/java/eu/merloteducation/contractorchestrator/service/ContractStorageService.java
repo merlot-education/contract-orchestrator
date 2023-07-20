@@ -177,8 +177,6 @@ public class ContractStorageService {
                         editedProvisioning.getSelectedConsumerConnectorId());
             }
             if (isProvider) {
-                targetProvisioning.setDataAddressName(
-                        editedProvisioning.getDataAddressName());
                 targetProvisioning.setDataAddressType(
                         editedProvisioning.getDataAddressType());
                 // TODO verify that this is a bucket that belongs to the connector
@@ -191,8 +189,6 @@ public class ContractStorageService {
                         editedProvisioning.getSelectedProviderConnectorId());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetProvisioning.setDataAddressName(
-                    editedProvisioning.getDataAddressName());
             targetProvisioning.setDataAddressType(
                     editedProvisioning.getDataAddressType());
             // TODO verify that this is a bucket that belongs to the connector
