@@ -55,5 +55,7 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
         this.dataAddressSourceFileName = provisioning.getDataAddressSourceFileName();
         this.dataAddressTargetBucketName = provisioning.getDataAddressTargetBucketName();
         this.dataAddressTargetFileName = provisioning.getDataAddressTargetFileName();
+        this.selectedConsumerConnectorId = provisioning.getSelectedConsumerConnectorId();
+        this.selectedProviderConnectorId = provisioning.getSelectedProviderConnectorId();
     }
 }

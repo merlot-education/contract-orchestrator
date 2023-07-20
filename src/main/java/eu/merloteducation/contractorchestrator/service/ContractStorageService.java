@@ -168,6 +168,7 @@ public class ContractStorageService {
             targetContract.setExchangeCountSelection(
                     editedContract.getExchangeCountSelection());
             if (isConsumer) {
+                // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressTargetBucketName(
                         editedProvisioning.getDataAddressTargetBucketName());
                 targetProvisioning.setDataAddressTargetFileName(
@@ -180,10 +181,12 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressName());
                 targetProvisioning.setDataAddressType(
                         editedProvisioning.getDataAddressType());
+                // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressSourceBucketName(
                         editedProvisioning.getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
                         editedProvisioning.getDataAddressSourceFileName());
+                // TODO verify that this is a valid connectorId
                 targetProvisioning.setSelectedProviderConnectorId(
                         editedProvisioning.getSelectedProviderConnectorId());
             }
@@ -192,10 +195,12 @@ public class ContractStorageService {
                     editedProvisioning.getDataAddressName());
             targetProvisioning.setDataAddressType(
                     editedProvisioning.getDataAddressType());
+            // TODO verify that this is a bucket that belongs to the connector
             targetProvisioning.setDataAddressSourceBucketName(
                     editedProvisioning.getDataAddressSourceBucketName());
             targetProvisioning.setDataAddressSourceFileName(
                     editedProvisioning.getDataAddressSourceFileName());
+            // TODO verify that this is a valid connectorId
             targetProvisioning.setSelectedProviderConnectorId(
                     editedProvisioning.getSelectedProviderConnectorId());
         }
