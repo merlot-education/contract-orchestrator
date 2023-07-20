@@ -25,11 +25,17 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressSourceFileName;
 
+    @JsonView(ContractViews.ProviderView.class)
+    private String selectedProviderConnectorId;
+
     @JsonView(ContractViews.ConsumerView.class)
     private String dataAddressTargetBucketName;
 
     @JsonView(ContractViews.ConsumerView.class)
     private String dataAddressTargetFileName;
+
+    @JsonView(ContractViews.ConsumerView.class)
+    private String selectedConsumerConnectorId;
 
     public DataDeliveryProvisioning() {
         super();
@@ -49,5 +55,7 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
         this.dataAddressSourceFileName = provisioning.getDataAddressSourceFileName();
         this.dataAddressTargetBucketName = provisioning.getDataAddressTargetBucketName();
         this.dataAddressTargetFileName = provisioning.getDataAddressTargetFileName();
+        this.selectedConsumerConnectorId = provisioning.getSelectedConsumerConnectorId();
+        this.selectedProviderConnectorId = provisioning.getSelectedProviderConnectorId();
     }
 }

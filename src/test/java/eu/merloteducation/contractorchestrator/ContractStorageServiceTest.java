@@ -616,6 +616,10 @@ public class ContractStorageServiceTest {
 
         provisioning.setDataAddressTargetBucketName("MyBucket");
         contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
+
+        provisioning.setSelectedConsumerConnectorId("edc1");
+        contractTemplateRepository.save(template);
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "userId");
         assertEquals(ContractState.SIGNED_CONSUMER, result.getState());
@@ -642,6 +646,7 @@ public class ContractStorageServiceTest {
         template.setConsumerOfferingTncAccepted(true);
         provisioning.setDataAddressTargetFileName("MyFile.json");
         provisioning.setDataAddressTargetBucketName("MyBucket");
+        provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);
 
         ContractTemplate result = contractStorageService.transitionContractTemplateState(template.getId(),
@@ -672,6 +677,10 @@ public class ContractStorageServiceTest {
         assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
 
         provisioning.setDataAddressSourceFileName("MyFile2..json");
+        contractTemplateRepository.save(template);
+        assertTransitionThrowsForbidden(template, ContractState.RELEASED, provider);
+
+        provisioning.setSelectedProviderConnectorId("edc2");
         contractTemplateRepository.save(template);
 
         result = contractStorageService.transitionContractTemplateState(result.getId(),
@@ -722,6 +731,7 @@ public class ContractStorageServiceTest {
         template.setConsumerOfferingTncAccepted(true);
         provisioning.setDataAddressTargetFileName("MyFile.json");
         provisioning.setDataAddressTargetBucketName("MyBucket");
+        provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);
         contractStorageService.transitionContractTemplateState(templateId,
                 ContractState.SIGNED_CONSUMER, consumer, "consumerUserId");
@@ -752,6 +762,7 @@ public class ContractStorageServiceTest {
         template.setRuntimeSelection("5 day(s)");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setDataAddressTargetFileName("MyFile.json");
+        provisioning.setSelectedConsumerConnectorId("edc1");
 
         DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
@@ -765,6 +776,7 @@ public class ContractStorageServiceTest {
         assertEquals(template.getRuntimeSelection(), result.getRuntimeSelection());
         assertEquals(provisioning.getDataAddressTargetBucketName(), resultProvisioning.getDataAddressTargetBucketName());
         assertEquals(provisioning.getDataAddressTargetFileName(), resultProvisioning.getDataAddressTargetFileName());
+        assertEquals(provisioning.getSelectedConsumerConnectorId(), resultProvisioning.getSelectedConsumerConnectorId());
 
         result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "userId");
@@ -780,6 +792,7 @@ public class ContractStorageServiceTest {
         resultProvisioning.setDataAddressType("IonosS3");
         resultProvisioning.setDataAddressSourceBucketName("MyBucket2");
         resultProvisioning.setDataAddressSourceFileName("MyFile2..json");
+        resultProvisioning.setSelectedProviderConnectorId("edc2");
 
         DataDeliveryContractTemplate result2 = (DataDeliveryContractTemplate) contractStorageService
                 .updateContractTemplate(result, "token",
@@ -791,6 +804,7 @@ public class ContractStorageServiceTest {
         assertEquals(resultProvisioning.getDataAddressName(), result2Provisioning.getDataAddressName());
         assertEquals(resultProvisioning.getDataAddressSourceFileName(), result2Provisioning.getDataAddressSourceFileName());
         assertEquals(resultProvisioning.getDataAddressSourceBucketName(), result2Provisioning.getDataAddressSourceBucketName());
+        assertEquals(resultProvisioning.getSelectedProviderConnectorId(), result2Provisioning.getSelectedProviderConnectorId());
 
         result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
                 ContractState.RELEASED, provider, "userId");

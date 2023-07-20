@@ -168,30 +168,41 @@ public class ContractStorageService {
             targetContract.setExchangeCountSelection(
                     editedContract.getExchangeCountSelection());
             if (isConsumer) {
+                // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressTargetBucketName(
                         editedProvisioning.getDataAddressTargetBucketName());
                 targetProvisioning.setDataAddressTargetFileName(
                         editedProvisioning.getDataAddressTargetFileName());
+                targetProvisioning.setSelectedConsumerConnectorId(
+                        editedProvisioning.getSelectedConsumerConnectorId());
             }
             if (isProvider) {
                 targetProvisioning.setDataAddressName(
                         editedProvisioning.getDataAddressName());
                 targetProvisioning.setDataAddressType(
                         editedProvisioning.getDataAddressType());
+                // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressSourceBucketName(
                         editedProvisioning.getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
                         editedProvisioning.getDataAddressSourceFileName());
+                // TODO verify that this is a valid connectorId
+                targetProvisioning.setSelectedProviderConnectorId(
+                        editedProvisioning.getSelectedProviderConnectorId());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetProvisioning.setDataAddressName(
                     editedProvisioning.getDataAddressName());
             targetProvisioning.setDataAddressType(
                     editedProvisioning.getDataAddressType());
+            // TODO verify that this is a bucket that belongs to the connector
             targetProvisioning.setDataAddressSourceBucketName(
                     editedProvisioning.getDataAddressSourceBucketName());
             targetProvisioning.setDataAddressSourceFileName(
                     editedProvisioning.getDataAddressSourceFileName());
+            // TODO verify that this is a valid connectorId
+            targetProvisioning.setSelectedProviderConnectorId(
+                    editedProvisioning.getSelectedProviderConnectorId());
         }
     }
 

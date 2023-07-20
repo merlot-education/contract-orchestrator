@@ -42,14 +42,28 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
                 (StringUtil.isNullOrEmpty(exchangeCountSelection) ||
                         serviceContractProvisioning == null ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetFileName()) ||
-                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetBucketName())))
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetBucketName())||
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getSelectedConsumerConnectorId())))
                 || (targetState == ContractState.RELEASED &&
                 (StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceFileName()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceBucketName()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressName()) ||
-                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressType())))) {
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressType())||
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getSelectedProviderConnectorId())))) {
             throw new IllegalStateException(
                     String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                            getState().name(), targetState.name()));
+        }
+        if (targetState == ContractState.RELEASED &&
+                serviceContractProvisioning.getDataAddressSourceBucketName().equals(serviceContractProvisioning.getDataAddressTargetBucketName())) {
+            throw new IllegalStateException(
+                    String.format("Cannot transition from state %s to %s as source and target bucket must not be the same",
+                            getState().name(), targetState.name()));
+        }
+        if (targetState == ContractState.RELEASED &&
+                serviceContractProvisioning.getSelectedConsumerConnectorId().equals(serviceContractProvisioning.getSelectedProviderConnectorId())) {
+            throw new IllegalStateException(
+                    String.format("Cannot transition from state %s to %s as source and target connector must not be the same",
                             getState().name(), targetState.name()));
         }
         super.transitionState(targetState);
