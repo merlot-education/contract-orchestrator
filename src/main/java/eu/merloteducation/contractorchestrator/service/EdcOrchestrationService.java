@@ -297,16 +297,10 @@ public class EdcOrchestrationService {
         }
     }
 
-    private OrganisationConnectorExtension getOrgaConnector(String orgaId) {
-        List<OrganisationConnectorExtension> connectors = messageQueueService
-                .remoteRequestOrganizationConnectors(
-                        orgaId.replace("Participant:", ""));
-
-        if (connectors.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find a connector for this organization.");
-        }
-        // TODO for now we assume a single connector per orga
-        return connectors.get(0);
+    private OrganisationConnectorExtension getOrgaConnector(String orgaId, String connectorId) {
+        return messageQueueService
+                .remoteRequestOrganizationConnectorByConnectorId(
+                        orgaId.replace("Participant:", ""), connectorId);
     }
 
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
@@ -316,8 +310,10 @@ public class EdcOrchestrationService {
         checkTransferAuthorization(template, activeRoleOrgaId);
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
-        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId());
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId(),
+                provisioning.getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId(),
+                provisioning.getSelectedConsumerConnectorId());
 
         String contractUuid = template.getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
@@ -365,9 +361,11 @@ public class EdcOrchestrationService {
                                                    Set<String> representedOrgaIds) {
         DataDeliveryContractTemplate template = validateContractType(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
+        DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId(),
+                provisioning.getSelectedConsumerConnectorId());
 
         return checkOfferStatus(negotiationId, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
@@ -380,8 +378,10 @@ public class EdcOrchestrationService {
         checkTransferAuthorization(template, activeRoleOrgaId);
 
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
-        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId());
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId(),
+                provisioning.getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId(),
+                provisioning.getSelectedConsumerConnectorId());
 
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, representedOrgaIds);
         // agreement id is always formatted as {contract_definition_id}:{assetId}:{random_uuid}
@@ -403,8 +403,10 @@ public class EdcOrchestrationService {
         DataDeliveryContractTemplate template = validateContractType(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
+        DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId(),
+                provisioning.getSelectedConsumerConnectorId());
 
         return checkTransferStatus(transferId, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());

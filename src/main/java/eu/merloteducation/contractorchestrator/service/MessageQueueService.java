@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.config.MessageQueueConfig;
+import eu.merloteducation.contractorchestrator.models.ConnectorDetailsRequest;
 import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
@@ -53,11 +54,11 @@ public class MessageQueueService {
         );
     }
 
-    public List<OrganisationConnectorExtension> remoteRequestOrganizationConnectors(String orgaId) {
+    public OrganisationConnectorExtension remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATIONCONNECTOR_REQUEST_KEY,
-                orgaId,
+                new ConnectorDetailsRequest(connectorId, orgaId),
                 new ParameterizedTypeReference<>() {
                 }
         );
