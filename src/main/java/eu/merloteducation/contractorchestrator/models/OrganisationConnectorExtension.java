@@ -22,22 +22,22 @@ public class OrganisationConnectorExtension {
     private List<String> bucketNames;
 
     public String getApiBaseUrl() {
-        return this.connectorEndpoint + "/api/";
+        return this.connectorEndpoint + "/api";
     }
     public String getManagementBaseUrl() {
-        return this.connectorEndpoint + "/management/";
+        return this.connectorEndpoint + "/management";
     }
 
     public String getProtocolBaseUrl() {
-        return this.connectorEndpoint + "/protocol/";
+        return this.connectorEndpoint + "/protocol";
     }
 
     public String getPublicBaseUrl() {
-        return this.connectorEndpoint + "/public/";
+        return this.connectorEndpoint + "/public";
     }
 
     public String getControlBaseUrl() {
-        return this.connectorEndpoint + "/control/";
+        return this.connectorEndpoint + "/control";
     }
 
 }

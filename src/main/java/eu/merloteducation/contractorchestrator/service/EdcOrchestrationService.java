@@ -67,7 +67,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<DataPlaneCreateRequest> request = new HttpEntity<>(dataPlaneCreateRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "instances",
+                restTemplate.exchange(managementUrl + "/instances",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
     }
@@ -82,7 +82,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<AssetCreateRequest> request = new HttpEntity<>(assetCreateRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/assets",
+                restTemplate.exchange(managementUrl + "/v2/assets",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
@@ -106,7 +106,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<PolicyCreateRequest> request = new HttpEntity<>(policyCreateRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/policydefinitions",
+                restTemplate.exchange(managementUrl + "/v2/policydefinitions",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
@@ -140,7 +140,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<ContractDefinitionCreateRequest> request = new HttpEntity<>(createRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/contractdefinitions",
+                restTemplate.exchange(managementUrl + "/v2/contractdefinitions",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
@@ -164,7 +164,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<CatalogRequest> request = new HttpEntity<>(catalogRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/catalog/request",
+                restTemplate.exchange(managementUrl + "/v2/catalog/request",
                         HttpMethod.POST, request, String.class).getBody();
 
         System.out.println(response);
@@ -195,7 +195,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(initiateRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/contractnegotiations",
+                restTemplate.exchange(managementUrl + "/v2/contractnegotiations",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
@@ -215,7 +215,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/contractnegotiations/" + negotiationId,
+                restTemplate.exchange(managementUrl + "/v2/contractnegotiations/" + negotiationId,
                         HttpMethod.GET, request, String.class).getBody();
         System.out.println(response);
 
@@ -245,7 +245,7 @@ public class EdcOrchestrationService {
         headers.set("X-API-Key", accessToken);
         HttpEntity<TransferRequest> request = new HttpEntity<>(transferRequest, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/transferprocesses",
+                restTemplate.exchange(managementUrl + "/v2/transferprocesses",
                         HttpMethod.POST, request, String.class).getBody();
         System.out.println(response);
 
@@ -264,7 +264,7 @@ public class EdcOrchestrationService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
         String response =
-                restTemplate.exchange(managementUrl + "v2/transferprocesses/" + transferId,
+                restTemplate.exchange(managementUrl + "/v2/transferprocesses/" + transferId,
                         HttpMethod.GET, request, String.class).getBody();
         System.out.println(response);
 
