@@ -172,6 +172,8 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressTargetBucketName());
                 targetProvisioning.setDataAddressTargetFileName(
                         editedProvisioning.getDataAddressTargetFileName());
+                targetProvisioning.setSelectedConsumerConnectorId(
+                        editedProvisioning.getSelectedConsumerConnectorId());
             }
             if (isProvider) {
                 targetProvisioning.setDataAddressName(
@@ -182,6 +184,8 @@ public class ContractStorageService {
                         editedProvisioning.getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
                         editedProvisioning.getDataAddressSourceFileName());
+                targetProvisioning.setSelectedProviderConnectorId(
+                        editedProvisioning.getSelectedProviderConnectorId());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetProvisioning.setDataAddressName(
@@ -192,6 +196,8 @@ public class ContractStorageService {
                     editedProvisioning.getDataAddressSourceBucketName());
             targetProvisioning.setDataAddressSourceFileName(
                     editedProvisioning.getDataAddressSourceFileName());
+            targetProvisioning.setSelectedProviderConnectorId(
+                    editedProvisioning.getSelectedProviderConnectorId());
         }
     }
 
