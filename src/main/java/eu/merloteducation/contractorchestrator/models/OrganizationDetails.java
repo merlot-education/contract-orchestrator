@@ -17,8 +17,4 @@ public class OrganizationDetails {
     private String registrationNumber;
     private String termsAndConditionsLink;
     private OrganizationAddressModel legalAddress;
-
-    private String connectorId;
-    private String connectorPublicKey;
-    private String connectorBaseUrl;
 }

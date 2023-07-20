@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.config.MessageQueueConfig;
+import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import org.slf4j.Logger;
@@ -9,6 +10,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class MessageQueueService {
@@ -44,6 +47,16 @@ public class MessageQueueService {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATION_REQUEST_KEY,
+                orgaId,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+    }
+
+    public List<OrganisationConnectorExtension> remoteRequestOrganizationConnectors(String orgaId) {
+        return rabbitTemplate.convertSendAndReceiveAsType(
+                MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
+                MessageQueueConfig.ORGANIZATIONCONNECTOR_REQUEST_KEY,
                 orgaId,
                 new ParameterizedTypeReference<>() {
                 }

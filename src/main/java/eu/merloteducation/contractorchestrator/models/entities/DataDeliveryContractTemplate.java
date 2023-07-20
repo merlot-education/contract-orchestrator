@@ -18,6 +18,10 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     @JsonView(ContractViews.DetailedView.class)
     private String exchangeCountSelection;
 
+    // copied from the service offering in order to decide access policy on data transfer
+    @JsonView(ContractViews.DetailedView.class)
+    private String dataTransferType;
+
     public DataDeliveryContractTemplate() {
         super();
         setServiceContractProvisioning(new DataDeliveryProvisioning());
@@ -26,6 +30,7 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     public DataDeliveryContractTemplate(DataDeliveryContractTemplate template, boolean regenerate) {
         super(template, regenerate);
         this.exchangeCountSelection = template.getExchangeCountSelection();
+        this.dataTransferType = template.getDataTransferType();
         setServiceContractProvisioning(template.getServiceContractProvisioning());
     }
 

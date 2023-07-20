@@ -52,9 +52,6 @@ public class ContractStorageService {
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
-    private EdcOrchestrationService edcOrchestrationService;
-
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
 
@@ -73,10 +70,14 @@ public class ContractStorageService {
         return new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
     }
 
-    private JSONObject requestOrganizationDetails(String orgaId) throws JSONException {
+    private JSONObject requestOrganizationDetails(String orgaId, String authToken) throws JSONException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", authToken);
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+
         String organizationResponse = restTemplate.exchange(
                 organizationsOrchestratorBaseUri + "/organization/" + orgaId,
-                HttpMethod.GET, null, String.class).getBody();
+                HttpMethod.GET, request, String.class).getBody();
         return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
     }
 
@@ -274,6 +275,8 @@ public class ContractStorageService {
             contract = new SaasContractTemplate();
         } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingDataDelivery")) {
             contract = new DataDeliveryContractTemplate();
+            // also store a copy of the data transfer type to later decide who can initiate a transfer
+            ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
@@ -299,7 +302,7 @@ public class ContractStorageService {
         }
 
         JSONObject organizationJson = requestOrganizationDetails(
-                contract.getProviderId().replace(ORGA_PREFIX, ""));
+                contract.getProviderId().replace(ORGA_PREFIX, ""), authToken);
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
         contract = contractTemplateRepository.save(contract);
@@ -479,6 +482,7 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
+        System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
