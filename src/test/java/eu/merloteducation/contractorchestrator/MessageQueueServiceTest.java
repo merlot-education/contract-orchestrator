@@ -59,9 +59,6 @@ class MessageQueueServiceTest {
         addressModel.setCity("City");
         addressModel.setStreet("Street");
         orga10.setLegalAddress(addressModel);
-        orga10.setConnectorId("connector10");
-        orga10.setConnectorBaseUrl("http://example.com/connector");
-        orga10.setConnectorPublicKey("key123");
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());
     }
@@ -81,9 +78,6 @@ class MessageQueueServiceTest {
         assertEquals(orga10.getLegalAddress().getStreet(), details.getLegalAddress().getStreet());
         assertEquals(orga10.getLegalAddress().getPostalCode(), details.getLegalAddress().getPostalCode());
         assertEquals(orga10.getLegalAddress().getCountryCode(), details.getLegalAddress().getCountryCode());
-        assertEquals(orga10.getConnectorBaseUrl(), details.getConnectorBaseUrl());
-        assertEquals(orga10.getConnectorPublicKey(), details.getConnectorPublicKey());
-        assertEquals(orga10.getConnectorId(), details.getConnectorId());
     }
 
     @Test
