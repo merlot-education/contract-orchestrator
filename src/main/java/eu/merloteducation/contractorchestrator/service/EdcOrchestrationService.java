@@ -319,9 +319,6 @@ public class EdcOrchestrationService {
         OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId());
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
 
-        String providerBaseUrl = providerConnector.getConnectorEndpoint();
-        String consumerBaseUrl = consumerConnector.getConnectorEndpoint();
-
         String contractUuid = template.getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
 
@@ -332,30 +329,24 @@ public class EdcOrchestrationService {
         String policyId = instanceUuid + "_Policy";
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
-        // TODO these port mappings need to be replaced with url mappings once they are hosted in the cloud
-        String providerManagementUrl = providerBaseUrl + ":8182/management/";
-        String providerProtocolUrl = providerBaseUrl + ":8282/protocol";
-
-        String consumerManagementUrl = consumerBaseUrl + ":9192/management/";
-
         // provider side
         IdResponse assetIdResponse = createAsset(
                 new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
                 new IonosS3DataAddress(provisioning.getDataAddressName(), provisioning.getDataAddressSourceBucketName(),
                         providerConnector.getOrgaId(), provisioning.getDataAddressSourceFileName(),
                         provisioning.getDataAddressSourceFileName(),"s3-eu-central-1.ionoscloud.com"),
-                providerManagementUrl, providerConnector.getConnectorAccessToken()
+                providerConnector.getManagementBaseUrl(), providerConnector.getConnectorAccessToken()
         );
         IdResponse policyIdResponse = createPolicyUnrestricted(new Policy(policyId),
-                providerManagementUrl, providerConnector.getConnectorAccessToken());
+                providerConnector.getManagementBaseUrl(), providerConnector.getConnectorAccessToken());
         createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
-                policyIdResponse.getId(), assetIdResponse.getId(), providerManagementUrl,
+                policyIdResponse.getId(), assetIdResponse.getId(), providerConnector.getManagementBaseUrl(),
                 providerConnector.getConnectorAccessToken());
 
 
         // consumer side
         // find the offering we are interested in
-        DcatCatalog catalog = queryCatalog(providerProtocolUrl, consumerManagementUrl,
+        DcatCatalog catalog = queryCatalog(providerConnector.getProtocolBaseUrl(), consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
         List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
         if(matches.size() != 1) {
@@ -364,9 +355,9 @@ public class EdcOrchestrationService {
         DcatDataset dataset = matches.get(0);
 
         return negotiateOffer(catalog.getParticipantId(), consumerConnector.getConnectorId(),
-                catalog.getParticipantId(), providerProtocolUrl,
+                catalog.getParticipantId(), providerConnector.getProtocolBaseUrl(),
                 new ContractOffer(dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)),
-                consumerManagementUrl,
+                consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
     }
 
@@ -378,10 +369,7 @@ public class EdcOrchestrationService {
 
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
 
-        String consumerBaseUrl = consumerConnector.getConnectorEndpoint();
-        String consumerManagementUrl = consumerBaseUrl + ":9192/management/";
-
-        return checkOfferStatus(negotiationId, consumerManagementUrl,
+        return checkOfferStatus(negotiationId, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
     }
 
@@ -395,8 +383,6 @@ public class EdcOrchestrationService {
         OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getProviderId());
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
 
-        String consumerManagementUrl = consumerConnector.getConnectorEndpoint() + ":9192/management/";
-
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, representedOrgaIds);
         // agreement id is always formatted as {contract_definition_id}:{assetId}:{random_uuid}
         String connectorId = providerConnector.getConnectorId();
@@ -408,7 +394,7 @@ public class EdcOrchestrationService {
                 template.getConsumerId(), provisioning.getDataAddressTargetFileName(),
                 provisioning.getDataAddressTargetFileName(),"s3-eu-central-1.ionoscloud.com");
 
-        return initiateTransfer(connectorId, connectorAddress, agreementId, assetId, destination, consumerManagementUrl,
+        return initiateTransfer(connectorId, connectorAddress, agreementId, assetId, destination, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
     }
 
@@ -420,9 +406,7 @@ public class EdcOrchestrationService {
 
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getConsumerId());
 
-        String consumerManagementUrl = consumerConnector.getConnectorEndpoint() + ":9192/management/";
-
-        return checkTransferStatus(transferId, consumerManagementUrl,
+        return checkTransferStatus(transferId, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
     }
 

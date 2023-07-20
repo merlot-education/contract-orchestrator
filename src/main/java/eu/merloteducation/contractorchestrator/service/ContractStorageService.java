@@ -70,10 +70,14 @@ public class ContractStorageService {
         return new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
     }
 
-    private JSONObject requestOrganizationDetails(String orgaId) throws JSONException {
+    private JSONObject requestOrganizationDetails(String orgaId, String authToken) throws JSONException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", authToken);
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+
         String organizationResponse = restTemplate.exchange(
                 organizationsOrchestratorBaseUri + "/organization/" + orgaId,
-                HttpMethod.GET, null, String.class).getBody();
+                HttpMethod.GET, request, String.class).getBody();
         return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
     }
 
@@ -298,7 +302,7 @@ public class ContractStorageService {
         }
 
         JSONObject organizationJson = requestOrganizationDetails(
-                contract.getProviderId().replace(ORGA_PREFIX, ""));
+                contract.getProviderId().replace(ORGA_PREFIX, ""), authToken);
         contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
 
         contract = contractTemplateRepository.save(contract);
@@ -478,6 +482,7 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
+        System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
