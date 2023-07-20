@@ -262,6 +262,7 @@ public class EdcOrchestrationService {
     private IonosS3TransferProcess checkTransferStatus(String transferId, String managementUrl, String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-API-Key", accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/transferprocesses/" + transferId,
