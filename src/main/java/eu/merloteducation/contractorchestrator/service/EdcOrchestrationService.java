@@ -345,7 +345,7 @@ public class EdcOrchestrationService {
         // find the offering we are interested in
         DcatCatalog catalog = queryCatalog(providerConnector.getProtocolBaseUrl(), consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
-        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).collect(Collectors.toList());
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }

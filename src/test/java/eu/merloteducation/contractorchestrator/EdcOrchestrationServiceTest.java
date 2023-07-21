@@ -1,6 +1,9 @@
 package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
+import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
+import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
+import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
@@ -23,14 +26,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -55,11 +55,15 @@ public class EdcOrchestrationServiceTest {
     private SaasContractTemplate wrongTypeContract;
     private DataDeliveryContractTemplate wrongStateContract;
 
+    private UUID fixedRandomUUID;
+
     @BeforeAll
     public void setUp() {
         ReflectionTestUtils.setField(edcOrchestrationService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(edcOrchestrationService, "contractStorageService", contractStorageService);
         ReflectionTestUtils.setField(edcOrchestrationService, "restTemplate", restTemplate);
+
+        fixedRandomUUID = UUID.fromString("550e8400-e29b-11d4-a716-446655440000");
 
         validPushContract = new DataDeliveryContractTemplate();
         validPushContract.setRuntimeSelection("unlimited");
@@ -181,8 +185,7 @@ public class EdcOrchestrationServiceTest {
                                                                  "odrl:hasPolicy": {"@id": "myId:myId:87ad21db-db75-4c1d-8492-066f8232c097",
                                                                                     "@type": "odrl:Set",
                                                                                     "odrl:obligation": [],
-                                                                                    "odrl:permission": {"odrl:action": {"odrl:type": "USE"},
-                                                                                                        "odrl:target": "myId"},
+                                                                                    "odrl:permission": [],
                                                                                     "odrl:prohibition": [],
                                                                                     "odrl:target": "myId"}},
                                                 "dcat:service": {"@id": "c144c176-6e90-4f20-9a60-45685301cbe8",
@@ -241,9 +244,97 @@ public class EdcOrchestrationServiceTest {
 
     @Test
     void testInitiateNegotiationValidPushProvider() {
+
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
-        this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getId(),
+        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getId(),
                 validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(negotiationId);
+
+    }
+
+    @Test
+    void testCheckNegotiationValidPushProvider() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
+        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getId(),
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(negotiation);
+
+    }
+
+    @Test
+    void testInitiateTransferValidPushProvider() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
+        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getId(),
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(transferId);
+
+    }
+
+    @Test
+    void testGetTransferStatusValidPushProvider() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
+        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getId(),
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(transferProcess);
+
+    }
+
+    @Test
+    void testInitiateNegotiationValidPullConsumer() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
+        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getId(),
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(negotiationId);
+
+    }
+
+    @Test
+    void testCheckNegotiationValidPullConsumer() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
+        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getId(),
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(negotiation);
+
+    }
+
+    @Test
+    void testInitiateTransferValidPullConsumer() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
+        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getId(),
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(transferId);
+
+    }
+
+    @Test
+    void testGetTransferStatusValidPullConsumer() {
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
+        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getId(),
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+
+        assertNotNull(transferProcess);
+
     }
 }
