@@ -47,7 +47,7 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
                 || (targetState == ContractState.RELEASED &&
                 (StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceFileName()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressSourceBucketName()) ||
-                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressType())||
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressType()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getSelectedProviderConnectorId())))) {
             throw new IllegalStateException(
                     String.format("Cannot transition from state %s to %s as mandatory fields are not set",
