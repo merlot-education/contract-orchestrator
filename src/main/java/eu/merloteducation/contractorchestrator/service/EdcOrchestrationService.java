@@ -73,6 +73,7 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createAsset(Asset asset, DataAddress dataAddress, String managementUrl, String accessToken) {
+        System.out.println("Create Asset on " + managementUrl + " with token " + accessToken);
         AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
         assetCreateRequest.setAsset(asset);
         assetCreateRequest.setDataAddress(dataAddress);
@@ -97,6 +98,7 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createPolicyUnrestricted(Policy policy, String managementUrl, String accessToken) {
+        System.out.println("Create Policy on " + managementUrl + " with token " + accessToken);
         PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
         policyCreateRequest.setPolicy(policy);
         policyCreateRequest.setId(policy.getId());
@@ -122,6 +124,7 @@ public class EdcOrchestrationService {
 
     private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
                                                 String assetId, String managementUrl, String accessToken) { // TODO add asset selector
+        System.out.println("Create contract definition on " + managementUrl + " with token " + accessToken);
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
         createRequest.setAccessPolicyId(accessPolicyId);
@@ -155,7 +158,7 @@ public class EdcOrchestrationService {
     }
 
     private DcatCatalog queryCatalog(String providerProtocolUrl, String managementUrl, String accessToken) {
-        System.out.println("Query Catalog");
+        System.out.println("Query Catalog on " + managementUrl + " with provider url " + providerProtocolUrl + " and token " + accessToken);
         CatalogRequest catalogRequest = new CatalogRequest();
         catalogRequest.setProviderUrl(providerProtocolUrl);
 
