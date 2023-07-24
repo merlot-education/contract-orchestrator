@@ -61,6 +61,9 @@ public class DataTransferController {
                                                Principal principal) throws Exception {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
         return new EdcIdResponse(edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRoleOrgaId, orgaIds));
     }
 
@@ -71,6 +74,9 @@ public class DataTransferController {
                                                              Principal principal) throws Exception {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
         return new EdcNegotiationStatus(
                 edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
@@ -82,6 +88,9 @@ public class DataTransferController {
                                                Principal principal) throws Exception {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
         return new EdcIdResponse(edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
 
@@ -92,6 +101,9 @@ public class DataTransferController {
                                                   Principal principal) throws Exception {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
+        if (!orgaIds.contains(activeRoleOrgaId)) {
+            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
+        }
         return new EdcTransferStatus(edcOrchestrationService.getTransferStatus(transferId, contractId, activeRoleOrgaId, orgaIds));
     }
 }
