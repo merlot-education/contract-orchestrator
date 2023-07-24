@@ -3,7 +3,6 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
@@ -18,8 +17,8 @@ import eu.merloteducation.contractorchestrator.models.edc.negotiation.Negotiatio
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
+import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
@@ -31,7 +30,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,6 +91,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC asset");
         }
         return idResponse;
     }
@@ -118,6 +117,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC policy");
         }
         return idResponse;
     }
@@ -153,6 +153,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC contract definition");
         }
         return idResponse;
     }
@@ -178,6 +179,7 @@ public class EdcOrchestrationService {
             catalogResponse = mapper.readValue(response, DcatCatalog.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not query EDC catalog");
         }
         System.out.println(catalogResponse);
         System.out.println(response);
@@ -208,6 +210,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could start EDC negotiation");
         }
         return idResponse;
     }
@@ -228,6 +231,7 @@ public class EdcOrchestrationService {
             contractNegotiation = mapper.readValue(response, ContractNegotiation.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC negotiation status");
         }
         return contractNegotiation;
     }
@@ -258,6 +262,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not start EDC data transfer");
         }
         return idResponse;
     }
@@ -278,13 +283,17 @@ public class EdcOrchestrationService {
             transferProcess = mapper.readValue(response, IonosS3TransferProcess.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC data transfer status");
         }
         return transferProcess;
     }
 
-    private DataDeliveryContractTemplate validateContractType(ContractTemplate template) {
+    private DataDeliveryContractTemplate validateContract(ContractTemplate template) {
         if (!(template instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate)){
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
+        }
+        if (template.getState() != ContractState.RELEASED){
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is in wrong state.");
         }
         return dataDeliveryContractTemplate;
     }
@@ -309,7 +318,7 @@ public class EdcOrchestrationService {
 
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
@@ -348,7 +357,7 @@ public class EdcOrchestrationService {
         // find the offering we are interested in
         DcatCatalog catalog = queryCatalog(providerConnector.getProtocolBaseUrl(), consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
-        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetId)).collect(Collectors.toList());
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
@@ -363,7 +372,7 @@ public class EdcOrchestrationService {
 
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         checkTransferAuthorization(template, activeRoleOrgaId);
@@ -377,7 +386,7 @@ public class EdcOrchestrationService {
 
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
@@ -404,7 +413,7 @@ public class EdcOrchestrationService {
 
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
                                                     Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
