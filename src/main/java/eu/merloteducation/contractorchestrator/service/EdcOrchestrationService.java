@@ -90,6 +90,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC asset");
         }
         return idResponse;
     }
@@ -114,6 +115,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC policy");
         }
         return idResponse;
     }
@@ -148,6 +150,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC contract definition");
         }
         return idResponse;
     }
@@ -173,6 +176,7 @@ public class EdcOrchestrationService {
             catalogResponse = mapper.readValue(response, DcatCatalog.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not query EDC catalog");
         }
         System.out.println(catalogResponse);
         System.out.println(response);
@@ -203,6 +207,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could start EDC negotiation");
         }
         return idResponse;
     }
@@ -223,6 +228,7 @@ public class EdcOrchestrationService {
             contractNegotiation = mapper.readValue(response, ContractNegotiation.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC negotiation status");
         }
         return contractNegotiation;
     }
@@ -253,6 +259,7 @@ public class EdcOrchestrationService {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not start EDC data transfer");
         }
         return idResponse;
     }
@@ -273,6 +280,7 @@ public class EdcOrchestrationService {
             transferProcess = mapper.readValue(response, IonosS3TransferProcess.class);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC data transfer status");
         }
         return transferProcess;
     }
@@ -281,7 +289,7 @@ public class EdcOrchestrationService {
         if (!(template instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate)){
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
         }
-        if (!(template.getState() == ContractState.RELEASED)){
+        if (template.getState() != ContractState.RELEASED){
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is in wrong state.");
         }
         return dataDeliveryContractTemplate;
@@ -346,7 +354,7 @@ public class EdcOrchestrationService {
         // find the offering we are interested in
         DcatCatalog catalog = queryCatalog(providerConnector.getProtocolBaseUrl(), consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
-        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).collect(Collectors.toList());
+        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
