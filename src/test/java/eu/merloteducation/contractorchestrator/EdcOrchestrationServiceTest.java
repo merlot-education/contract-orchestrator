@@ -25,10 +25,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -55,15 +56,11 @@ public class EdcOrchestrationServiceTest {
     private SaasContractTemplate wrongTypeContract;
     private DataDeliveryContractTemplate wrongStateContract;
 
-    private UUID fixedRandomUUID;
-
     @BeforeAll
     public void setUp() {
         ReflectionTestUtils.setField(edcOrchestrationService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(edcOrchestrationService, "contractStorageService", contractStorageService);
         ReflectionTestUtils.setField(edcOrchestrationService, "restTemplate", restTemplate);
-
-        fixedRandomUUID = UUID.fromString("550e8400-e29b-11d4-a716-446655440000");
 
         validPushContract = new DataDeliveryContractTemplate();
         validPushContract.setRuntimeSelection("unlimited");
@@ -251,6 +248,9 @@ public class EdcOrchestrationServiceTest {
                 validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(negotiationId);
+        assertEquals("edc:IdResponseDto", negotiationId.getType());
+        assertEquals("myId", negotiationId.getId());
+        assertEquals(1689756292703L, negotiationId.getCreatedAt());
 
     }
 
@@ -263,7 +263,14 @@ public class EdcOrchestrationServiceTest {
                 validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(negotiation);
-
+        assertEquals("edc:ContractNegotiationDto", negotiation.getType());
+        assertEquals("623d4060-302b-45a0-89d0-65bc69650822", negotiation.getId());
+        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", negotiation.getContractAgreementId());
+        assertTrue(negotiation.getCallbackAddresses().isEmpty());
+        assertEquals("http://localhost:8282/protocol", negotiation.getCounterPartyAddress());
+        assertEquals("dataspace-protocol-http", negotiation.getProtocol());
+        assertEquals("FINALIZED", negotiation.getState());
+        assertEquals("CONSUMER", negotiation.getEdcType());
     }
 
     @Test
@@ -275,6 +282,9 @@ public class EdcOrchestrationServiceTest {
                 validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(transferId);
+        assertEquals("edc:IdResponseDto", transferId.getType());
+        assertEquals("myId", transferId.getId());
+        assertEquals(1689756292703L, transferId.getCreatedAt());
 
     }
 
@@ -287,8 +297,56 @@ public class EdcOrchestrationServiceTest {
                 validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(transferProcess);
+        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
+        assertEquals("edc:TransferProcessDto", transferProcess.getType());
+        assertTrue(transferProcess.getCallbackAddresses().isEmpty());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getBlobName());
+        assertEquals("merlotedcconsumer", transferProcess.getDataDestination().getBucketName());
+        assertEquals("company2", transferProcess.getDataDestination().getContainer());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getKeyName());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getName());
+        assertEquals("s3-eu-central-1.ionoscloud.com", transferProcess.getDataDestination().getStorage());
+        assertEquals("IonosS3", transferProcess.getDataDestination().getDataType());
+        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getDataRequest().getId());
+        assertEquals("edc:DataRequestDto", transferProcess.getDataRequest().getType());
+        assertEquals("myId", transferProcess.getDataRequest().getAssetId());
+        assertEquals("provider", transferProcess.getDataRequest().getConnectorId());
+        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", transferProcess.getDataRequest().getContractId());
+        assertEquals("COMPLETED", transferProcess.getState());
+        assertEquals("1689756313117", transferProcess.getStateTimestamp());
+        assertEquals("CONSUMER", transferProcess.getEdcType());
+    }
+
+    @Test
+    void testValidPushWrongRole() {
+
+        String consumer = validPushContract.getConsumerId().replace("Participant:", "");
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(consumer);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
     }
+
 
     @Test
     void testInitiateNegotiationValidPullConsumer() {
@@ -299,7 +357,9 @@ public class EdcOrchestrationServiceTest {
                 validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(negotiationId);
-
+        assertEquals("edc:IdResponseDto", negotiationId.getType());
+        assertEquals("myId", negotiationId.getId());
+        assertEquals(1689756292703L, negotiationId.getCreatedAt());
     }
 
     @Test
@@ -312,6 +372,14 @@ public class EdcOrchestrationServiceTest {
 
         assertNotNull(negotiation);
 
+        assertEquals("edc:ContractNegotiationDto", negotiation.getType());
+        assertEquals("623d4060-302b-45a0-89d0-65bc69650822", negotiation.getId());
+        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", negotiation.getContractAgreementId());
+        assertTrue(negotiation.getCallbackAddresses().isEmpty());
+        assertEquals("http://localhost:8282/protocol", negotiation.getCounterPartyAddress());
+        assertEquals("dataspace-protocol-http", negotiation.getProtocol());
+        assertEquals("FINALIZED", negotiation.getState());
+        assertEquals("CONSUMER", negotiation.getEdcType());
     }
 
     @Test
@@ -323,7 +391,10 @@ public class EdcOrchestrationServiceTest {
                 validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(transferId);
-
+        assertNotNull(transferId);
+        assertEquals("edc:IdResponseDto", transferId.getType());
+        assertEquals("myId", transferId.getId());
+        assertEquals(1689756292703L, transferId.getCreatedAt());
     }
 
     @Test
@@ -335,6 +406,114 @@ public class EdcOrchestrationServiceTest {
                 validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
 
         assertNotNull(transferProcess);
+        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
+        assertEquals("edc:TransferProcessDto", transferProcess.getType());
+        assertTrue(transferProcess.getCallbackAddresses().isEmpty());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getBlobName());
+        assertEquals("merlotedcconsumer", transferProcess.getDataDestination().getBucketName());
+        assertEquals("company2", transferProcess.getDataDestination().getContainer());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getKeyName());
+        assertEquals("device1-data.csv", transferProcess.getDataDestination().getName());
+        assertEquals("s3-eu-central-1.ionoscloud.com", transferProcess.getDataDestination().getStorage());
+        assertEquals("IonosS3", transferProcess.getDataDestination().getDataType());
+        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getDataRequest().getId());
+        assertEquals("edc:DataRequestDto", transferProcess.getDataRequest().getType());
+        assertEquals("myId", transferProcess.getDataRequest().getAssetId());
+        assertEquals("provider", transferProcess.getDataRequest().getConnectorId());
+        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", transferProcess.getDataRequest().getContractId());
+        assertEquals("COMPLETED", transferProcess.getState());
+        assertEquals("1689756313117", transferProcess.getStateTimestamp());
+        assertEquals("CONSUMER", transferProcess.getEdcType());
+    }
+
+    @Test
+    void testValidPullWrongRole() {
+
+        String provider = validPullContract.getProviderId().replace("Participant:", "");
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(provider);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getId(),
+                        provider, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getId(),
+                        provider, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getId(),
+                        provider, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getId(),
+                        provider, representedOrgaIds));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+
+    }
+
+
+    @Test
+    void testWrongContractType() {
+
+        String consumer = wrongTypeContract.getConsumerId().replace("Participant:", "");
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(consumer);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorNegotiation(wrongTypeContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getNegotationStatus("myId", wrongTypeContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", wrongTypeContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getTransferStatus("myId", wrongTypeContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+    }
+
+    @Test
+    void testWrongContractState() {
+
+        String consumer = wrongStateContract.getConsumerId().replace("Participant:", "");
+
+        Set<String> representedOrgaIds = new HashSet<>();
+        representedOrgaIds.add(consumer);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorNegotiation(wrongStateContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getNegotationStatus("myId", wrongStateContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", wrongStateContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+
+        ex = assertThrows(ResponseStatusException.class,
+                () -> this.edcOrchestrationService.getTransferStatus("myId", wrongStateContract.getId(),
+                        consumer, representedOrgaIds));
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
     }
 }

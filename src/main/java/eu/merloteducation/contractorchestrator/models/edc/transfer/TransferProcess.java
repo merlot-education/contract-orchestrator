@@ -28,7 +28,7 @@ public abstract class TransferProcess {
     @JsonProperty(EdcConstants.EDC_PREFIX + "stateTimestamp")
     private String stateTimestamp;
 
-    @JsonProperty(EdcConstants.EDC_PREFIX + "edcType")
+    @JsonProperty(EdcConstants.EDC_PREFIX + "type")
     private String edcType;
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "callbackAddresses")

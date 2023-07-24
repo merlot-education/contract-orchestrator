@@ -3,7 +3,6 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
@@ -18,8 +17,8 @@ import eu.merloteducation.contractorchestrator.models.edc.negotiation.Negotiatio
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
 import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
+import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
@@ -31,7 +30,6 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -279,9 +277,12 @@ public class EdcOrchestrationService {
         return transferProcess;
     }
 
-    private DataDeliveryContractTemplate validateContractType(ContractTemplate template) {
+    private DataDeliveryContractTemplate validateContract(ContractTemplate template) {
         if (!(template instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate)){
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
+        }
+        if (!(template.getState() == ContractState.RELEASED)){
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is in wrong state.");
         }
         return dataDeliveryContractTemplate;
     }
@@ -306,7 +307,7 @@ public class EdcOrchestrationService {
 
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
@@ -360,7 +361,7 @@ public class EdcOrchestrationService {
 
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         checkTransferAuthorization(template, activeRoleOrgaId);
@@ -374,7 +375,7 @@ public class EdcOrchestrationService {
 
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
@@ -401,7 +402,7 @@ public class EdcOrchestrationService {
 
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
                                                     Set<String> representedOrgaIds) {
-        DataDeliveryContractTemplate template = validateContractType(
+        DataDeliveryContractTemplate template = validateContract(
                 contractStorageService.getContractDetails(contractId, representedOrgaIds));
         checkTransferAuthorization(template, activeRoleOrgaId);
         DataDeliveryProvisioning provisioning = (DataDeliveryProvisioning) template.getServiceContractProvisioning();
