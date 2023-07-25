@@ -777,6 +777,25 @@ public class ContractStorageServiceTest {
 
     @Test
     @Transactional
+    void transitionDataDeliveryContractPurge() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template2.getConsumerId().replace("Participant:", "");
+        String provider = template2.getProviderId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        representedOrgaIds.add(provider);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(template2, false);
+
+        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(template.getId(),
+                ContractState.DELETED, consumer, "userId");
+
+        result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(template.getId(),
+                ContractState.PURGED, provider, "userId");
+
+        assertNull(contractTemplateRepository.findById(result.getId()).orElse(null));
+    }
+
+    @Test
+    @Transactional
     void updateDataDeliveryFieldsAfterTransition() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = template2.getConsumerId().replace("Participant:", "");
