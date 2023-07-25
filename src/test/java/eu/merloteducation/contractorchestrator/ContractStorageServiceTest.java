@@ -740,6 +740,43 @@ public class ContractStorageServiceTest {
 
     @Test
     @Transactional
+    void transitionSaasContractRevokedNotAllowed() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = template1.getConsumerId().replace("Participant:", "");
+        String provider = template1.getProviderId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        representedOrgaIds.add(provider);
+        SaasContractTemplate template = new SaasContractTemplate(template1, false);
+
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.setUserCountSelection("unlimited");
+        template.setRuntimeSelection("5 day(s)");
+
+        SaasContractTemplate result = (SaasContractTemplate) contractStorageService
+                .updateContractTemplate(template, "token",
+                        consumer, representedOrgaIds);
+
+        result = (SaasContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.SIGNED_CONSUMER, consumer, "userId");
+
+        result.setProviderMerlotTncAccepted(true);
+
+        SaasContractTemplate result2 = (SaasContractTemplate) contractStorageService
+                .updateContractTemplate(result, "token",
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
+
+        assertEquals(result.isProviderMerlotTncAccepted(), result2.isProviderMerlotTncAccepted());
+
+        result = (SaasContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.RELEASED, provider, "userId");
+
+        assertTransitionThrowsForbidden(result, ContractState.REVOKED, provider);
+    }
+
+    @Test
+    @Transactional
     void updateDataDeliveryFieldsAfterTransition() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = template2.getConsumerId().replace("Participant:", "");

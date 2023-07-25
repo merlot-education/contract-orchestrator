@@ -431,14 +431,7 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        // check if transitioning to the target state is generally allowed
-        try {
-            contract.transitionState(targetState);
-        } catch (IllegalStateException e) {
-            throw new ResponseStatusException(FORBIDDEN, e.getMessage());
-        }
-
-        // perform further checks and set fields if needed
+        // perform checks and set fields if needed
         if (targetState == ContractState.SIGNED_CONSUMER) {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
@@ -466,6 +459,13 @@ public class ContractStorageService {
             contractTemplateRepository.delete(contract);
             messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
             return contract;
+        }
+
+        // check if transitioning to the target state is generally allowed
+        try {
+            contract.transitionState(targetState);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
         // if all checks passed, save the new state of the contract

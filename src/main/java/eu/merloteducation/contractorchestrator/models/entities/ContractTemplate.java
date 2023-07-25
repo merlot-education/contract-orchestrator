@@ -145,11 +145,6 @@ public abstract class ContractTemplate {
                                 state.name(), targetState.name()));
 
             }
-            if (targetState == ContractState.REVOKED && type.equals("SaasContractTemplate")) {
-                throw new IllegalStateException(
-                        String.format("Not allowed to transition from state %s to %s for this contract type",
-                                state.name(), targetState.name()));
-            }
             state = targetState;
         } else {
             throw new IllegalStateException(

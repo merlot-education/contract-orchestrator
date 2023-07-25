@@ -36,6 +36,11 @@ public class SaasContractTemplate extends ContractTemplate {
                                 getState().name(), targetState.name()));
             }
         }
+        if (targetState == ContractState.REVOKED) {
+            throw new IllegalStateException(
+                    String.format("Not allowed to transition from state %s to %s for this contract type",
+                            getState().name(), targetState.name()));
+        }
         super.transitionState(targetState);
     }
 }
