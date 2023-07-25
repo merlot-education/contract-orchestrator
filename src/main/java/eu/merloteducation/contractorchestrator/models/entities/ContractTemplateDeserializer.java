@@ -33,6 +33,9 @@ public class ContractTemplateDeserializer extends StdDeserializer<ContractTempla
             requestClass = SaasContractTemplate.class;
         } else if (root.has("exchangeCountSelection")) {
             requestClass = DataDeliveryContractTemplate.class;
+        } else {
+            // TODO base this on the type field instead of the existence of attributes
+            requestClass = CooperationContractTemplate.class;
         }
 
         return mapper.treeToValue(root, requestClass);

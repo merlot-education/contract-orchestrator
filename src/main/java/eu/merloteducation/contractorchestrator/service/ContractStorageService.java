@@ -284,6 +284,8 @@ public class ContractStorageService {
             contract = new DataDeliveryContractTemplate();
             // also store a copy of the data transfer type to later decide who can initiate a transfer
             ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
+        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingCooperation")) {
+            contract = new CooperationContractTemplate();
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
