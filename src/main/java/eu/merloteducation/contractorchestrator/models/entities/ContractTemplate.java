@@ -33,7 +33,7 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     @JsonProperty("type")
-    private String discriminator;
+    private String type;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)
@@ -144,6 +144,11 @@ public abstract class ContractTemplate {
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",
                                 state.name(), targetState.name()));
 
+            }
+            if (targetState == ContractState.REVOKED && type.equals("SaasContractTemplate")) {
+                throw new IllegalStateException(
+                        String.format("Not allowed to transition from state %s to %s for this contract type",
+                                state.name(), targetState.name()));
             }
             state = targetState;
         } else {
