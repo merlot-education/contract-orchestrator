@@ -309,10 +309,11 @@ public class ContractStorageServiceTest {
 
     @Test
     void getContractByIdNotAllowed() {
+        String contractId = saasContract.getId();
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("1234");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.getContractDetails(saasContract.getId(), representedOrgaIds));
+                () -> contractStorageService.getContractDetails(contractId, representedOrgaIds));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
@@ -865,6 +866,7 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionDataDeliveryContractPurgeWrongState() {
+        String contractId = dataDeliveryContract.getId();
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
@@ -873,7 +875,7 @@ public class ContractStorageServiceTest {
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->contractStorageService.transitionContractTemplateState(template.getId(),
+                () ->contractStorageService.transitionContractTemplateState(contractId,
                         ContractState.PURGED, provider, "userId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
@@ -881,6 +883,7 @@ public class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionDataDeliveryContractPurgeWrongRole() {
+        String contractId = dataDeliveryContract.getId();
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
@@ -888,8 +891,8 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(provider);
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
-        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.DELETED, consumer, "userId");
+        DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
+                .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () ->contractStorageService.transitionContractTemplateState(template.getId(),
