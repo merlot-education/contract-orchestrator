@@ -895,7 +895,7 @@ public class ContractStorageServiceTest {
                 .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->contractStorageService.transitionContractTemplateState(template.getId(),
+                () ->contractStorageService.transitionContractTemplateState(contractId,
                         ContractState.PURGED, consumer, "userId"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
