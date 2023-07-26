@@ -33,7 +33,7 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     @JsonProperty("type")
-    private String discriminator;
+    private String type;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)

@@ -284,6 +284,8 @@ public class ContractStorageService {
             contract = new DataDeliveryContractTemplate();
             // also store a copy of the data transfer type to later decide who can initiate a transfer
             ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
+        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingCooperation")) {
+            contract = new CooperationContractTemplate();
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
@@ -350,6 +352,10 @@ public class ContractStorageService {
                     new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
         } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
             contract = new SaasContractTemplate(saasContractTemplate, true);
+            contract.setServiceContractProvisioning(
+                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
+        } else if (contract instanceof CooperationContractTemplate cooperationContractTemplate) {
+            contract = new CooperationContractTemplate(cooperationContractTemplate, true);
             contract.setServiceContractProvisioning(
                     new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
         } else {
@@ -431,12 +437,7 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
-        if (contract.getState() == ContractState.DELETED && targetState == ContractState.PURGED && isProvider) {
-            contractTemplateRepository.delete(contract);
-            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
-            return contract;
-        }
-
+        // perform checks and set fields if needed
         if (targetState == ContractState.SIGNED_CONSUMER) {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
@@ -451,19 +452,29 @@ public class ContractStorageService {
             }
             contract.setProviderSignerUserId(userId);
             contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
+            if (!contract.getRuntimeSelection().equals(SELECTION_INFINITE)) {
+                contract.getServiceContractProvisioning().setValidUntil(
+                        this.computeValidityTimestamp(contract.getRuntimeSelection()));
+            }
         }
 
+        if (targetState == ContractState.PURGED) {
+            if (!(contract.getState() == ContractState.DELETED && isProvider)) {
+                throw new ResponseStatusException(FORBIDDEN, "Not allowed to purge contract");
+            }
+            contractTemplateRepository.delete(contract);
+            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
+            return contract;
+        }
+
+        // check if transitioning to the target state is generally allowed
         try {
             contract.transitionState(targetState);
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
-        if (contract.getState() == ContractState.RELEASED && !contract.getRuntimeSelection().equals(SELECTION_INFINITE)) {
-            contract.getServiceContractProvisioning().setValidUntil(
-                    this.computeValidityTimestamp(contract.getRuntimeSelection()));
-        }
-
+        // if all checks passed, save the new state of the contract
         return contractTemplateRepository.save(contract);
     }
 
