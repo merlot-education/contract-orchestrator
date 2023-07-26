@@ -354,6 +354,10 @@ public class ContractStorageService {
             contract = new SaasContractTemplate(saasContractTemplate, true);
             contract.setServiceContractProvisioning(
                     new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
+        } else if (contract instanceof CooperationContractTemplate cooperationContractTemplate) {
+            contract = new CooperationContractTemplate(cooperationContractTemplate, true);
+            contract.setServiceContractProvisioning(
+                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
         }

@@ -809,6 +809,42 @@ public class ContractStorageServiceTest {
 
     @Test
     @Transactional
+    void transitionCooperationContractRevokedNotAllowed() throws JSONException {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = coopContract.getConsumerId().replace("Participant:", "");
+        String provider = coopContract.getProviderId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        representedOrgaIds.add(provider);
+        CooperationContractTemplate template = new CooperationContractTemplate(coopContract, false);
+
+        template.setConsumerMerlotTncAccepted(true);
+        template.setConsumerProviderTncAccepted(true);
+        template.setConsumerOfferingTncAccepted(true);
+        template.setRuntimeSelection("5 day(s)");
+
+        CooperationContractTemplate result = (CooperationContractTemplate) contractStorageService
+                .updateContractTemplate(template, "token",
+                        consumer, representedOrgaIds);
+
+        result = (CooperationContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.SIGNED_CONSUMER, consumer, "userId");
+
+        result.setProviderMerlotTncAccepted(true);
+
+        CooperationContractTemplate result2 = (CooperationContractTemplate) contractStorageService
+                .updateContractTemplate(result, "token",
+                        representedOrgaIds.iterator().next(), representedOrgaIds);
+
+        assertEquals(result.isProviderMerlotTncAccepted(), result2.isProviderMerlotTncAccepted());
+
+        result = (CooperationContractTemplate) contractStorageService.transitionContractTemplateState(result.getId(),
+                ContractState.RELEASED, provider, "userId");
+
+        assertTransitionThrowsForbidden(result, ContractState.REVOKED, provider);
+    }
+
+    @Test
+    @Transactional
     void transitionDataDeliveryContractPurge() {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
@@ -970,6 +1006,26 @@ public class ContractStorageServiceTest {
         assertNull(template.getProviderSignerUserId());
         assertNotEquals(template.getServiceContractProvisioning().getId(),
                 saasContract.getServiceContractProvisioning().getId());
+        assertInstanceOf(DefaultProvisioning.class, template.getServiceContractProvisioning());
+    }
+
+    @Test
+    void regenerateCooperationContractValid() {
+        Set<String> representedOrgaIds = new HashSet<>();
+        String consumer = coopContract.getConsumerId().replace("Participant:", "");
+        representedOrgaIds.add(consumer);
+        ContractTemplate template = this.contractStorageService.transitionContractTemplateState(coopContract.getId(),
+                ContractState.DELETED, consumer, "1234");
+        template = this.contractStorageService.regenerateContract(template.getId(), representedOrgaIds);
+
+        assertNotEquals(template.getId(), coopContract.getId());
+        assertEquals(ContractState.IN_DRAFT, template.getState());
+        assertNull(template.getConsumerSignerUserId());
+        assertNull(template.getConsumerSignature());
+        assertNull(template.getProviderSignature());
+        assertNull(template.getProviderSignerUserId());
+        assertNotEquals(template.getServiceContractProvisioning().getId(),
+                coopContract.getServiceContractProvisioning().getId());
         assertInstanceOf(DefaultProvisioning.class, template.getServiceContractProvisioning());
     }
 
