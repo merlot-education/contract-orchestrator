@@ -87,65 +87,72 @@ public class ContractStorageService {
         // make sure selections are valid
         if (contract.getRuntimeSelection() != null
                 && !isValidRuntimeSelection(
-                contract.getRuntimeSelection(), serviceOfferingJson.getJSONArray("runtimeOption"))) {
+                contract.getRuntimeSelection(), serviceOfferingJson)) {
             return false;
         }
 
         if (contract instanceof SaasContractTemplate saasContract
                 && saasContract.getUserCountSelection() != null
                 && !isValidUserCountSelection(saasContract.getUserCountSelection(),
-                serviceOfferingJson.getJSONArray("userCountOption"))) {
+                serviceOfferingJson)) {
             return false;
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
                 && dataDeliveryContract.getExchangeCountSelection() != null
                 && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
-                serviceOfferingJson.getJSONArray("exchangeCountOption"))) {
+                serviceOfferingJson)) {
             return false;
         }
 
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, JSONArray options) throws JSONException {
-        boolean foundMatch = false;
+    private boolean isValidRuntimeSelection(String selection, JSONObject obj) throws JSONException {
+        if (selection.equals(SELECTION_INFINITE)) {
+            return obj.getBoolean("runtimeUnlimited");
+        }
+
+        JSONArray options = obj.getJSONArray("runtimeOption");
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("runtimeUnlimited") && selection.equals(SELECTION_INFINITE))
-                    || selection.equals(option.getInt("runtimeCount")
+            if (selection.equals(option.getInt("runtimeCount")
                     + " " + option.getString("runtimeMeasurement"))) {
-                foundMatch = true;
-                break;
+                return true;
             }
         }
-        return foundMatch;
+        return false;
     }
 
-    private boolean isValidUserCountSelection(String selection, JSONArray options) throws JSONException {
-        boolean foundMatch = false;
+    private boolean isValidUserCountSelection(String selection, JSONObject obj) throws JSONException {
+        if (selection.equals(SELECTION_INFINITE)) {
+            return obj.getBoolean("userCountUnlimited");
+        }
+
+        JSONArray options = obj.getJSONArray("userCountOption");
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("userCountUnlimited") && selection.equals(SELECTION_INFINITE))
-                    || selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
-                foundMatch = true;
-                break;
+            if (selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
+                return true;
             }
         }
-        return foundMatch;
+        return false;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, JSONArray options) throws JSONException {
-        boolean foundMatch = false;
+    private boolean isValidExchangeCountSelection(String selection, JSONObject obj) throws JSONException {
+        if (selection.equals(SELECTION_INFINITE)) {
+            return obj.getBoolean("exchangeCountUnlimited");
+        }
+
+        JSONArray options = obj.getJSONArray("exchangeCountOption");
+
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
-            if ((option.getBoolean("exchangeCountUnlimited") && selection.equals(SELECTION_INFINITE))
-                    || selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {
-                foundMatch = true;
-                break;
+            if (selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {
+                return true;
             }
         }
-        return foundMatch;
+        return false;
     }
 
     private void updateSaasContract(SaasContractTemplate targetContract,
