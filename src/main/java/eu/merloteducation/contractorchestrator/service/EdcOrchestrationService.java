@@ -123,20 +123,18 @@ public class EdcOrchestrationService {
     }
 
     private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
-                                                String assetId, String managementUrl, String accessToken) { // TODO add asset selector
+                                                String assetId, String managementUrl, String accessToken) {
         System.out.println("Create contract definition on " + managementUrl + " with token " + accessToken);
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
         createRequest.setAccessPolicyId(accessPolicyId);
         createRequest.setContractPolicyId(contractPolicyid);
         List<Criterion> assetSelector = new ArrayList<>();
-        //Criterion assetCriterion = new Criterion();
-        //assetCriterion.setOperator("=");
-        //assetCriterion.setOperandLeft("asset:prop:id");
-        //List<String> targetAssets = new ArrayList<>();
-        //targetAssets.add(assetId);
-        //assetCriterion.setOperandRight(assetId);
-        //assetSelector.add(assetCriterion);
+        Criterion assetCriterion = new Criterion();
+        assetCriterion.setOperator("=");
+        assetCriterion.setOperandLeft("https://w3id.org/edc/v0.0.1/ns/id");
+        assetCriterion.setOperandRight(assetId);
+        assetSelector.add(assetCriterion);
         createRequest.setAssetsSelector(assetSelector);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
