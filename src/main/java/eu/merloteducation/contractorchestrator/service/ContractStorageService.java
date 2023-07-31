@@ -110,10 +110,13 @@ public class ContractStorageService {
 
     private boolean isValidRuntimeSelection(String selection, JSONObject obj) throws JSONException {
         if (selection.equals(SELECTION_INFINITE)) {
-            return obj.getBoolean("runtimeUnlimited");
+            return obj.optBoolean("runtimeUnlimited", false);
         }
 
-        JSONArray options = obj.getJSONArray("runtimeOption");
+        JSONArray options = obj.optJSONArray("runtimeOption");
+        if (options == null) {
+            return false;
+        }
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
             if (selection.equals(option.getInt("runtimeCount")
@@ -126,10 +129,13 @@ public class ContractStorageService {
 
     private boolean isValidUserCountSelection(String selection, JSONObject obj) throws JSONException {
         if (selection.equals(SELECTION_INFINITE)) {
-            return obj.getBoolean("userCountUnlimited");
+            return obj.optBoolean("userCountUnlimited", false);
         }
 
-        JSONArray options = obj.getJSONArray("userCountOption");
+        JSONArray options = obj.optJSONArray("userCountOption");
+        if (options == null) {
+            return false;
+        }
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
             if (selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
@@ -141,11 +147,13 @@ public class ContractStorageService {
 
     private boolean isValidExchangeCountSelection(String selection, JSONObject obj) throws JSONException {
         if (selection.equals(SELECTION_INFINITE)) {
-            return obj.getBoolean("exchangeCountUnlimited");
+            return obj.optBoolean("exchangeCountUnlimited", false);
         }
 
-        JSONArray options = obj.getJSONArray("exchangeCountOption");
-
+        JSONArray options = obj.optJSONArray("exchangeCountOption");
+        if (options == null) {
+            return false;
+        }
         for (int i = 0; i < options.length(); i++) {
             JSONObject option = options.getJSONObject(i);
             if (selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {

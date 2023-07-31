@@ -101,12 +101,8 @@ public class ContractStorageServiceTest {
                             "hash": "asd"
                         }
                     ],
+                    "runtimeUnlimited": true,
                     "runtimeOption": [
-                        {
-                            "runtimeCount": 0,
-                            "runtimeMeasurement": null,
-                            "runtimeUnlimited": true
-                        },
                        {
                             "runtimeCount": 5,
                             "runtimeMeasurement": "day(s)",
@@ -191,22 +187,12 @@ public class ContractStorageServiceTest {
     @BeforeEach
     public void beforeEach() {
         String userCountOption = """
-                ,"userCountOption": [
-                                        {
-                                            "userCountUpTo": 0,
-                                            "userCountUnlimited": true
-                                        }
-                                    ]
+                ,"userCountUnlimited": true
                 """;
 
         String exchangeCountOption = """
                 ,"dataTransferType": "Pull"
-                ,"exchangeCountOption": [
-                                        {
-                                            "exchangeCountUpTo": 0,
-                                            "exchangeCountUnlimited": true
-                                        }
-                                    ]
+                ,"exchangeCountUnlimited": true
                 """;
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
