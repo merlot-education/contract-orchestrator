@@ -109,10 +109,6 @@ public class ContractStorageService {
     }
 
     private boolean isValidRuntimeSelection(String selection, JSONObject obj) throws JSONException {
-        if (selection.equals(SELECTION_INFINITE)) {
-            return obj.optBoolean("runtimeUnlimited", false);
-        }
-
         JSONArray options = obj.optJSONArray("runtimeOption");
         if (options == null) {
             return false;
@@ -128,10 +124,6 @@ public class ContractStorageService {
     }
 
     private boolean isValidUserCountSelection(String selection, JSONObject obj) throws JSONException {
-        if (selection.equals(SELECTION_INFINITE)) {
-            return obj.optBoolean("userCountUnlimited", false);
-        }
-
         JSONArray options = obj.optJSONArray("userCountOption");
         if (options == null) {
             return false;
@@ -146,10 +138,6 @@ public class ContractStorageService {
     }
 
     private boolean isValidExchangeCountSelection(String selection, JSONObject obj) throws JSONException {
-        if (selection.equals(SELECTION_INFINITE)) {
-            return obj.optBoolean("exchangeCountUnlimited", false);
-        }
-
         JSONArray options = obj.optJSONArray("exchangeCountOption");
         if (options == null) {
             return false;
@@ -467,7 +455,8 @@ public class ContractStorageService {
             }
             contract.setProviderSignerUserId(userId);
             contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
-            if (!contract.getRuntimeSelection().equals(SELECTION_INFINITE)) {
+            if (!(contract.getRuntimeSelection().startsWith("0")
+                    || contract.getRuntimeSelection().endsWith("unlimited"))) {
                 contract.getServiceContractProvisioning().setValidUntil(
                         this.computeValidityTimestamp(contract.getRuntimeSelection()));
             }

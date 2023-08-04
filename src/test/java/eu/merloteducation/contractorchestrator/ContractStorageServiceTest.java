@@ -101,11 +101,15 @@ public class ContractStorageServiceTest {
                             "hash": "asd"
                         }
                     ],
-                    "runtimeUnlimited": true,
                     "runtimeOption": [
                        {
                             "runtimeCount": 5,
                             "runtimeMeasurement": "day(s)",
+                            "runtimeUnlimited": false
+                        },
+                        {
+                            "runtimeCount": 0,
+                            "runtimeMeasurement": "unlimited",
                             "runtimeUnlimited": false
                         }
                     ],
@@ -187,12 +191,20 @@ public class ContractStorageServiceTest {
     @BeforeEach
     public void beforeEach() {
         String userCountOption = """
-                ,"userCountUnlimited": true
+                ,"userCountOption": [
+                    {
+                        userCountUpTo: 0
+                    }
+                ]
                 """;
 
         String exchangeCountOption = """
                 ,"dataTransferType": "Pull"
-                ,"exchangeCountUnlimited": true
+                ,"exchangeCountOption": [
+                    {
+                        exchangeCountUpTo: 0
+                    }
+                ]
                 """;
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
@@ -378,7 +390,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
-        template.setRuntimeSelection("unlimited");
+        template.setRuntimeSelection("0 unlimited");
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 representedOrgaIds.iterator().next(), representedOrgaIds);
 
@@ -396,7 +408,7 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(saasContract.getConsumerId().replace("Participant:", ""));
         SaasContractTemplate template = new SaasContractTemplate(saasContract, false);
 
-        template.setUserCountSelection("unlimited");
+        template.setUserCountSelection("0");
         SaasContractTemplate result = (SaasContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
                         representedOrgaIds.iterator().next(), representedOrgaIds);
@@ -411,7 +423,7 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(dataDeliveryContract.getConsumerId().replace("Participant:", ""));
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
                         representedOrgaIds.iterator().next(), representedOrgaIds);
@@ -770,7 +782,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
-        template.setUserCountSelection("unlimited");
+        template.setUserCountSelection("0");
         template.setRuntimeSelection("5 day(s)");
 
         SaasContractTemplate result = (SaasContractTemplate) contractStorageService
@@ -903,7 +915,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         template.setRuntimeSelection("5 day(s)");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setDataAddressTargetFileName("MyFile.json");
