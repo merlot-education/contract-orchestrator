@@ -102,15 +102,13 @@ public class ContractStorageServiceTest {
                         }
                     ],
                     "runtimeOption": [
-                        {
-                            "runtimeCount": 0,
-                            "runtimeMeasurement": null,
-                            "runtimeUnlimited": true
-                        },
                        {
                             "runtimeCount": 5,
-                            "runtimeMeasurement": "day(s)",
-                            "runtimeUnlimited": false
+                            "runtimeMeasurement": "day(s)"
+                        },
+                        {
+                            "runtimeCount": 0,
+                            "runtimeMeasurement": "unlimited"
                         }
                     ],
                     "merlotTermsAndConditionsAccepted": true,
@@ -192,21 +190,19 @@ public class ContractStorageServiceTest {
     public void beforeEach() {
         String userCountOption = """
                 ,"userCountOption": [
-                                        {
-                                            "userCountUpTo": 0,
-                                            "userCountUnlimited": true
-                                        }
-                                    ]
+                    {
+                        userCountUpTo: 0
+                    }
+                ]
                 """;
 
         String exchangeCountOption = """
                 ,"dataTransferType": "Pull"
                 ,"exchangeCountOption": [
-                                        {
-                                            "exchangeCountUpTo": 0,
-                                            "exchangeCountUnlimited": true
-                                        }
-                                    ]
+                    {
+                        exchangeCountUpTo: 0
+                    }
+                ]
                 """;
 
         lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
@@ -392,7 +388,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
-        template.setRuntimeSelection("unlimited");
+        template.setRuntimeSelection("0 unlimited");
         ContractTemplate result = contractStorageService.updateContractTemplate(template, "token",
                 representedOrgaIds.iterator().next(), representedOrgaIds);
 
@@ -410,7 +406,7 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(saasContract.getConsumerId().replace("Participant:", ""));
         SaasContractTemplate template = new SaasContractTemplate(saasContract, false);
 
-        template.setUserCountSelection("unlimited");
+        template.setUserCountSelection("0");
         SaasContractTemplate result = (SaasContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
                         representedOrgaIds.iterator().next(), representedOrgaIds);
@@ -425,7 +421,7 @@ public class ContractStorageServiceTest {
         representedOrgaIds.add(dataDeliveryContract.getConsumerId().replace("Participant:", ""));
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         DataDeliveryContractTemplate result = (DataDeliveryContractTemplate) contractStorageService
                 .updateContractTemplate(template, "token",
                         representedOrgaIds.iterator().next(), representedOrgaIds);
@@ -635,11 +631,11 @@ public class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
-        template.setRuntimeSelection("unlimited");
+        template.setRuntimeSelection("0 unlimited");
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
@@ -672,8 +668,8 @@ public class ContractStorageServiceTest {
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
         String templateId = template.getId();
-        template.setExchangeCountSelection("unlimited");
-        template.setRuntimeSelection("unlimited");
+        template.setExchangeCountSelection("0");
+        template.setRuntimeSelection("0 unlimited");
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
@@ -753,8 +749,8 @@ public class ContractStorageServiceTest {
         DataDeliveryProvisioning provisioning =
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         String templateId = template.getId();
-        template.setExchangeCountSelection("unlimited");
-        template.setRuntimeSelection("unlimited");
+        template.setExchangeCountSelection("0");
+        template.setRuntimeSelection("0 unlimited");
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
@@ -784,7 +780,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
-        template.setUserCountSelection("unlimited");
+        template.setUserCountSelection("0");
         template.setRuntimeSelection("5 day(s)");
 
         SaasContractTemplate result = (SaasContractTemplate) contractStorageService
@@ -917,7 +913,7 @@ public class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         template.setRuntimeSelection("5 day(s)");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setDataAddressTargetFileName("MyFile.json");
