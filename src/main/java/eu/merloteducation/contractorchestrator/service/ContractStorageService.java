@@ -36,7 +36,6 @@ public class ContractStorageService {
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
     private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
-    private static final String SELECTION_INFINITE = "unlimited";
 
     private static final String ORGA_PREFIX = "Participant:";
 

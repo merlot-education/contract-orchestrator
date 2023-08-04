@@ -63,12 +63,12 @@ class EdcOrchestrationServiceTest {
         ReflectionTestUtils.setField(edcOrchestrationService, "restTemplate", restTemplate);
 
         validPushContract = new DataDeliveryContractTemplate();
-        validPushContract.setRuntimeSelection("unlimited");
+        validPushContract.setRuntimeSelection("0 unlimited");
         validPushContract.setConsumerMerlotTncAccepted(true);
         validPushContract.setConsumerOfferingTncAccepted(true);
         validPushContract.setConsumerProviderTncAccepted(true);
         validPushContract.setProviderMerlotTncAccepted(true);
-        validPushContract.setExchangeCountSelection("unlimited");
+        validPushContract.setExchangeCountSelection("0");
         validPushContract.setConsumerId("Participant:10");
         validPushContract.setProviderId("Participant:20");
         validPushContract.setConsumerSignature("1234");
@@ -99,12 +99,12 @@ class EdcOrchestrationServiceTest {
         validPullContract.transitionState(ContractState.RELEASED);
 
         wrongTypeContract = new SaasContractTemplate();
-        wrongTypeContract.setRuntimeSelection("unlimited");
+        wrongTypeContract.setRuntimeSelection("0 unlimited");
         wrongTypeContract.setConsumerMerlotTncAccepted(true);
         wrongTypeContract.setConsumerOfferingTncAccepted(true);
         wrongTypeContract.setConsumerProviderTncAccepted(true);
         wrongTypeContract.setProviderMerlotTncAccepted(true);
-        wrongTypeContract.setUserCountSelection("unlimited");
+        wrongTypeContract.setUserCountSelection("0");
         wrongTypeContract.setConsumerId("Participant:10");
         wrongTypeContract.setProviderId("Participant:20");
         wrongTypeContract.setConsumerSignature("1234");

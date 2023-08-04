@@ -104,13 +104,11 @@ public class ContractStorageServiceTest {
                     "runtimeOption": [
                        {
                             "runtimeCount": 5,
-                            "runtimeMeasurement": "day(s)",
-                            "runtimeUnlimited": false
+                            "runtimeMeasurement": "day(s)"
                         },
                         {
                             "runtimeCount": 0,
-                            "runtimeMeasurement": "unlimited",
-                            "runtimeUnlimited": false
+                            "runtimeMeasurement": "unlimited"
                         }
                     ],
                     "merlotTermsAndConditionsAccepted": true,
@@ -633,11 +631,11 @@ public class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
-        template.setExchangeCountSelection("unlimited");
+        template.setExchangeCountSelection("0");
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
-        template.setRuntimeSelection("unlimited");
+        template.setRuntimeSelection("0 unlimited");
         contractTemplateRepository.save(template);
         assertTransitionThrowsForbidden(template, ContractState.SIGNED_CONSUMER, consumer);
 
@@ -670,8 +668,8 @@ public class ContractStorageServiceTest {
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
         String templateId = template.getId();
-        template.setExchangeCountSelection("unlimited");
-        template.setRuntimeSelection("unlimited");
+        template.setExchangeCountSelection("0");
+        template.setRuntimeSelection("0 unlimited");
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
@@ -751,8 +749,8 @@ public class ContractStorageServiceTest {
         DataDeliveryProvisioning provisioning =
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
         String templateId = template.getId();
-        template.setExchangeCountSelection("unlimited");
-        template.setRuntimeSelection("unlimited");
+        template.setExchangeCountSelection("0");
+        template.setRuntimeSelection("0 unlimited");
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
