@@ -241,6 +241,9 @@ public class ContractStorageService {
     private OffsetDateTime computeValidityTimestamp(String runtimeSelection) {
         String[] runtimeParts = runtimeSelection.split(" ");
         long numPart = Long.parseLong(runtimeParts[0]);
+        if (numPart == 0L || runtimeParts[1].equals("unlimited")) {
+            return null;
+        }
         TemporalAmount temporalAmount = switch (runtimeParts[1]) {
             case "hour(s)" -> Duration.ofHours(numPart);
             case "day(s)" -> Duration.ofDays(numPart);
@@ -454,11 +457,8 @@ public class ContractStorageService {
             }
             contract.setProviderSignerUserId(userId);
             contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
-            if (!(contract.getRuntimeSelection().startsWith("0")
-                    || contract.getRuntimeSelection().endsWith("unlimited"))) {
-                contract.getServiceContractProvisioning().setValidUntil(
-                        this.computeValidityTimestamp(contract.getRuntimeSelection()));
-            }
+            contract.getServiceContractProvisioning().setValidUntil(
+                    this.computeValidityTimestamp(contract.getRuntimeSelection()));
         }
 
         if (targetState == ContractState.PURGED) {
