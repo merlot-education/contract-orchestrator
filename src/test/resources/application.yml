@@ -44,3 +44,9 @@ serviceoffering-orchestrator:
 
 organizations-orchestrator:
   base-uri: http://localhost:8082/api
+
+cors:
+  global:
+    origins:
+    patterns: >
+      http://localhost:[*]
