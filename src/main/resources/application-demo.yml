@@ -1,0 +1,5 @@
+cors:
+  global:
+    origins: >
+      https://marketplace.demo.merlot-education.eu
+    patterns:
