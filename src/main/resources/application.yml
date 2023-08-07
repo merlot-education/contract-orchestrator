@@ -62,6 +62,6 @@ organizations-orchestrator:
 
 cors:
   global:
-    origins: >
-      http://localhost:4200
-    patterns:
+    origins:
+    patterns: >
+      http://localhost:[*]
