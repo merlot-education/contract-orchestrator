@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/")
 public class ContractsController {
 
