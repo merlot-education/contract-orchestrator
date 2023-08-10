@@ -19,6 +19,7 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     private String exchangeCountSelection;
 
     // copied from the service offering in order to decide access policy on data transfer
+    // TODO remove this field once DTOs are handled properly
     @JsonView(ContractViews.DetailedView.class)
     private String dataTransferType;
 
@@ -32,6 +33,11 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
         this.exchangeCountSelection = template.getExchangeCountSelection();
         this.dataTransferType = template.getDataTransferType();
         setServiceContractProvisioning(template.getServiceContractProvisioning());
+    }
+
+    @Override
+    public DataDeliveryProvisioning getServiceContractProvisioning() {
+        return (DataDeliveryProvisioning) super.getServiceContractProvisioning();
     }
 
     @Override

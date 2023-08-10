@@ -1,7 +1,15 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.merloteducation.contractorchestrator.models.OfferingDetails;
+import eu.merloteducation.contractorchestrator.models.OfferingTerms;
+import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.dto.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import jakarta.transaction.Transactional;
@@ -51,13 +59,19 @@ public class ContractStorageService {
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
+    @Autowired
+    private ContractMapper contractMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${serviceoffering-orchestrator.base-uri}")
     private String serviceOfferingOrchestratorBaseUri;
 
     @Value("${organizations-orchestrator.base-uri}")
     private String organizationsOrchestratorBaseUri;
 
-    private JSONObject requestServiceOfferingDetails(String authToken, String offeringId) throws JSONException {
+    private OfferingDetails requestServiceOfferingDetails(String authToken, String offeringId) throws JsonProcessingException {
         // request details about service offering
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", authToken);
@@ -66,7 +80,8 @@ public class ContractStorageService {
                 serviceOfferingOrchestratorBaseUri + "/serviceoffering/" + offeringId,
                 HttpMethod.GET, request, String.class).getBody();
 
-        return new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return objectMapper.readValue(serviceOfferingResponse, OfferingDetails.class); // TODO replace this with actual model once common library is created
     }
 
     private JSONObject requestOrganizationDetails(String orgaId, String authToken) throws JSONException {
@@ -266,7 +281,7 @@ public class ContractStorageService {
      */
     @Transactional
     public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
-            throws JSONException {
+            throws JSONException, JsonProcessingException {
 
         // check that fields are in a valid format
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
@@ -274,22 +289,22 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
-        JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
+        OfferingDetails offeringDetails = requestServiceOfferingDetails(authToken,
                 contractCreateRequest.getOfferingId());
-        if (!serviceOfferingJson.getString("merlotState").equals("RELEASED")) {
+        if (!offeringDetails.getState().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingSaaS")) {
+        if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingSaaS")) {
             contract = new SaasContractTemplate();
-        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingDataDelivery")) {
+        } else if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingDataDelivery")) {
             contract = new DataDeliveryContractTemplate();
             // also store a copy of the data transfer type to later decide who can initiate a transfer
-            ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
-        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingCooperation")) {
+            ((DataDeliveryContractTemplate) contract).setDataTransferType(offeringDetails.getDataTransferType());
+        } else if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingCooperation")) {
             contract = new CooperationContractTemplate();
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
@@ -505,6 +520,25 @@ public class ContractStorageService {
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
         System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        OrganizationDetails consumerDetails = new OrganizationDetails();
+        consumerDetails.setOrganizationLegalName("consumer");
+        OrganizationDetails providerDetails = new OrganizationDetails();
+        providerDetails.setOrganizationLegalName("provider");
+        OfferingDetails offeringDetails = new OfferingDetails();
+        List<OfferingTerms> terms = new ArrayList<>();
+        OfferingTerms term = new OfferingTerms();
+        term.setContent("content");
+        term.setHash("hash");
+        terms.add(term);
+        offeringDetails.setTermsAndConditions(terms);
+
+        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate) {
+            DataDeliveryContractDetailsDto contractDetailsDto = contractMapper.contractToContractDetailsDto(dataDeliveryContractTemplate,
+                    providerDetails, consumerDetails, offeringDetails);
+            System.out.println(contractDetailsDto);
+        }
+
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
