@@ -30,6 +30,11 @@ public class MessageQueueService {
         );
     }
 
+    /**
+     * Send a contract creation message to the message bus.
+     *
+     * @param contractTemplateUpdated data about the created contract
+     */
     public void sendContractCreatedMessage(ContractTemplateUpdated contractTemplateUpdated) {
         logger.info("Sending contract created message for contract with id {} and offering with id {}",
                 contractTemplateUpdated.getContractId(),
@@ -37,6 +42,11 @@ public class MessageQueueService {
         sendContractUpdatedMessage(contractTemplateUpdated, MessageQueueConfig.CONTRACT_CREATED_KEY);
     }
 
+    /**
+     * Send a contract purge message to the message bus.
+     *
+     * @param contractTemplateUpdated data about the purged contract
+     */
     public void sendContractPurgedMessage(ContractTemplateUpdated contractTemplateUpdated) {
         logger.info("Sending contract purged message for contract with id {} and offering with id {}",
                 contractTemplateUpdated.getContractId(),
@@ -44,6 +54,12 @@ public class MessageQueueService {
         sendContractUpdatedMessage(contractTemplateUpdated, MessageQueueConfig.CONTRACT_PURGED_KEY);
     }
 
+    /**
+     * Request details of an organization over the message bus.
+     *
+     * @param orgaId organization id
+     * @return organization details
+     */
     public OrganizationDetails remoteRequestOrganizationDetails(String orgaId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
@@ -54,6 +70,13 @@ public class MessageQueueService {
         );
     }
 
+    /**
+     * Request details of an organization connector over the message bus.
+     *
+     * @param orgaId organization id
+     * @param connectorId connector id
+     * @return connector details
+     */
     public OrganisationConnectorExtension remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,

@@ -54,10 +54,18 @@ public class DataTransferController {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * POST request to start automated contract negotiation over a given contract id.
+     *
+     * @param contractId contract id
+     * @param activeRole currently selected role by the user in the frontend
+     * @param principal  user auth data
+     * @return negotiation initiation response
+     */
     @PostMapping("/contract/{contractId}/negotiation/start")
     public EdcIdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
-                                               @RequestHeader(name = "Active-Role") String activeRole,
-                                               Principal principal) throws Exception {
+                                                  @RequestHeader(name = "Active-Role") String activeRole,
+                                                  Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
@@ -66,11 +74,20 @@ public class DataTransferController {
         return new EdcIdResponse(edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRoleOrgaId, orgaIds));
     }
 
+    /**
+     * GET request to get the current status of the automated negotiation over a contract.
+     *
+     * @param contractId    contract id
+     * @param negotiationId negotiation id
+     * @param activeRole    currently selected role by the user in the frontend
+     * @param principal     user auth data
+     * @return status of negotiation
+     */
     @GetMapping("/contract/{contractId}/negotiation/{negotiationId}/status")
     public EdcNegotiationStatus getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
                                                              @PathVariable(value = "negotiationId") String negotiationId,
                                                              @RequestHeader(name = "Active-Role") String activeRole,
-                                                             Principal principal) throws Exception {
+                                                             Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
@@ -80,11 +97,20 @@ public class DataTransferController {
                 edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
 
+    /**
+     * POST request for initiating a transfer over a succeded automated negotiation of a contract
+     *
+     * @param contractId    contract id
+     * @param negotiationId negotiation id
+     * @param activeRole    currently selected role by the user in the frontend
+     * @param principal     user auth data
+     * @return transfer initiation response
+     */
     @PostMapping("/contract/{contractId}/negotiation/{negotiationId}/transfer/start")
     public EdcIdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
-                                              @PathVariable(value = "negotiationId") String negotiationId,
-                                               @RequestHeader(name = "Active-Role") String activeRole,
-                                               Principal principal) throws Exception {
+                                                 @PathVariable(value = "negotiationId") String negotiationId,
+                                                 @RequestHeader(name = "Active-Role") String activeRole,
+                                                 Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
@@ -93,11 +119,20 @@ public class DataTransferController {
         return new EdcIdResponse(edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId, activeRoleOrgaId, orgaIds));
     }
 
+    /**
+     * GET request to get the current transfer status of a given transfer of a contract.
+     *
+     * @param contractId contract id
+     * @param transferId transfer id
+     * @param activeRole currently selected role by the user in the frontend
+     * @param principal  user auth data
+     * @return status of transfer
+     */
     @GetMapping("/contract/{contractId}/transfer/{transferId}/status")
     public EdcTransferStatus getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "transferId") String transferId,
                                                   @RequestHeader(name = "Active-Role") String activeRole,
-                                                  Principal principal) throws Exception {
+                                                  Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {

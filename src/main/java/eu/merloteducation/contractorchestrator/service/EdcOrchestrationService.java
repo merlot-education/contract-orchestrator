@@ -314,6 +314,15 @@ public class EdcOrchestrationService {
                         orgaId.replace("Participant:", ""), connectorId);
     }
 
+    /**
+     * Given a contract id, a role and a set of represented organizations, start the automated EDC negotiation
+     * over the contract.
+     *
+     * @param contractId contract id
+     * @param activeRoleOrgaId currently active role
+     * @param representedOrgaIds represented organizations
+     * @return negotiation initiation response
+     */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
         DataDeliveryContractTemplate template = validateContract(
@@ -368,6 +377,15 @@ public class EdcOrchestrationService {
                 consumerConnector.getConnectorAccessToken());
     }
 
+    /**
+     * Given a negotiation id and a contract, return the current status of the automated EDC negotiation.
+     *
+     * @param negotiationId negotiation id
+     * @param contractId contract id
+     * @param activeRoleOrgaId currently active role
+     * @param representedOrgaIds represented organizations
+     * @return status of negotiation
+     */
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds) {
         DataDeliveryContractTemplate template = validateContract(
@@ -382,6 +400,15 @@ public class EdcOrchestrationService {
                 consumerConnector.getConnectorAccessToken());
     }
 
+    /**
+     * Given a (completed) EDC negotiation id and a contract id, start the EDC data transfer over the contract.
+     *
+     * @param negotiationId negotiation id
+     * @param contractId contract id
+     * @param activeRoleOrgaId currently active role
+     * @param representedOrgaIds represented organizations
+     * @return transfer initiation response
+     */
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 Set<String> representedOrgaIds) {
         DataDeliveryContractTemplate template = validateContract(
@@ -409,6 +436,15 @@ public class EdcOrchestrationService {
                 consumerConnector.getConnectorAccessToken());
     }
 
+    /**
+     * Given a transfer id and a contract, get the current status of the data transfer.
+     *
+     * @param transferId transfer id
+     * @param contractId contract id
+     * @param activeRoleOrgaId currently active role
+     * @param representedOrgaIds represented organizations
+     * @return status of transfer
+     */
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
                                                     Set<String> representedOrgaIds) {
         DataDeliveryContractTemplate template = validateContract(
@@ -422,15 +458,5 @@ public class EdcOrchestrationService {
         return checkTransferStatus(transferId, consumerConnector.getManagementBaseUrl(),
                 consumerConnector.getConnectorAccessToken());
     }
-
-    public void getAllTransfers(ContractTemplate template, String activeOrgaId) {
-        // TODO fetch data from management endpoint by POSTing at /v2/transferprocesses/request
-    }
-
-    public void getAllNegotiations(ContractTemplate template, String activeOrgaId) {
-        // TODO fetch data from management endpoint by POSTing at /v2/contractnegotiations/request
-    }
-
-
 
 }
