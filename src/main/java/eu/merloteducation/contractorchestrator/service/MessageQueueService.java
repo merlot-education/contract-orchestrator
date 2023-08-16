@@ -2,8 +2,8 @@ package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.config.MessageQueueConfig;
 import eu.merloteducation.contractorchestrator.models.ConnectorDetailsRequest;
-import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +11,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class MessageQueueService {

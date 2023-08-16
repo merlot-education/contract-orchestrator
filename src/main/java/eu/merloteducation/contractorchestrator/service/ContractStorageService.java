@@ -1,12 +1,8 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.merloteducation.contractorchestrator.models.OfferingDetails;
-import eu.merloteducation.contractorchestrator.models.OfferingTerms;
-import eu.merloteducation.contractorchestrator.models.OrganizationDetails;
-import eu.merloteducation.contractorchestrator.models.dto.DataDeliveryContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
@@ -32,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
@@ -48,6 +45,12 @@ public class ContractStorageService {
     private static final String ORGA_PREFIX = "Participant:";
 
     @Autowired
+    private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
+
+    @Autowired
+    private OrganizationOrchestratorClient organizationOrchestratorClient;
+
+    @Autowired
     private RestTemplate restTemplate;
 
     @Autowired
@@ -62,103 +65,67 @@ public class ContractStorageService {
     @Autowired
     private ContractMapper contractMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Value("${serviceoffering-orchestrator.base-uri}")
-    private String serviceOfferingOrchestratorBaseUri;
-
-    @Value("${organizations-orchestrator.base-uri}")
-    private String organizationsOrchestratorBaseUri;
-
-    private OfferingDetails requestServiceOfferingDetails(String authToken, String offeringId) throws JsonProcessingException {
-        // request details about service offering
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", authToken);
-        HttpEntity<String> request = new HttpEntity<>(null, headers);
-        String serviceOfferingResponse = restTemplate.exchange(
-                serviceOfferingOrchestratorBaseUri + "/serviceoffering/" + offeringId,
-                HttpMethod.GET, request, String.class).getBody();
-
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return objectMapper.readValue(serviceOfferingResponse, OfferingDetails.class); // TODO replace this with actual model once common library is created
-    }
-
-    private JSONObject requestOrganizationDetails(String orgaId, String authToken) throws JSONException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", authToken);
-        HttpEntity<String> request = new HttpEntity<>(null, headers);
-
-        String organizationResponse = restTemplate.exchange(
-                organizationsOrchestratorBaseUri + "/organization/" + orgaId,
-                HttpMethod.GET, request, String.class).getBody();
-        return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
-    }
-
     private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
-        JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken, contract.getOfferingId());
+        OfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
+                contract.getOfferingId(), Map.of("Authorization", authToken));
 
         // make sure selections are valid
         if (contract.getRuntimeSelection() != null
                 && !isValidRuntimeSelection(
-                contract.getRuntimeSelection(), serviceOfferingJson)) {
+                contract.getRuntimeSelection(), offeringDetails)) {
             return false;
         }
 
         if (contract instanceof SaasContractTemplate saasContract
                 && saasContract.getUserCountSelection() != null
                 && !isValidUserCountSelection(saasContract.getUserCountSelection(),
-                serviceOfferingJson)) {
+                (SaasOfferingDetails) offeringDetails)) {
             return false;
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
                 && dataDeliveryContract.getExchangeCountSelection() != null
                 && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
-                serviceOfferingJson)) {
+                (DataDeliveryOfferingDetails) offeringDetails)) {
             return false;
         }
 
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("runtimeOption");
-        if (options == null) {
+    private boolean isValidRuntimeSelection(String selection, OfferingDetails offeringDetails) throws JSONException {
+        if (offeringDetails.getRuntimeOption() == null || offeringDetails.getRuntimeOption().isEmpty()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(option.getInt("runtimeCount")
-                    + " " + option.getString("runtimeMeasurement"))) {
+
+        for (OfferingRuntimeOption option : offeringDetails.getRuntimeOption()) {
+            if (selection.equals(option.getRuntimeCount() + " " + option.getRuntimeMeasurement())) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isValidUserCountSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("userCountOption");
-        if (options == null) {
+    private boolean isValidUserCountSelection(String selection, SaasOfferingDetails offeringDetails) throws JSONException {
+        if (offeringDetails.getUserCountOption() == null || offeringDetails.getUserCountOption().isEmpty()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
+
+        for (OfferingUserCountOption option : offeringDetails.getUserCountOption()) {
+            if (selection.equals(String.valueOf(option.getUserCountUpTo()))) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("exchangeCountOption");
-        if (options == null) {
+    private boolean isValidExchangeCountSelection(String selection, DataDeliveryOfferingDetails offeringDetails) throws JSONException {
+        if (offeringDetails.getExchangeCountOption() == null || offeringDetails.getExchangeCountOption().isEmpty()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {
+
+        for (OfferingExchangeCountOption option : offeringDetails.getExchangeCountOption()) {
+            if (selection.equals(String.valueOf(option.getExchangeCountUpTo()))) {
                 return true;
             }
         }
@@ -176,10 +143,8 @@ public class ContractStorageService {
                                             DataDeliveryContractTemplate editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
-        DataDeliveryProvisioning targetProvisioning =
-                (DataDeliveryProvisioning) targetContract.getServiceContractProvisioning();
-        DataDeliveryProvisioning editedProvisioning =
-                (DataDeliveryProvisioning) editedContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning editedProvisioning = editedContract.getServiceContractProvisioning();
 
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(
@@ -289,40 +254,37 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
-        OfferingDetails offeringDetails = requestServiceOfferingDetails(authToken,
-                contractCreateRequest.getOfferingId());
-        if (!offeringDetails.getState().equals("RELEASED")) {
+        OfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
+                contractCreateRequest.getOfferingId(), Map.of("Authorization", authToken));
+
+        // in case someone with access rights to the state attempts to load this check the state as well
+        if (offeringDetails.getState() != null && !offeringDetails.getState().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingSaaS")) {
-            contract = new SaasContractTemplate();
-        } else if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingDataDelivery")) {
-            contract = new DataDeliveryContractTemplate();
-            // also store a copy of the data transfer type to later decide who can initiate a transfer
-            ((DataDeliveryContractTemplate) contract).setDataTransferType(offeringDetails.getDataTransferType());
-        } else if (offeringDetails.getType().equals("merlot:MerlotServiceOfferingCooperation")) {
-            contract = new CooperationContractTemplate();
-        } else {
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
+        switch (offeringDetails.getType()) {
+            case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
+            case "merlot:MerlotServiceOfferingDataDelivery" -> {
+                contract = new DataDeliveryContractTemplate();
+                // also store a copy of the data transfer type to later decide who can initiate a transfer
+                ((DataDeliveryContractTemplate) contract).setDataTransferType(
+                        ((DataDeliveryOfferingDetails) offeringDetails).getDataTransferType());
+            }
+            case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
+            default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
 
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
 
-        contract.setOfferingName(serviceOfferingJson.getString("name"));
-        contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
-        if (!serviceOfferingJson.isNull("attachments")) {
-            List<String> attachments = new ArrayList<>();
-            JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
-            for (int i = 0; i < jsonAttachments.length(); i++) {
-                attachments.add(jsonAttachments.get(0).toString());
-            }
-            contract.setOfferingAttachments(attachments);
+        contract.setOfferingName(offeringDetails.getName());
+        contract.setProviderId(offeringDetails.getOfferedBy());
+        if (offeringDetails.getAttachments() != null) {
+            contract.setOfferingAttachments(offeringDetails.getAttachments());
         }
 
         // check if consumer and provider are equal, and if so abort
@@ -330,9 +292,10 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Provider and consumer must not be equal.");
         }
 
-        JSONObject organizationJson = requestOrganizationDetails(
-                contract.getProviderId().replace(ORGA_PREFIX, ""), authToken);
-        contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
+        OrganizationDetails organizationDetails = organizationOrchestratorClient.getOrganizationDetails(
+                contract.getProviderId().replace(ORGA_PREFIX, ""),
+                Map.of("Authorization", authToken));
+        contract.setProviderTncUrl(organizationDetails.getTermsAndConditionsLink());
 
         contract = contractTemplateRepository.save(contract);
 
@@ -520,24 +483,6 @@ public class ContractStorageService {
     public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
         System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        OrganizationDetails consumerDetails = new OrganizationDetails();
-        consumerDetails.setOrganizationLegalName("consumer");
-        OrganizationDetails providerDetails = new OrganizationDetails();
-        providerDetails.setOrganizationLegalName("provider");
-        OfferingDetails offeringDetails = new OfferingDetails();
-        List<OfferingTerms> terms = new ArrayList<>();
-        OfferingTerms term = new OfferingTerms();
-        term.setContent("content");
-        term.setHash("hash");
-        terms.add(term);
-        offeringDetails.setTermsAndConditions(terms);
-
-        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContractTemplate) {
-            DataDeliveryContractDetailsDto contractDetailsDto = contractMapper.contractToContractDetailsDto(dataDeliveryContractTemplate,
-                    providerDetails, consumerDetails, offeringDetails);
-            System.out.println(contractDetailsDto);
-        }
 
 
         if (contract == null) {

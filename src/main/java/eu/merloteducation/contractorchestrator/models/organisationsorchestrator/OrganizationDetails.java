@@ -1,7 +1,5 @@
-package eu.merloteducation.contractorchestrator.models;
+package eu.merloteducation.contractorchestrator.models.organisationsorchestrator;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

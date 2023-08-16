@@ -1,4 +1,4 @@
-package eu.merloteducation.contractorchestrator.models;
+package eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator;
 
 import lombok.Getter;
 import lombok.Setter;

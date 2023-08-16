@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
