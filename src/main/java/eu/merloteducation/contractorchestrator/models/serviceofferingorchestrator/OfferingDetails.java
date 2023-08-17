@@ -2,8 +2,6 @@ package eu.merloteducation.contractorchestrator.models.serviceofferingorchestrat
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplateDeserializer;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,11 +17,19 @@ import java.util.List;
 })
 public abstract class OfferingDetails {
 
-    private List<OfferingTerms> termsAndConditions;
-    private List<String> attachments;
-    private String state;
+    private String id;
+    private String sdHash;
     private String name;
+    private String creationDate;
     private String offeredBy;
+    private String merlotState;
     private String type;
+
+    private String description;
+    private String modifiedDate;
+    private String exampleCosts;
+    private List<String> attachments;
+    private List<OfferingTerms> termsAndConditions;
     private List<OfferingRuntimeOption> runtimeOption;
+    private boolean merlotTermsAndConditionsAccepted;
 }

@@ -16,13 +16,9 @@ public class ContractDetailsDto extends ContractBasicDto {
 
     private String type;
 
-    private List<String> offeringAttachments;
-
     private String providerTncUrl;
 
     private String runtimeSelection;
-
-    private List<OfferingTerms> offeringTermsAndConditions;
 
     private String additionalAgreements;
 

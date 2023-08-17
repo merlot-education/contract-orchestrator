@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.dto;
 
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.OfferingDetails;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -14,9 +15,7 @@ public class ContractBasicDto {
     private String id;
     private OffsetDateTime creationDate;
 
-    private String offeringId;
-
-    private String offeringName;
+    private OfferingDetails offering;
 
     private String providerId;
 

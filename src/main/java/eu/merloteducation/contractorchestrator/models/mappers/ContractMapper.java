@@ -25,9 +25,10 @@ public interface ContractMapper {
 
     @Mapping(target = "id", source = "contract.id")
     @Mapping(target = "state", source = "contract.state")
+    @Mapping(target = "creationDate", source = "contract.creationDate")
     @Mapping(target = "providerLegalName", source = "providerOrgaDetails.organizationLegalName")
     @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails.organizationLegalName")
-    @Mapping(target = "offeringName", source = "offeringDetails.name")
+    @Mapping(target = "offering", source = "offeringDetails")
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
                                                 OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,
@@ -35,7 +36,6 @@ public interface ContractMapper {
 
     @InheritConfiguration
     @Mapping(target = "type", source = "contract.type")
-    @Mapping(target = "offeringTermsAndConditions", source = "offeringDetails.termsAndConditions")
     @Mapping(target = "validUntil", source = "contract.serviceContractProvisioning.validUntil")
     ContractDetailsDto contractToContractDetailsDto(ContractTemplate contract,
                                                     OrganizationDetails providerOrgaDetails,
@@ -55,7 +55,6 @@ public interface ContractMapper {
                                                         SaasOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
-    @Mapping(target = "dataTransferType", source = "offeringDetails.dataTransferType")
     @Mapping(target = "dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType")
     @Mapping(target = "dataAddressSourceBucketName", source = "contract.serviceContractProvisioning.dataAddressSourceBucketName")
     @Mapping(target = "dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName")

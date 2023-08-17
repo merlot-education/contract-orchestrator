@@ -285,7 +285,7 @@ public class ContractStorageService {
                 contractCreateRequest.getOfferingId(), Map.of("Authorization", authToken));
 
         // in case someone with access rights to the state attempts to load this check the state as well
-        if (offeringDetails.getState() != null && !offeringDetails.getState().equals("RELEASED")) {
+        if (offeringDetails.getMerlotState() != null && !offeringDetails.getMerlotState().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 

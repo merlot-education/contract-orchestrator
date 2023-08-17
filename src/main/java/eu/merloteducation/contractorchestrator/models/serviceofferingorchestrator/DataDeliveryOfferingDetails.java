@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 public class DataDeliveryOfferingDetails extends OfferingDetails {
+    private String dataAccessType;
     private String dataTransferType;
     private List<OfferingExchangeCountOption> exchangeCountOption;
 }

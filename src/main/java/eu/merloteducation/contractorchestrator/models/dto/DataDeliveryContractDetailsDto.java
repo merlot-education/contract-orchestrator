@@ -11,8 +11,6 @@ public class DataDeliveryContractDetailsDto extends ContractDetailsDto {
 
     private String exchangeCountSelection;
 
-    private String dataTransferType;
-
     @JsonView(ContractViews.ProviderView.class)
     private String dataAddressType;
 
