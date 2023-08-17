@@ -27,6 +27,7 @@ public interface ContractMapper {
     @Mapping(target = "state", source = "contract.state")
     @Mapping(target = "providerLegalName", source = "providerOrgaDetails.organizationLegalName")
     @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails.organizationLegalName")
+    @Mapping(target = "offeringName", source = "offeringDetails.name")
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
                                                 OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,

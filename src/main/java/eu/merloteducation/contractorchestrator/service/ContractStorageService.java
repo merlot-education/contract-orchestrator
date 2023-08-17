@@ -241,7 +241,7 @@ public class ContractStorageService {
 
         OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
                 Map.of("Authorization", authToken));
-        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of("Authorization", authToken));
         OfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
@@ -294,13 +294,7 @@ public class ContractStorageService {
 
         switch (offeringDetails.getType()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
-            case "merlot:MerlotServiceOfferingDataDelivery" -> {
-                contract = new DataDeliveryContractTemplate();
-                // also store a copy of the data transfer type to later decide who can initiate a transfer
-                // TODO remove
-                ((DataDeliveryContractTemplate) contract).setDataTransferType(
-                        ((DataDeliveryOfferingDetails) offeringDetails).getDataTransferType());
-            }
+            case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
             default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
@@ -308,9 +302,6 @@ public class ContractStorageService {
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
-
-        // TODO remove
-        contract.setOfferingName(offeringDetails.getName());
         contract.setProviderId(offeringDetails.getOfferedBy());
         if (offeringDetails.getAttachments() != null) {
             contract.setOfferingAttachments(offeringDetails.getAttachments());
