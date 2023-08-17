@@ -1,6 +1,8 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
@@ -235,6 +237,30 @@ public class ContractStorageService {
         return OffsetDateTime.now().plus(temporalAmount);
     }
 
+    private ContractDetailsDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
+
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of("Authorization", authToken));
+        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of("Authorization", authToken));
+        OfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+
+        if (template instanceof DataDeliveryContractTemplate dataTemplate
+                && offeringDetails instanceof DataDeliveryOfferingDetails dataOfferingDetails) {
+            return contractMapper.contractToContractDetailsDto(dataTemplate, providerDetails,
+                    consumerDetails, dataOfferingDetails);
+        } else if (template instanceof SaasContractTemplate saasTemplate
+                && offeringDetails instanceof SaasOfferingDetails saasOfferingDetails) {
+            return contractMapper.contractToContractDetailsDto(saasTemplate, providerDetails,
+                    consumerDetails, saasOfferingDetails);
+        } else if (template instanceof CooperationContractTemplate coopTemplate
+                && offeringDetails instanceof CooperationContractOfferingDetails coopOfferingDetails) {
+            return contractMapper.contractToContractDetailsDto(coopTemplate, providerDetails,
+                    consumerDetails, coopOfferingDetails);
+        }
+        throw new IllegalArgumentException("Unknown contract or offering type.");
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -245,8 +271,8 @@ public class ContractStorageService {
      * @return Instantiated contract object from the database
      */
     @Transactional
-    public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
-            throws JSONException, JsonProcessingException {
+    public ContractDetailsDto addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
+            throws JSONException {
 
         // check that fields are in a valid format
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
@@ -254,6 +280,7 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
+        // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
         OfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
                 contractCreateRequest.getOfferingId(), Map.of("Authorization", authToken));
 
@@ -270,6 +297,7 @@ public class ContractStorageService {
             case "merlot:MerlotServiceOfferingDataDelivery" -> {
                 contract = new DataDeliveryContractTemplate();
                 // also store a copy of the data transfer type to later decide who can initiate a transfer
+                // TODO remove
                 ((DataDeliveryContractTemplate) contract).setDataTransferType(
                         ((DataDeliveryOfferingDetails) offeringDetails).getDataTransferType());
             }
@@ -281,6 +309,7 @@ public class ContractStorageService {
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
 
+        // TODO remove
         contract.setOfferingName(offeringDetails.getName());
         contract.setProviderId(offeringDetails.getOfferedBy());
         if (offeringDetails.getAttachments() != null) {
@@ -301,7 +330,7 @@ public class ContractStorageService {
 
         messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
 
-        return contract;
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
@@ -309,10 +338,11 @@ public class ContractStorageService {
      * with a copy of all editable fields. A new ID is generated as well as the signatures are reset.
      *
      * @param contractId         id of the contract to copy
+     * @param authToken          the OAuth2 Token from the user requesting this action
      * @param representedOrgaIds list of organization ids the user represents
      * @return newly generated contract
      */
-    public ContractTemplate regenerateContract(String contractId, Set<String> representedOrgaIds) {
+    public ContractDetailsDto regenerateContract(String contractId, Set<String> representedOrgaIds, String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -328,6 +358,10 @@ public class ContractStorageService {
         if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
+
+        // Make sure we can still access the requested offering, otherwise exception is thrown
+        serviceOfferingOrchestratorClient.getOfferingDetails(
+                contract.getOfferingId(), Map.of("Authorization", authToken));
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
             contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
@@ -345,22 +379,21 @@ public class ContractStorageService {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
         }
         contractTemplateRepository.save(contract);
-        return contract;
+
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
      * Given an edited ContractTemplate, this function verifies the updated fields and writes them to the database if allowed.
      *
-     * @param editedContract     contract template with edited fields
-     * @param authToken          the OAuth2 Token from the user requesting this action
-     * @param activeRoleOrgaId   the currently selected role of the user
-     * @param representedOrgaIds list of organization ids the user represents
+     * @param editedContract   contract template with edited fields
+     * @param authToken        the OAuth2 Token from the user requesting this action
+     * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
-    public ContractTemplate updateContractTemplate(ContractTemplate editedContract,
+    public ContractDetailsDto updateContractTemplate(ContractTemplate editedContract,
                                                    String authToken,
-                                                   String activeRoleOrgaId,
-                                                   Set<String> representedOrgaIds) throws JSONException {
+                                                   String activeRoleOrgaId) throws JSONException {
 
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
 
@@ -390,7 +423,8 @@ public class ContractStorageService {
         }
 
         // at this point we have a valid requested update, save it in the db
-        return contractTemplateRepository.save(contract);
+        contract = contractTemplateRepository.save(contract);
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
@@ -400,12 +434,14 @@ public class ContractStorageService {
      * @param targetState      target state of the contract template
      * @param activeRoleOrgaId the currently selected role of the user
      * @param userId           the id of the user that requested this action
+     * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
-    public ContractTemplate transitionContractTemplateState(String contractId,
+    public ContractDetailsDto transitionContractTemplateState(String contractId,
                                                             ContractState targetState,
                                                             String activeRoleOrgaId,
-                                                            String userId) {
+                                                            String userId,
+                                                            String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -445,7 +481,7 @@ public class ContractStorageService {
             }
             contractTemplateRepository.delete(contract);
             messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
-            return contract;
+            return castAndMapToContractDetailsDto(contract, authToken);
         }
 
         // check if transitioning to the target state is generally allowed
@@ -456,31 +492,37 @@ public class ContractStorageService {
         }
 
         // if all checks passed, save the new state of the contract
-        return contractTemplateRepository.save(contract);
+        contract = contractTemplateRepository.save(contract);
+
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
      * Returns all contracts from the database where the specified organization is either the consumer or provider.
      *
-     * @param orgaId   id of the organization requesting this data
-     * @param pageable page request
+     * @param orgaId    id of the organization requesting this data
+     * @param pageable  page request
+     * @param authToken the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractTemplate> getOrganizationContracts(String orgaId, Pageable pageable) {
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
-        return contractTemplateRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+        Page<ContractTemplate> contractTemplates = contractTemplateRepository.
+                findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+
+        return contractTemplates.map(template -> castAndMapToContractDetailsDto(template, authToken));
     }
 
     /**
      * For a given id, return the corresponding contract database entry.
      *
      * @param contractId         id of the contract
-     * @param representedOrgaIds ids of orgas that the user requesting this action represents
+     * @param authToken          the OAuth2 Token from the user requesting this action
      * @return contract object from the database
      */
-    public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
+    public ContractDetailsDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
         System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
@@ -494,6 +536,6 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_VIEW_FORBIDDEN);
         }
 
-        return contract;
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 }

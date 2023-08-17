@@ -1,5 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.CooperationContractOfferingDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.DataDeliveryOfferingDetails;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.OfferingDetails;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.dto.*;
@@ -7,6 +9,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.SaasOfferingDetails;
 import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,7 +20,7 @@ import java.time.OffsetDateTime;
 public interface ContractMapper {
 
     default String map(OffsetDateTime offsetDateTime) {
-        return offsetDateTime.toString();
+        return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
     @Mapping(target = "id", source = "contract.id")
@@ -42,17 +45,16 @@ public interface ContractMapper {
     CooperationContractDetailsDto contractToContractDetailsDto(CooperationContractTemplate contract,
                                                                OrganizationDetails providerOrgaDetails,
                                                                OrganizationDetails consumerOrgaDetails,
-                                                               OfferingDetails offeringDetails);
+                                                               CooperationContractOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
     SaasContractDetailsDto contractToContractDetailsDto(SaasContractTemplate contract,
                                                         OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
-                                                        OfferingDetails offeringDetails);
+                                                        SaasOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
-    // TODO mapping for different types
-    //@Mapping(target = "dataTransferType", source = "offeringDetails.dataTransferType")
+    @Mapping(target = "dataTransferType", source = "offeringDetails.dataTransferType")
     @Mapping(target = "dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType")
     @Mapping(target = "dataAddressSourceBucketName", source = "contract.serviceContractProvisioning.dataAddressSourceBucketName")
     @Mapping(target = "dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName")
@@ -63,6 +65,6 @@ public interface ContractMapper {
     DataDeliveryContractDetailsDto contractToContractDetailsDto(DataDeliveryContractTemplate contract,
                                                         OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
-                                                        OfferingDetails offeringDetails);
+                                                        DataDeliveryOfferingDetails offeringDetails);
 }
 

@@ -60,18 +60,21 @@ public class DataTransferController {
      * @param contractId contract id
      * @param activeRole currently selected role by the user in the frontend
      * @param principal  user auth data
+     * @param authToken  active OAuth2 token of this user
      * @return negotiation initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/start")
     public EdcIdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
                                                   @RequestHeader(name = "Active-Role") String activeRole,
+                                                  @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
-        return new EdcIdResponse(edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRoleOrgaId, orgaIds));
+        return new EdcIdResponse(edcOrchestrationService.initiateConnectorNegotiation(contractId, activeRoleOrgaId,
+                orgaIds, authToken));
     }
 
     /**
@@ -81,12 +84,14 @@ public class DataTransferController {
      * @param negotiationId negotiation id
      * @param activeRole    currently selected role by the user in the frontend
      * @param principal     user auth data
+     * @param authToken  active OAuth2 token of this user
      * @return status of negotiation
      */
     @GetMapping("/contract/{contractId}/negotiation/{negotiationId}/status")
     public EdcNegotiationStatus getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
                                                              @PathVariable(value = "negotiationId") String negotiationId,
                                                              @RequestHeader(name = "Active-Role") String activeRole,
+                                                             @RequestHeader(name = "Authorization") String authToken,
                                                              Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
@@ -94,7 +99,7 @@ public class DataTransferController {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
         return new EdcNegotiationStatus(
-                edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, orgaIds));
+                edcOrchestrationService.getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, orgaIds, authToken));
     }
 
     /**
@@ -104,19 +109,22 @@ public class DataTransferController {
      * @param negotiationId negotiation id
      * @param activeRole    currently selected role by the user in the frontend
      * @param principal     user auth data
+     * @param authToken  active OAuth2 token of this user
      * @return transfer initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/{negotiationId}/transfer/start")
     public EdcIdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
                                                  @PathVariable(value = "negotiationId") String negotiationId,
                                                  @RequestHeader(name = "Active-Role") String activeRole,
+                                                 @RequestHeader(name = "Authorization") String authToken,
                                                  Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
-        return new EdcIdResponse(edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId, activeRoleOrgaId, orgaIds));
+        return new EdcIdResponse(edcOrchestrationService.initiateConnectorTransfer(negotiationId, contractId,
+                activeRoleOrgaId, orgaIds, authToken));
     }
 
     /**
@@ -126,18 +134,21 @@ public class DataTransferController {
      * @param transferId transfer id
      * @param activeRole currently selected role by the user in the frontend
      * @param principal  user auth data
+     * @param authToken  active OAuth2 token of this user
      * @return status of transfer
      */
     @GetMapping("/contract/{contractId}/transfer/{transferId}/status")
     public EdcTransferStatus getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "transferId") String transferId,
                                                   @RequestHeader(name = "Active-Role") String activeRole,
+                                                  @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) {
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
         }
-        return new EdcTransferStatus(edcOrchestrationService.getTransferStatus(transferId, contractId, activeRoleOrgaId, orgaIds));
+        return new EdcTransferStatus(edcOrchestrationService.getTransferStatus(transferId, contractId, activeRoleOrgaId,
+                orgaIds, authToken));
     }
 }
