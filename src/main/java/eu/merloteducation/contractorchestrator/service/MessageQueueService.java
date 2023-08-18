@@ -5,7 +5,7 @@ import eu.merloteducation.contractorchestrator.models.ConnectorDetailsRequest;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.OfferingDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -92,7 +92,7 @@ public class MessageQueueService {
      * @param offeringId id of the offering
      * @return offering details
      */
-    public OfferingDetails remoteRequestOfferingDetails(String offeringId) {
+    public ServiceOfferingDetails remoteRequestOfferingDetails(String offeringId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.OFFERING_REQUEST_KEY,

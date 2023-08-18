@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.DataDeliveryContractDetailsDto;
@@ -21,10 +22,7 @@ import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateReq
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.DataDeliveryOfferingDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -301,11 +299,12 @@ public class EdcOrchestrationService {
     private void checkTransferAuthorization(DataDeliveryContractDetailsDto template, String activeRoleOrgaId) {
         boolean isConsumer = activeRoleOrgaId.equals(template.getConsumerId().replace(ORGA_PREFIX, ""));
         boolean isProvider = activeRoleOrgaId.equals(template.getProviderId().replace(ORGA_PREFIX, ""));
-        DataDeliveryOfferingDetails offeringDetails = (DataDeliveryOfferingDetails) template.getOffering();
+        ServiceOfferingDetails offeringDetails = template.getOffering();
+        String dataTransferType = offeringDetails.getSelfDescription().get("verifiableCredential")
+                .get("credentialSubject").get("merlot:dataTransferType").asText();
 
-        if (!(
-                (offeringDetails.getDataTransferType().equals("Push") && isProvider) ||
-                        (offeringDetails.getDataTransferType().equals("Pull")&& isConsumer)
+        if (!((dataTransferType.equals("Push") && isProvider) ||
+                        (dataTransferType.equals("Pull")&& isConsumer)
         )) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your role is not authorized to perform the data transfer");
         }

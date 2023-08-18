@@ -1,13 +1,10 @@
 package eu.merloteducation.contractorchestrator.models.dto;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.OfferingTerms;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.util.List;
 
 @Getter
 @Setter

@@ -1,15 +1,12 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.CooperationContractOfferingDetails;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.DataDeliveryOfferingDetails;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.OfferingDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.dto.*;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.SaasOfferingDetails;
 import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -32,7 +29,7 @@ public interface ContractMapper {
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
                                                 OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,
-                                                OfferingDetails offeringDetails);
+                                                ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration
     @Mapping(target = "type", source = "contract.type")
@@ -40,19 +37,19 @@ public interface ContractMapper {
     ContractDetailsDto contractToContractDetailsDto(ContractTemplate contract,
                                                     OrganizationDetails providerOrgaDetails,
                                                     OrganizationDetails consumerOrgaDetails,
-                                                    OfferingDetails offeringDetails);
+                                                    ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
     CooperationContractDetailsDto contractToContractDetailsDto(CooperationContractTemplate contract,
                                                                OrganizationDetails providerOrgaDetails,
                                                                OrganizationDetails consumerOrgaDetails,
-                                                               CooperationContractOfferingDetails offeringDetails);
+                                                               ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
     SaasContractDetailsDto contractToContractDetailsDto(SaasContractTemplate contract,
                                                         OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
-                                                        SaasOfferingDetails offeringDetails);
+                                                        ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDetailsDto")
     @Mapping(target = "dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType")
@@ -65,6 +62,6 @@ public interface ContractMapper {
     DataDeliveryContractDetailsDto contractToContractDetailsDto(DataDeliveryContractTemplate contract,
                                                         OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
-                                                        DataDeliveryOfferingDetails offeringDetails);
+                                                                ServiceOfferingDetails offeringDetails);
 }
 

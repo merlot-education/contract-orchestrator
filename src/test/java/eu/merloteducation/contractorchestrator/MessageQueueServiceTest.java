@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationAddressModel;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import org.junit.jupiter.api.BeforeAll;

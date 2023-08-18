@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
@@ -68,8 +69,7 @@ public class ContractStorageService {
     private ContractMapper contractMapper;
 
     private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
-        OfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
-                contract.getOfferingId(), Map.of("Authorization", authToken));
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
 
         // make sure selections are valid
         if (contract.getRuntimeSelection() != null
@@ -81,56 +81,68 @@ public class ContractStorageService {
         if (contract instanceof SaasContractTemplate saasContract
                 && saasContract.getUserCountSelection() != null
                 && !isValidUserCountSelection(saasContract.getUserCountSelection(),
-                (SaasOfferingDetails) offeringDetails)) {
+                offeringDetails)) {
             return false;
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
                 && dataDeliveryContract.getExchangeCountSelection() != null
                 && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
-                (DataDeliveryOfferingDetails) offeringDetails)) {
+                offeringDetails)) {
             return false;
         }
 
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, OfferingDetails offeringDetails) throws JSONException {
-        if (offeringDetails.getRuntimeOption() == null || offeringDetails.getRuntimeOption().isEmpty()) {
+    private boolean isValidRuntimeSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode runtimeOptions = credentialSubject.get("merlot:runtimeOption");
+        if (!runtimeOptions.isArray()) {
             return false;
         }
 
-        for (OfferingRuntimeOption option : offeringDetails.getRuntimeOption()) {
-            if (selection.equals(option.getRuntimeCount() + " " + option.getRuntimeMeasurement())) {
+        for (final JsonNode option: runtimeOptions) {
+            if (selection.equals(option.get("merlot:runtimeCount").get("@value").asText()
+                    + " " + option.get("merlot:runtimeMeasurement").get("@value").asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private boolean isValidUserCountSelection(String selection, SaasOfferingDetails offeringDetails) throws JSONException {
-        if (offeringDetails.getUserCountOption() == null || offeringDetails.getUserCountOption().isEmpty()) {
+    private boolean isValidUserCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode userCountOptions = credentialSubject.get("merlot:userCountOption");
+        if (!userCountOptions.isArray()) {
             return false;
         }
 
-        for (OfferingUserCountOption option : offeringDetails.getUserCountOption()) {
-            if (selection.equals(String.valueOf(option.getUserCountUpTo()))) {
+        for (final JsonNode option: userCountOptions) {
+            if (selection.equals(option.get("merlot:userCountUpTo").get("@value").asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, DataDeliveryOfferingDetails offeringDetails) throws JSONException {
-        if (offeringDetails.getExchangeCountOption() == null || offeringDetails.getExchangeCountOption().isEmpty()) {
+    private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode exchangeCountOptions = credentialSubject.get("merlot:exchangeCountOption");
+        if (!exchangeCountOptions.isArray()) {
             return false;
         }
 
-        for (OfferingExchangeCountOption option : offeringDetails.getExchangeCountOption()) {
-            if (selection.equals(String.valueOf(option.getExchangeCountUpTo()))) {
+        for (final JsonNode option: exchangeCountOptions) {
+            if (selection.equals(option.get("merlot:exchangeCountUpTo").get("@value").asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -243,20 +255,17 @@ public class ContractStorageService {
                 Map.of("Authorization", authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of("Authorization", authToken));
-        OfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
-        if (template instanceof DataDeliveryContractTemplate dataTemplate
-                && offeringDetails instanceof DataDeliveryOfferingDetails dataOfferingDetails) {
+        if (template instanceof DataDeliveryContractTemplate dataTemplate) {
             return contractMapper.contractToContractDetailsDto(dataTemplate, providerDetails,
-                    consumerDetails, dataOfferingDetails);
-        } else if (template instanceof SaasContractTemplate saasTemplate
-                && offeringDetails instanceof SaasOfferingDetails saasOfferingDetails) {
+                    consumerDetails, offeringDetails);
+        } else if (template instanceof SaasContractTemplate saasTemplate) {
             return contractMapper.contractToContractDetailsDto(saasTemplate, providerDetails,
-                    consumerDetails, saasOfferingDetails);
-        } else if (template instanceof CooperationContractTemplate coopTemplate
-                && offeringDetails instanceof CooperationContractOfferingDetails coopOfferingDetails) {
+                    consumerDetails, offeringDetails);
+        } else if (template instanceof CooperationContractTemplate coopTemplate) {
             return contractMapper.contractToContractDetailsDto(coopTemplate, providerDetails,
-                    consumerDetails, coopOfferingDetails);
+                    consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
     }
@@ -281,18 +290,20 @@ public class ContractStorageService {
         }
 
         // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
-        OfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
+        ServiceOfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
                 contractCreateRequest.getOfferingId(), Map.of("Authorization", authToken));
 
         // in case someone with access rights to the state attempts to load this check the state as well
-        if (offeringDetails.getMerlotState() != null && !offeringDetails.getMerlotState().equals("RELEASED")) {
+        if (offeringDetails.getMetadata().get("state") != null && !offeringDetails.getMetadata().get("state").asText().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        switch (offeringDetails.getType()) {
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+
+        switch (credentialSubject.get("@type").asText()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
             case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
@@ -302,10 +313,15 @@ public class ContractStorageService {
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
-        contract.setProviderId(offeringDetails.getOfferedBy());
-        if (offeringDetails.getAttachments() != null) {
-            contract.setOfferingAttachments(offeringDetails.getAttachments());
+        contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
+
+        List<String> attachments = new ArrayList<>();
+        if (credentialSubject.has("merlot:attachments")) {
+            for (JsonNode attachment : credentialSubject.get("merlot:attachments")) {
+                attachments.add(attachment.asText());
+            }
         }
+        contract.setOfferingAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
