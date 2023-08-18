@@ -331,7 +331,8 @@ public class ContractStorageService {
         OrganizationDetails organizationDetails = organizationOrchestratorClient.getOrganizationDetails(
                 contract.getProviderId().replace(ORGA_PREFIX, ""),
                 Map.of("Authorization", authToken));
-        contract.setProviderTncUrl(organizationDetails.getTermsAndConditionsLink());
+        contract.setProviderTncUrl(organizationDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
 
         contract = contractTemplateRepository.save(contract);
 

@@ -8,7 +8,5 @@ import lombok.ToString;
 @Setter
 @ToString
 public class OrganizationDetails {
-    private String id;
-    private String organizationLegalName;
-    private String termsAndConditionsLink;
+    private OrganizationSelfDescription selfDescription;
 }
