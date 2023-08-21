@@ -9,6 +9,7 @@ import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -173,7 +174,7 @@ public class ContractsController {
     @GetMapping("organization/{orgaId}")
     @JsonView(ContractViews.BasicView.class)
     public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
-                                                           @RequestParam(value = "size", defaultValue = "9") int size,
+                                                           @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
                                                            @PathVariable(value = "orgaId") String orgaId,
                                                            @RequestHeader(name = "Authorization") String authToken,
                                                            Principal principal) {
