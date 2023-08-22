@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -81,7 +82,7 @@ public class ContractsController {
      */
     @PostMapping("")
     @JsonView(ContractViews.ConsumerView.class)
-    public ContractDetailsDto addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
+    public ContractDto addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
                                                   @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) throws Exception {
         if (!getRepresentedOrgaIds(principal).contains(contractCreateRequest.getConsumerId().replace("Participant:", ""))) {
@@ -100,7 +101,7 @@ public class ContractsController {
      * @return updated contract template
      */
     @PutMapping("")
-    public ContractDetailsDto updateContractTemplate(@Valid @RequestBody ContractTemplate editedContract,
+    public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                                      @RequestHeader(name = "Authorization") String authToken,
                                                      @RequestHeader(name = "Active-Role") String activeRole,
                                                      Principal principal) throws Exception {
@@ -123,7 +124,7 @@ public class ContractsController {
      * @return newly generated contract
      */
     @PostMapping("/contract/regenerate/{contractId}")
-    public ContractDetailsDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
+    public ContractDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                          @RequestHeader(name = "Authorization") String authToken,
                                                          Principal principal) {
         Set<String> orgaIds = getRepresentedOrgaIds(principal);
@@ -142,7 +143,7 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
-    public ContractDetailsDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
+    public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                          @PathVariable(value = "status") ContractState status,
                                                          @RequestHeader(name = "Active-Role") String activeRole,
                                                          @RequestHeader(name = "Authorization") String authToken,
@@ -173,11 +174,11 @@ public class ContractsController {
      */
     @GetMapping("organization/{orgaId}")
     @JsonView(ContractViews.BasicView.class)
-    public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
-                                                           @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
-                                                           @PathVariable(value = "orgaId") String orgaId,
-                                                           @RequestHeader(name = "Authorization") String authToken,
-                                                           Principal principal) {
+    public Page<ContractDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                      @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
+                                                      @PathVariable(value = "orgaId") String orgaId,
+                                                      @RequestHeader(name = "Authorization") String authToken,
+                                                      Principal principal) {
         if (!getRepresentedOrgaIds(principal).contains(orgaId.replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to access contracts of this id.");
         }
@@ -195,11 +196,10 @@ public class ContractsController {
      * @return detailed view of this contract
      */
     @GetMapping("contract/{contractId}")
-    public ContractDetailsDto getContractDetails(@PathVariable(value = "contractId") String contractId,
+    public ContractDto getContractDetails(@PathVariable(value = "contractId") String contractId,
                                                  @RequestHeader(name = "Authorization") String authToken,
                                                  Principal principal) {
-        ContractDetailsDto details = contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(principal), authToken);
-        return details;
+        return contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(principal), authToken);
     }
 
 }

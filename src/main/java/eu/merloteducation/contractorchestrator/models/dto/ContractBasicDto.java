@@ -11,18 +11,5 @@ import java.time.OffsetDateTime;
 @Setter
 @ToString
 public class ContractBasicDto {
-    private String id;
-    private OffsetDateTime creationDate;
 
-    private ServiceOfferingDetails offering;
-
-    private String providerId;
-
-    private String providerLegalName;
-
-    private String consumerId;
-
-    private String consumerLegalName;
-
-    private String state;
 }

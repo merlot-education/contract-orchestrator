@@ -1,9 +1,13 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
@@ -11,17 +15,13 @@ import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
@@ -48,6 +48,9 @@ public class ContractStorageService {
     private static final String ORGA_PREFIX = "Participant:";
 
     @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
     private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
 
     @Autowired
@@ -72,21 +75,21 @@ public class ContractStorageService {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
 
         // make sure selections are valid
-        if (contract.getRuntimeSelection() != null
+        if (!StringUtil.isNullOrEmpty(contract.getRuntimeSelection())
                 && !isValidRuntimeSelection(
                 contract.getRuntimeSelection(), offeringDetails)) {
             return false;
         }
 
         if (contract instanceof SaasContractTemplate saasContract
-                && saasContract.getUserCountSelection() != null
+                && !StringUtil.isNullOrEmpty(saasContract.getUserCountSelection())
                 && !isValidUserCountSelection(saasContract.getUserCountSelection(),
                 offeringDetails)) {
             return false;
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
-                && dataDeliveryContract.getExchangeCountSelection() != null
+                && !StringUtil.isNullOrEmpty(dataDeliveryContract.getExchangeCountSelection())
                 && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
                 offeringDetails)) {
             return false;
@@ -147,86 +150,85 @@ public class ContractStorageService {
     }
 
     private void updateSaasContract(SaasContractTemplate targetContract,
-                                    SaasContractTemplate editedContract) {
+                                    SaasContractDto editedContract) {
         if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setUserCountSelection(editedContract.getUserCountSelection());
+            targetContract.setUserCountSelection(editedContract.getNegotiation().getUserCountSelection());
         }
     }
 
     private void updateDataDeliveryContract(DataDeliveryContractTemplate targetContract,
-                                            DataDeliveryContractTemplate editedContract,
+                                            DataDeliveryContractDto editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
         DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
-        DataDeliveryProvisioning editedProvisioning = editedContract.getServiceContractProvisioning();
 
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(
-                    editedContract.getExchangeCountSelection());
+                    editedContract.getNegotiation().getExchangeCountSelection());
             if (isConsumer) {
                 // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressTargetBucketName(
-                        editedProvisioning.getDataAddressTargetBucketName());
+                        editedContract.getProvisioning().getDataAddressTargetBucketName());
                 targetProvisioning.setDataAddressTargetFileName(
-                        editedProvisioning.getDataAddressTargetFileName());
+                        editedContract.getProvisioning().getDataAddressTargetFileName());
                 targetProvisioning.setSelectedConsumerConnectorId(
-                        editedProvisioning.getSelectedConsumerConnectorId());
+                        editedContract.getProvisioning().getSelectedConsumerConnectorId());
             }
             if (isProvider) {
                 targetProvisioning.setDataAddressType(
-                        editedProvisioning.getDataAddressType());
+                        editedContract.getProvisioning().getDataAddressType());
                 // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressSourceBucketName(
-                        editedProvisioning.getDataAddressSourceBucketName());
+                        editedContract.getProvisioning().getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
-                        editedProvisioning.getDataAddressSourceFileName());
+                        editedContract.getProvisioning().getDataAddressSourceFileName());
                 // TODO verify that this is a valid connectorId
                 targetProvisioning.setSelectedProviderConnectorId(
-                        editedProvisioning.getSelectedProviderConnectorId());
+                        editedContract.getProvisioning().getSelectedProviderConnectorId());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetProvisioning.setDataAddressType(
-                    editedProvisioning.getDataAddressType());
+                    editedContract.getProvisioning().getDataAddressType());
             // TODO verify that this is a bucket that belongs to the connector
             targetProvisioning.setDataAddressSourceBucketName(
-                    editedProvisioning.getDataAddressSourceBucketName());
+                    editedContract.getProvisioning().getDataAddressSourceBucketName());
             targetProvisioning.setDataAddressSourceFileName(
-                    editedProvisioning.getDataAddressSourceFileName());
+                    editedContract.getProvisioning().getDataAddressSourceFileName());
             // TODO verify that this is a valid connectorId
             targetProvisioning.setSelectedProviderConnectorId(
-                    editedProvisioning.getSelectedProviderConnectorId());
+                    editedContract.getProvisioning().getSelectedProviderConnectorId());
         }
     }
 
     private void updateContractDependingOnRole(ContractTemplate targetContract,
-                                               ContractTemplate editedContract,
+                                               ContractDto editedContract,
                                                boolean isConsumer,
                                                boolean isProvider) {
         // TODO consider moving this logic into a DTO pattern
         if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+            targetContract.setRuntimeSelection(editedContract.getNegotiation().getRuntimeSelection());
             if (isConsumer) {
-                targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
-                targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
-                targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+                targetContract.setConsumerMerlotTncAccepted(editedContract.getNegotiation().isConsumerMerlotTncAccepted());
+                targetContract.setConsumerProviderTncAccepted(editedContract.getNegotiation().isConsumerProviderTncAccepted());
+                targetContract.setConsumerOfferingTncAccepted(editedContract.getNegotiation().isConsumerOfferingTncAccepted());
             }
             if (isProvider) {
-                targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
-                targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
-                targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+                targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
+                targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
+                targetContract.setOfferingAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+            targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
 
         }
 
         if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
-                editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
+                editedContract instanceof SaasContractDto editedSaasContractTemplate) {
             updateSaasContract(targetSaasContractTemplate, editedSaasContractTemplate);
         }
 
         if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
-                editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                editedContract instanceof DataDeliveryContractDto editedDataDeliveryContractTemplate) {
             updateDataDeliveryContract(targetDataDeliveryContractTemplate, editedDataDeliveryContractTemplate,
                     isConsumer, isProvider);
         }
@@ -249,7 +251,7 @@ public class ContractStorageService {
         return OffsetDateTime.now().plus(temporalAmount);
     }
 
-    private ContractDetailsDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
+    private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
         OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
                 Map.of("Authorization", authToken));
@@ -258,13 +260,13 @@ public class ContractStorageService {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
-            return contractMapper.contractToContractDetailsDto(dataTemplate, providerDetails,
+            return contractMapper.contractToContractDto(dataTemplate, providerDetails,
                     consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
-            return contractMapper.contractToContractDetailsDto(saasTemplate, providerDetails,
+            return contractMapper.contractToContractDto(saasTemplate, providerDetails,
                     consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
-            return contractMapper.contractToContractDetailsDto(coopTemplate, providerDetails,
+            return contractMapper.contractToContractDto(coopTemplate, providerDetails,
                     consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
@@ -280,7 +282,7 @@ public class ContractStorageService {
      * @return Instantiated contract object from the database
      */
     @Transactional
-    public ContractDetailsDto addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
+    public ContractDto addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
             throws JSONException {
 
         // check that fields are in a valid format
@@ -334,10 +336,9 @@ public class ContractStorageService {
         contract.setProviderTncUrl(organizationDetails.getSelfDescription()
                 .getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
 
-        contract = contractTemplateRepository.save(contract);
-
+        contract = contractTemplateRepository.saveAndFlush(contract);
+        entityManager.refresh(contract); // refresh entity from database to get newly generated discriminator column
         messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
-
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
@@ -350,7 +351,7 @@ public class ContractStorageService {
      * @param representedOrgaIds list of organization ids the user represents
      * @return newly generated contract
      */
-    public ContractDetailsDto regenerateContract(String contractId, Set<String> representedOrgaIds, String authToken) {
+    public ContractDto regenerateContract(String contractId, Set<String> representedOrgaIds, String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -399,11 +400,11 @@ public class ContractStorageService {
      * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
-    public ContractDetailsDto updateContractTemplate(ContractTemplate editedContract,
+    public ContractDto updateContractTemplate(ContractDto editedContract,
                                                    String authToken,
                                                    String activeRoleOrgaId) throws JSONException {
 
-        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
+        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getDetails().getId()).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
@@ -445,7 +446,7 @@ public class ContractStorageService {
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
-    public ContractDetailsDto transitionContractTemplateState(String contractId,
+    public ContractDto transitionContractTemplateState(String contractId,
                                                             ContractState targetState,
                                                             String activeRoleOrgaId,
                                                             String userId,
@@ -513,7 +514,7 @@ public class ContractStorageService {
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
+    public Page<ContractDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
@@ -530,7 +531,7 @@ public class ContractStorageService {
      * @param authToken          the OAuth2 Token from the user requesting this action
      * @return contract object from the database
      */
-    public ContractDetailsDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
+    public ContractDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
         System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 

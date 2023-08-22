@@ -1,5 +1,11 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
+import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.dto.*;
@@ -20,50 +26,56 @@ public interface ContractMapper {
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
-    @Mapping(target = "id", source = "contract.id")
-    @Mapping(target = "state", source = "contract.state")
-    @Mapping(target = "creationDate", source = "contract.creationDate")
-    @Mapping(target = "providerLegalName",
+    @Mapping(target = "type", source = "contract.type")
+    @Mapping(target = "details.id", source = "contract.id")
+    @Mapping(target = "details.creationDate", source = "contract.creationDate")
+    @Mapping(target = "details.providerId", source = "contract.providerId")
+    @Mapping(target = "details.providerLegalName",
             source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
-    @Mapping(target = "consumerLegalName",
+    @Mapping(target = "details.consumerId", source = "contract.consumerId")
+    @Mapping(target = "details.consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+    @Mapping(target = "details.state", source = "contract.state")
+    @Mapping(target = "details.providerTncUrl", source = "contract.providerTncUrl")
+    @Mapping(target = "negotiation.runtimeSelection", source = "contract.runtimeSelection", defaultValue = "")
+    @Mapping(target = "negotiation.additionalAgreements", source = "contract.additionalAgreements")
+    @Mapping(target = "negotiation.attachments", source = "contract.offeringAttachments")
+    @Mapping(target = "negotiation.consumerMerlotTncAccepted", source = "contract.consumerMerlotTncAccepted")
+    @Mapping(target = "negotiation.consumerOfferingTncAccepted", source = "contract.consumerOfferingTncAccepted")
+    @Mapping(target = "negotiation.consumerProviderTncAccepted", source = "contract.consumerProviderTncAccepted")
+    @Mapping(target = "negotiation.providerMerlotTncAccepted", source = "contract.providerMerlotTncAccepted")
+    @Mapping(target = "provisioning.validUntil", source = "contract.serviceContractProvisioning.validUntil")
     @Mapping(target = "offering", source = "offeringDetails")
-    ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
+    ContractDto contractToContractDto(ContractTemplate contract,
                                                 OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,
                                                 ServiceOfferingDetails offeringDetails);
 
-    @InheritConfiguration
-    @Mapping(target = "type", source = "contract.type")
-    @Mapping(target = "validUntil", source = "contract.serviceContractProvisioning.validUntil")
-    ContractDetailsDto contractToContractDetailsDto(ContractTemplate contract,
-                                                    OrganizationDetails providerOrgaDetails,
-                                                    OrganizationDetails consumerOrgaDetails,
-                                                    ServiceOfferingDetails offeringDetails);
-
-    @InheritConfiguration(name = "contractToContractDetailsDto")
-    CooperationContractDetailsDto contractToContractDetailsDto(CooperationContractTemplate contract,
-                                                               OrganizationDetails providerOrgaDetails,
-                                                               OrganizationDetails consumerOrgaDetails,
-                                                               ServiceOfferingDetails offeringDetails);
-
-    @InheritConfiguration(name = "contractToContractDetailsDto")
-    SaasContractDetailsDto contractToContractDetailsDto(SaasContractTemplate contract,
+    @InheritConfiguration(name = "contractToContractDto")
+    CooperationContractDto contractToContractDto(CooperationContractTemplate contract,
                                                         OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
                                                         ServiceOfferingDetails offeringDetails);
 
-    @InheritConfiguration(name = "contractToContractDetailsDto")
-    @Mapping(target = "dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType")
-    @Mapping(target = "dataAddressSourceBucketName", source = "contract.serviceContractProvisioning.dataAddressSourceBucketName")
-    @Mapping(target = "dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName")
-    @Mapping(target = "selectedProviderConnectorId", source = "contract.serviceContractProvisioning.selectedProviderConnectorId")
-    @Mapping(target = "dataAddressTargetBucketName", source = "contract.serviceContractProvisioning.dataAddressTargetBucketName")
-    @Mapping(target = "dataAddressTargetFileName", source = "contract.serviceContractProvisioning.dataAddressTargetFileName")
-    @Mapping(target = "selectedConsumerConnectorId", source = "contract.serviceContractProvisioning.selectedConsumerConnectorId")
-    DataDeliveryContractDetailsDto contractToContractDetailsDto(DataDeliveryContractTemplate contract,
-                                                        OrganizationDetails providerOrgaDetails,
-                                                        OrganizationDetails consumerOrgaDetails,
-                                                                ServiceOfferingDetails offeringDetails);
+    @InheritConfiguration(name = "contractToContractDto")
+    @Mapping(target = "negotiation.userCountSelection", source = "contract.userCountSelection", defaultValue = "")
+    SaasContractDto contractToContractDto(SaasContractTemplate contract,
+                                                 OrganizationDetails providerOrgaDetails,
+                                                 OrganizationDetails consumerOrgaDetails,
+                                                 ServiceOfferingDetails offeringDetails);
+
+    @InheritConfiguration(name = "contractToContractDto")
+    @Mapping(target = "negotiation.exchangeCountSelection", source = "contract.exchangeCountSelection", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressSourceBucketName", source = "contract.serviceContractProvisioning.dataAddressSourceBucketName", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName", defaultValue = "")
+    @Mapping(target = "provisioning.selectedProviderConnectorId", source = "contract.serviceContractProvisioning.selectedProviderConnectorId", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressTargetBucketName", source = "contract.serviceContractProvisioning.dataAddressTargetBucketName", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressTargetFileName", source = "contract.serviceContractProvisioning.dataAddressTargetFileName", defaultValue = "")
+    @Mapping(target = "provisioning.selectedConsumerConnectorId", source = "contract.serviceContractProvisioning.selectedConsumerConnectorId", defaultValue = "")
+    DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
+                                                         OrganizationDetails providerOrgaDetails,
+                                                         OrganizationDetails consumerOrgaDetails,
+                                                         ServiceOfferingDetails offeringDetails);
 }
 

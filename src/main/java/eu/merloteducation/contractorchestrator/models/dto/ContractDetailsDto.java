@@ -6,30 +6,27 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.OffsetDateTime;
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
-public class ContractDetailsDto extends ContractBasicDto {
+public class ContractDetailsDto {
 
-    private String type;
+    private String id;
+
+    private String creationDate;
+
+    private String providerId;
+
+    private String providerLegalName;
+
+    private String consumerId;
+
+    private String consumerLegalName;
+
+    private String state;
 
     private String providerTncUrl;
-
-    private String runtimeSelection;
-
-    private String additionalAgreements;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerMerlotTncAccepted;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerOfferingTncAccepted;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerProviderTncAccepted;
-
-    @JsonView(ContractViews.ProviderView.class)
-    private boolean providerMerlotTncAccepted;
-
-    private String validUntil;
 }

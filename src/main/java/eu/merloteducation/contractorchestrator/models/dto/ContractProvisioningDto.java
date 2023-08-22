@@ -5,8 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SaasContractDetailsDto extends ContractDetailsDto {
-
-    private String userCountSelection;
-
+public class ContractProvisioningDto {
+    private String validUntil;
 }
