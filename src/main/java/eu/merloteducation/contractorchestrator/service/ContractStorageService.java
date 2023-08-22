@@ -2,7 +2,6 @@ package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
@@ -249,6 +248,15 @@ public class ContractStorageService {
             default -> throw new IllegalArgumentException("Unknown metric: " + runtimeParts[1]);
         };
         return OffsetDateTime.now().plus(temporalAmount);
+    }
+
+    private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of("Authorization", authToken));
+        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
+                Map.of("Authorization", authToken));
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
@@ -514,14 +522,14 @@ public class ContractStorageService {
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
         Page<ContractTemplate> contractTemplates = contractTemplateRepository.
                 findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
 
-        return contractTemplates.map(template -> castAndMapToContractDetailsDto(template, authToken));
+        return contractTemplates.map(template -> mapToContractBasicDto(template, authToken));
     }
 
     /**

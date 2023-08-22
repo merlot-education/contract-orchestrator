@@ -11,7 +11,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DataDeliveryContractDto.class, name = "DataDeliveryContractTemplate"),
         @JsonSubTypes.Type(value = SaasContractDto.class, name = "SaasContractTemplate"),

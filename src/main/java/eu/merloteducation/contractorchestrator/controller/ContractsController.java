@@ -3,7 +3,6 @@ package eu.merloteducation.contractorchestrator.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
@@ -174,11 +173,11 @@ public class ContractsController {
      */
     @GetMapping("organization/{orgaId}")
     @JsonView(ContractViews.BasicView.class)
-    public Page<ContractDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
-                                                      @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
-                                                      @PathVariable(value = "orgaId") String orgaId,
-                                                      @RequestHeader(name = "Authorization") String authToken,
-                                                      Principal principal) {
+    public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                           @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
+                                                           @PathVariable(value = "orgaId") String orgaId,
+                                                           @RequestHeader(name = "Authorization") String authToken,
+                                                           Principal principal) {
         if (!getRepresentedOrgaIds(principal).contains(orgaId.replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to access contracts of this id.");
         }

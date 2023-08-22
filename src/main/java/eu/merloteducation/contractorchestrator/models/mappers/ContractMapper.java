@@ -26,6 +26,19 @@ public interface ContractMapper {
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
+    @Mapping(target = "id", source = "contract.id")
+    @Mapping(target = "creationDate", source = "contract.creationDate")
+    @Mapping(target = "offering", source = "offeringDetails")
+    @Mapping(target = "providerLegalName",
+            source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+    @Mapping(target = "consumerLegalName",
+            source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+    @Mapping(target = "state", source = "contract.state")
+    ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
+                                                OrganizationDetails providerOrgaDetails,
+                                                OrganizationDetails consumerOrgaDetails,
+                                                ServiceOfferingDetails offeringDetails);
+
     @Mapping(target = "type", source = "contract.type")
     @Mapping(target = "details.id", source = "contract.id")
     @Mapping(target = "details.creationDate", source = "contract.creationDate")
