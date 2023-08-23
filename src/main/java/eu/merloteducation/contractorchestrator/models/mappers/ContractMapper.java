@@ -1,10 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;

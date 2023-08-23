@@ -45,6 +45,10 @@ public class ContractStorageService {
 
     private static final String ORGA_PREFIX = "Participant:";
 
+    private static final String CREDENTIAL_SUBJECT = "credentialSubject";
+    private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
+    private static final String VALUE = "@value";
+
     @Autowired
     private EntityManager entityManager;
 
@@ -94,15 +98,15 @@ public class ContractStorageService {
     }
 
     private boolean isValidRuntimeSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
         JsonNode runtimeOptions = credentialSubject.get("merlot:runtimeOption");
         if (!runtimeOptions.isArray()) {
             return false;
         }
 
         for (final JsonNode option: runtimeOptions) {
-            if (selection.equals(option.get("merlot:runtimeCount").get("@value").asText()
-                    + " " + option.get("merlot:runtimeMeasurement").get("@value").asText())) {
+            if (selection.equals(option.get("merlot:runtimeCount").get(VALUE).asText()
+                    + " " + option.get("merlot:runtimeMeasurement").get(VALUE).asText())) {
                 return true;
             }
         }
@@ -112,14 +116,14 @@ public class ContractStorageService {
 
     private boolean isValidUserCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
         JsonNode userCountOptions = credentialSubject.get("merlot:userCountOption");
         if (!userCountOptions.isArray()) {
             return false;
         }
 
         for (final JsonNode option: userCountOptions) {
-            if (selection.equals(option.get("merlot:userCountUpTo").get("@value").asText())) {
+            if (selection.equals(option.get("merlot:userCountUpTo").get(VALUE).asText())) {
                 return true;
             }
         }
@@ -129,14 +133,14 @@ public class ContractStorageService {
 
     private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
         JsonNode exchangeCountOptions = credentialSubject.get("merlot:exchangeCountOption");
         if (!exchangeCountOptions.isArray()) {
             return false;
         }
 
         for (final JsonNode option: exchangeCountOptions) {
-            if (selection.equals(option.get("merlot:exchangeCountUpTo").get("@value").asText())) {
+            if (selection.equals(option.get("merlot:exchangeCountUpTo").get(VALUE).asText())) {
                 return true;
             }
         }
@@ -307,7 +311,7 @@ public class ContractStorageService {
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get("verifiableCredential").get("credentialSubject");
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
 
         switch (credentialSubject.get("@type").asText()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
