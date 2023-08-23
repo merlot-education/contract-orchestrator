@@ -1,5 +1,8 @@
 package eu.merloteducation.contractorchestrator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
@@ -12,11 +15,13 @@ import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetai
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractNegotiationDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
-import eu.merloteducation.contractorchestrator.service.ContractSignerService;
-import eu.merloteducation.contractorchestrator.service.ContractStorageService;
-import eu.merloteducation.contractorchestrator.service.MessageQueueService;
+import eu.merloteducation.contractorchestrator.service.*;
 import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.text.StringSubstitutor;
 import org.json.JSONException;
@@ -56,22 +61,26 @@ import static org.mockito.Mockito.lenient;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Transactional
 public class ContractStorageServiceTest {
+
+    @Autowired
+    private ContractMapper contractMapper;
+
+    @Autowired
+    private EntityManager entityManager;
+
     @Mock
-    private RestTemplate restTemplate;
+    private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
+
+    @Mock
+    private OrganizationOrchestratorClient organizationOrchestratorClient;
 
     @Mock
     private RabbitTemplate rabbitTemplate;
 
-    @Value("${serviceoffering-orchestrator.base-uri}")
-    private String serviceOfferingOrchestratorBaseUri;
-
-    @Value("${organizations-orchestrator.base-uri}")
-    private String organizationsOrchestratorBaseUri;
-
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
+    @Mock
     private MessageQueueService messageQueueService;
 
     @Autowired
@@ -91,7 +100,7 @@ public class ContractStorageServiceTest {
         String response = """
                 {
                     "metadata": {
-                        "state": "IN_DRAFT",
+                        "state": "RELEASED",
                         "hash": "${hash}",
                         "creationDate": "2023-08-21T15:32:19.100661+02:00",
                         "modifiedDate": "2023-08-21T13:32:19.487564Z"
@@ -367,12 +376,13 @@ public class ContractStorageServiceTest {
 
     @BeforeAll
     public void setUp() {
-        ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorBaseUri", serviceOfferingOrchestratorBaseUri);
-        ReflectionTestUtils.setField(contractStorageService, "organizationsOrchestratorBaseUri", organizationsOrchestratorBaseUri);
+        ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
+        ReflectionTestUtils.setField(contractStorageService, "contractMapper", contractMapper);
+        ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
+        ReflectionTestUtils.setField(contractStorageService, "organizationOrchestratorClient", organizationOrchestratorClient);
         ReflectionTestUtils.setField(contractStorageService, "contractTemplateRepository", contractTemplateRepository);
         ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(contractStorageService, "contractSignerService", contractSignerService);
-        ReflectionTestUtils.setField(messageQueueService, "rabbitTemplate", rabbitTemplate);
 
         saasContract = new SaasContractTemplate();
         saasContract.setConsumerId("Participant:10");
@@ -400,7 +410,7 @@ public class ContractStorageServiceTest {
     }
 
     @BeforeEach
-    public void beforeEach() {
+    public void beforeEach() throws JsonProcessingException {
         String userCountOption = """
                                 ,"merlot:userCountOption": [
                                      {
@@ -432,60 +442,68 @@ public class ContractStorageServiceTest {
                                     }
                                 ]
                 """;
+        ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
-                                + "ServiceOffering:4321"),
-                        eq(HttpMethod.GET), any(), eq(String.class)))
-                .thenReturn(new ResponseEntity<>(
-                        createServiceOfferingOrchestratorResponse(
-                                "ServiceOffering:4321",
-                                "4321",
-                                "OfferingName",
-                                "Participant:40",
-                                "merlot:MerlotServiceOfferingSaaS",
-                                userCountOption), HttpStatus.OK));
+        ServiceOfferingDetails offering4321 = objectMapper.readValue(
+                createServiceOfferingOrchestratorResponse(
+                        "ServiceOffering:4321",
+                        "4321",
+                        "OfferingName",
+                        "Participant:40",
+                        "merlot:MerlotServiceOfferingSaaS",
+                        userCountOption), ServiceOfferingDetails.class);
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
-                                + saasContract.getOfferingId()),
-                        eq(HttpMethod.GET), any(), eq(String.class)))
-                .thenReturn(new ResponseEntity<>(
-                        createServiceOfferingOrchestratorResponse(
-                                saasContract.getOfferingId(),
-                                "1234",
-                                "MyOffering",
-                                saasContract.getProviderId(),
-                                "merlot:MerlotServiceOfferingSaaS",
-                                userCountOption), HttpStatus.OK));
+        ServiceOfferingDetails saasOffering = objectMapper.readValue(
+                createServiceOfferingOrchestratorResponse(
+                        saasContract.getOfferingId(),
+                        "1234",
+                        "MyOffering",
+                        saasContract.getProviderId(),
+                        "merlot:MerlotServiceOfferingSaaS",
+                        userCountOption), ServiceOfferingDetails.class);
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
-                                + dataDeliveryContract.getOfferingId()),
-                        eq(HttpMethod.GET), any(), eq(String.class)))
-                .thenReturn(new ResponseEntity<>(
-                        createServiceOfferingOrchestratorResponse(
-                                dataDeliveryContract.getOfferingId(),
-                                "2345",
-                                "MyOffering",
-                                dataDeliveryContract.getProviderId(),
-                                "merlot:MerlotServiceOfferingDataDelivery",
-                                exchangeCountOption), HttpStatus.OK));
+        ServiceOfferingDetails dataDeliveryOffering = objectMapper.readValue(
+                createServiceOfferingOrchestratorResponse(
+                        dataDeliveryContract.getOfferingId(),
+                        "2345",
+                        "MyOffering",
+                        dataDeliveryContract.getProviderId(),
+                        "merlot:MerlotServiceOfferingDataDelivery",
+                        exchangeCountOption), ServiceOfferingDetails.class);
 
-        lenient().when(restTemplate.exchange(eq(serviceOfferingOrchestratorBaseUri + "/serviceoffering/"
-                                + coopContract.getOfferingId()),
-                        eq(HttpMethod.GET), any(), eq(String.class)))
-                .thenReturn(new ResponseEntity<>(
-                        createServiceOfferingOrchestratorResponse(
-                                coopContract.getOfferingId(),
-                                "3456",
-                                "MyOffering",
-                                coopContract.getProviderId(),
-                                "merlot:MerlotServiceOfferingCooperation",
-                                ""), HttpStatus.OK));
+        ServiceOfferingDetails coopOffering = objectMapper.readValue(
+                createServiceOfferingOrchestratorResponse(
+                        coopContract.getOfferingId(),
+                        "3456",
+                        "MyOffering",
+                        coopContract.getProviderId(),
+                        "merlot:MerlotServiceOfferingCooperation",
+                        ""), ServiceOfferingDetails.class);
+
+
+        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq("ServiceOffering:4321"), any()))
+                .thenReturn(offering4321);
+        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq("ServiceOffering:4321")))
+                .thenReturn(offering4321);
+
+        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq(saasContract.getOfferingId()), any()))
+                .thenReturn(saasOffering);
+        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq(saasContract.getOfferingId())))
+                .thenReturn(saasOffering);
+
+        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq(dataDeliveryContract.getOfferingId()), any()))
+                .thenReturn(dataDeliveryOffering);
+        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq(dataDeliveryContract.getOfferingId())))
+                .thenReturn(dataDeliveryOffering);
+
+        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq(coopContract.getOfferingId()), any()))
+                .thenReturn(coopOffering);
+        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq(coopContract.getOfferingId())))
+                .thenReturn(coopOffering);
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
-        lenient().when(restTemplate.exchange(
-                        startsWith(organizationsOrchestratorBaseUri + "/organization/"),
-                        eq(HttpMethod.GET), any(), eq(String.class)))
-                .thenReturn(new ResponseEntity<>(organizationOrchestratorResponse, HttpStatus.OK));
+        lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
+                .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
     }
 
     @Test
@@ -623,7 +641,7 @@ public class ContractStorageServiceTest {
         assertEquals(editedContract.getNegotiation().isConsumerOfferingTncAccepted(), result.getNegotiation().isConsumerOfferingTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerProviderTncAccepted(), result.getNegotiation().isConsumerProviderTncAccepted());
         assertEquals(editedContract.getNegotiation().getRuntimeSelection(), result.getNegotiation().getRuntimeSelection());
-        assertInstanceOf(SaasContractTemplate.class, result);
+        assertInstanceOf(SaasContractDto.class, result);
     }
 
     @Test
@@ -701,8 +719,10 @@ public class ContractStorageServiceTest {
     void updateContractNotAuthorized() {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("1234");
-        SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+        SaasContractDto editedContract = new SaasContractDto();
+        editedContract.setDetails(new SaasContractDetailsDto());
+        editedContract.getDetails().setId(saasContract.getId());
+
         String activeRoleOrgaId = representedOrgaIds.iterator().next();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -950,27 +970,27 @@ public class ContractStorageServiceTest {
 
         editedContract.getNegotiation().setProviderMerlotTncAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
-                consumer);
+                provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressType("IonosS3");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
-                consumer);
+                provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressSourceBucketName("MyBucket2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
-                consumer);
+                provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2..json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
-                consumer);
+                provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setSelectedProviderConnectorId("edc2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
-                consumer);
+                provider);
 
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
                 ContractState.RELEASED, provider, "providerUserId", "authToken");
@@ -1046,7 +1066,7 @@ public class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract.getNegotiation().setUserCountSelection("0");
-        editedContract.getNegotiation().setRuntimeSelection("5 day(s)");
+        editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
         editedContract = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
 
@@ -1083,7 +1103,7 @@ public class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
-        editedContract.getNegotiation().setRuntimeSelection("5 day(s)");
+        editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
 
         CooperationContractDto result = (CooperationContractDto) contractStorageService
                 .updateContractTemplate(editedContract, "authToken",
@@ -1183,14 +1203,14 @@ public class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract.getNegotiation().setExchangeCountSelection("0");
-        editedContract.getNegotiation().setRuntimeSelection("5 day(s)");
+        editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
         editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
                 .updateContractTemplate(editedContract, "authToken",
-                        representedOrgaIds.iterator().next());
+                        consumer);
 
         assertEquals(editedContract.getNegotiation().isConsumerMerlotTncAccepted(), result.getNegotiation().isConsumerMerlotTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerOfferingTncAccepted(), result.getNegotiation().isConsumerOfferingTncAccepted());
@@ -1216,8 +1236,7 @@ public class ContractStorageServiceTest {
         result.getProvisioning().setSelectedProviderConnectorId("edc2");
 
         DataDeliveryContractDto result2 = (DataDeliveryContractDto) contractStorageService
-                .updateContractTemplate(result, "token",
-                        representedOrgaIds.iterator().next());
+                .updateContractTemplate(result, "token", provider);
 
         assertEquals(result.getNegotiation().isProviderMerlotTncAccepted(), result2.getNegotiation().isProviderMerlotTncAccepted());
         assertEquals(result.getProvisioning().getDataAddressType(), result2.getProvisioning().getDataAddressType());

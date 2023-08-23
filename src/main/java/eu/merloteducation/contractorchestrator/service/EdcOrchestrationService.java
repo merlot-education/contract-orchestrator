@@ -300,7 +300,7 @@ public class EdcOrchestrationService {
         boolean isProvider = activeRoleOrgaId.equals(template.getDetails().getProviderId().replace(ORGA_PREFIX, ""));
         ServiceOfferingDetails offeringDetails = template.getOffering();
         String dataTransferType = offeringDetails.getSelfDescription().get("verifiableCredential")
-                .get("credentialSubject").get("merlot:dataTransferType").asText();
+                .get("credentialSubject").get("merlot:dataTransferType").get("@value").asText();
 
         if (!((dataTransferType.equals("Push") && isProvider) ||
                         (dataTransferType.equals("Pull")&& isConsumer)
