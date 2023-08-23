@@ -47,6 +47,7 @@ public class ContractStorageService {
 
     private static final String CREDENTIAL_SUBJECT = "credentialSubject";
     private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
+    private static final String AUTHORIZATION = "Authorization";
     private static final String VALUE = "@value";
 
     @Autowired
@@ -252,9 +253,9 @@ public class ContractStorageService {
 
     private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
         OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
-                Map.of("Authorization", authToken));
+                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
-                Map.of("Authorization", authToken));
+                Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
         return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
     }
@@ -262,9 +263,9 @@ public class ContractStorageService {
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
         OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
-                Map.of("Authorization", authToken));
+                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
-                Map.of("Authorization", authToken));
+                Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
@@ -301,7 +302,7 @@ public class ContractStorageService {
 
         // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
         ServiceOfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
-                contractCreateRequest.getOfferingId(), Map.of("Authorization", authToken));
+                contractCreateRequest.getOfferingId(), Map.of(AUTHORIZATION, authToken));
 
         // in case someone with access rights to the state attempts to load this check the state as well
         if (offeringDetails.getMetadata().get("state") != null && !offeringDetails.getMetadata().get("state").asText().equals("RELEASED")) {
@@ -340,7 +341,7 @@ public class ContractStorageService {
 
         OrganizationDetails organizationDetails = organizationOrchestratorClient.getOrganizationDetails(
                 contract.getProviderId().replace(ORGA_PREFIX, ""),
-                Map.of("Authorization", authToken));
+                Map.of(AUTHORIZATION, authToken));
         contract.setProviderTncUrl(organizationDetails.getSelfDescription()
                 .getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
 
@@ -378,7 +379,7 @@ public class ContractStorageService {
 
         // Make sure we can still access the requested offering, otherwise exception is thrown
         serviceOfferingOrchestratorClient.getOfferingDetails(
-                contract.getOfferingId(), Map.of("Authorization", authToken));
+                contract.getOfferingId(), Map.of(AUTHORIZATION, authToken));
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
             contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
