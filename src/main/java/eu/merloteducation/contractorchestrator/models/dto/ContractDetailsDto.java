@@ -29,4 +29,12 @@ public class ContractDetailsDto {
     private String state;
 
     private String providerTncUrl;
+
+    private String providerSignerUser;
+
+    private String providerSignature;
+
+    private String consumerSignerUser;
+
+    private String consumerSignature;
 }

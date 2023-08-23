@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.*;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,19 +44,14 @@ class MessageQueueServiceTest {
         when(rabbitTemplate.convertSendAndReceiveAsType(anyString(), anyString(), any(Object.class),any()))
                 .thenReturn(null);
         orga10 = new OrganizationDetails();
-        orga10.setId("Participant:10");
-        orga10.setMerlotId("10");
-        orga10.setOrganizationLegalName("Orga10");
-        orga10.setOrganizationName("Orga10");
-        orga10.setRegistrationNumber("1234");
-        orga10.setTermsAndConditionsLink("http://example.com");
-        OrganizationAddressModel addressModel = new OrganizationAddressModel();
-        addressModel.setAddressCode("DE");
-        addressModel.setCountryCode("DE");
-        addressModel.setPostalCode("12345");
-        addressModel.setCity("City");
-        addressModel.setStreet("Street");
-        orga10.setLegalAddress(addressModel);
+        orga10.setSelfDescription(new OrganizationSelfDescription());
+        orga10.getSelfDescription().setVerifiableCredential(new OrganizationVerifiableCredential());
+        orga10.getSelfDescription().getVerifiableCredential().setCredentialSubject(new OrganizationCredentialSubject());
+        OrganizationCredentialSubject credentialSubject =orga10.getSelfDescription().getVerifiableCredential()
+                .getCredentialSubject();
+        credentialSubject.setId("Participant:10");
+        credentialSubject.setLegalName(new StringTypeValue("Orga 10"));
+        credentialSubject.setTermsAndConditionsLink(new StringTypeValue("http://example.com"));
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());
     }
@@ -65,17 +60,12 @@ class MessageQueueServiceTest {
     void remoteGetOrgaDetailsExistent() {
         OrganizationDetails details = messageQueueService.remoteRequestOrganizationDetails("10");
         assertNotNull(details);
-        assertEquals(orga10.getId(), details.getId());
-        assertEquals(orga10.getMerlotId(), details.getMerlotId());
-        assertEquals(orga10.getOrganizationLegalName(), details.getOrganizationLegalName());
-        assertEquals(orga10.getOrganizationName(), details.getOrganizationName());
-        assertEquals(orga10.getRegistrationNumber(), details.getRegistrationNumber());
-        assertEquals(orga10.getTermsAndConditionsLink(), details.getTermsAndConditionsLink());
-        assertEquals(orga10.getLegalAddress().getAddressCode(), details.getLegalAddress().getAddressCode());
-        assertEquals(orga10.getLegalAddress().getCity(), details.getLegalAddress().getCity());
-        assertEquals(orga10.getLegalAddress().getStreet(), details.getLegalAddress().getStreet());
-        assertEquals(orga10.getLegalAddress().getPostalCode(), details.getLegalAddress().getPostalCode());
-        assertEquals(orga10.getLegalAddress().getCountryCode(), details.getLegalAddress().getCountryCode());
+        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getId(),
+                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getId());
+        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getLegalName().getValue(),
+                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getLegalName().getValue());
+        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue(),
+                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
     }
 
     @Test

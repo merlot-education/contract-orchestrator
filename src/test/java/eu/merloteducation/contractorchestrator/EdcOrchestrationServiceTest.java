@@ -75,7 +75,6 @@ class EdcOrchestrationServiceTest {
         validPushContract.setConsumerSignerUserId("1234");
         validPushContract.setProviderSignature("2345");
         validPushContract.setProviderSignerUserId("2345");
-        validPushContract.setDataTransferType("Push");
         DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
         provisioning.setSelectedProviderConnectorId("edc1");
         provisioning.setDataAddressType("IonosS3");
@@ -94,7 +93,6 @@ class EdcOrchestrationServiceTest {
         validPullContract.setConsumerSignerUserId("1234");
         validPullContract.setProviderSignature("2345");
         validPullContract.setProviderSignerUserId("2345");
-        validPullContract.setDataTransferType("Pull");
         validPullContract.transitionState(ContractState.SIGNED_CONSUMER);
         validPullContract.transitionState(ContractState.RELEASED);
 
@@ -119,10 +117,10 @@ class EdcOrchestrationServiceTest {
 
         //when(contractStorageService.getContractDetails(eq("Contract:validPush"), any())).thenReturn(validPushContract);
 
-        doReturn(validPushContract).when(contractStorageService).getContractDetails(eq(validPushContract.getId()), any());
-        doReturn(validPullContract).when(contractStorageService).getContractDetails(eq(validPullContract.getId()), any());
-        doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getId()), any());
-        doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getId()), any());
+        doReturn(validPushContract).when(contractStorageService).getContractDetails(eq(validPushContract.getId()), any(), any());
+        doReturn(validPullContract).when(contractStorageService).getContractDetails(eq(validPullContract.getId()), any(), any());
+        doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getId()), any(), any());
+        doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getId()), any(), any());
 
         OrganisationConnectorExtension edc1 = new OrganisationConnectorExtension();
         edc1.setId("1234");
@@ -245,7 +243,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
         IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -260,7 +258,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
         ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiation);
         assertEquals("edc:ContractNegotiationDto", negotiation.getType());
@@ -279,7 +277,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
         IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferId);
         assertEquals("edc:IdResponseDto", transferId.getType());
@@ -294,7 +292,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
         IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
         assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
@@ -328,22 +326,22 @@ class EdcOrchestrationServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
     }
@@ -355,7 +353,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
         IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -369,7 +367,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
         ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiation);
 
@@ -389,7 +387,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
         IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferId);
         assertNotNull(transferId);
@@ -404,7 +402,7 @@ class EdcOrchestrationServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
         IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
         assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
@@ -438,22 +436,22 @@ class EdcOrchestrationServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
     }
@@ -470,22 +468,22 @@ class EdcOrchestrationServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
     }
@@ -501,22 +499,22 @@ class EdcOrchestrationServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
     }

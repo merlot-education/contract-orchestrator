@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
@@ -40,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -77,20 +83,27 @@ class ContractsControllerTest {
 
     @BeforeEach
     public void beforeEach() throws JSONException {
-        List<ContractTemplate> contractTemplates = new ArrayList<>();
-        SaasContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        List<ContractDto> contractTemplates = new ArrayList<>();
+        SaasContractDto template = new SaasContractDto();
+        template.setDetails(new SaasContractDetailsDto());
+        template.getDetails().setProviderId("Participant:10");
+        template.getDetails().setConsumerId("Participant:20");
         contractTemplates.add(template);
-        Page<ContractTemplate> contractTemplatesPage = new PageImpl<>(contractTemplates);
+
+        ContractBasicDto contractBasicDto = new ContractBasicDto();
+        contractBasicDto.setId("1234");
+        List<ContractBasicDto> contractDtos = new ArrayList<>();
+        contractDtos.add(contractBasicDto);
+
+        Page<ContractBasicDto> contractTemplatesPage = new PageImpl<>(contractDtos);
 
         lenient().when(contractStorageService.addContractTemplate(any(), any()))
-                .thenReturn(contractTemplates.get(0));
-        lenient().when(contractStorageService.getContractDetails(any(), any()))
-                .thenReturn(contractTemplates.get(0));
-        lenient().when(contractStorageService.updateContractTemplate(any(), any(), any(), any()))
-                .thenReturn(contractTemplates.get(0));
-        lenient().when(contractStorageService.getOrganizationContracts(any(), any()))
+                .thenReturn(template);
+        lenient().when(contractStorageService.getContractDetails(any(), any(), any()))
+                .thenReturn(template);
+        lenient().when(contractStorageService.updateContractTemplate(any(), any(), any()))
+                .thenReturn(template);
+        lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any()))
                 .thenReturn(contractTemplatesPage);
     }
 
@@ -163,16 +176,17 @@ class ContractsControllerTest {
     @Test
     void putUpdateContractValid() throws Exception
     {
-        ContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        SaasContractDto contractDto = new SaasContractDto();
+        contractDto.setDetails(new SaasContractDetailsDto());
+        contractDto.getDetails().setProviderId("Participant:10");
+        contractDto.getDetails().setConsumerId("Participant:20");
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .header("Active-Role", "OrgLegRep_10")
-                        .content(objectAsJsonString(template))
+                        .content(objectAsJsonString(contractDto))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
@@ -202,16 +216,17 @@ class ContractsControllerTest {
     @Test
     void putUpdateContractForbidden() throws Exception
     {
-        ContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        SaasContractDto contractDto = new SaasContractDto();
+        contractDto.setDetails(new SaasContractDetailsDto());
+        contractDto.getDetails().setProviderId("Participant:10");
+        contractDto.getDetails().setConsumerId("Participant:20");
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .header("Active-Role", "garbage")
-                        .content(objectAsJsonString(template))
+                        .content(objectAsJsonString(contractDto))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
