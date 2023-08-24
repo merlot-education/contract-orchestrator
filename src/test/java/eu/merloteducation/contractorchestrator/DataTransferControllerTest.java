@@ -83,10 +83,10 @@ public class DataTransferControllerTest {
         transferProcess.setId("234");
         transferProcess.setState("COMPLETED");
 
-        lenient().when(edcOrchestrationService.initiateConnectorNegotiation(any(), any(), any())).thenReturn(idResponse);
-        lenient().when(edcOrchestrationService.initiateConnectorTransfer(any(), any(), any(), any())).thenReturn(idResponse);
-        lenient().when(edcOrchestrationService.getNegotationStatus(any(), any(), any(), any())).thenReturn(negotiation);
-        lenient().when(edcOrchestrationService.getTransferStatus(any(), any(), any(), any())).thenReturn(transferProcess);
+        lenient().when(edcOrchestrationService.initiateConnectorNegotiation(any(), any(), any(), any())).thenReturn(idResponse);
+        lenient().when(edcOrchestrationService.initiateConnectorTransfer(any(), any(), any(), any(), any())).thenReturn(idResponse);
+        lenient().when(edcOrchestrationService.getNegotationStatus(any(), any(), any(), any(), any())).thenReturn(negotiation);
+        lenient().when(edcOrchestrationService.getTransferStatus(any(), any(), any(), any(), any())).thenReturn(transferProcess);
     }
 
     @Test

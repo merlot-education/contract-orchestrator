@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.controller;
 
+import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import org.jetbrains.annotations.NotNull;
@@ -22,15 +23,15 @@ public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBod
                                            @NotNull ServerHttpResponse res) {
         ServletServerHttpRequest request = (ServletServerHttpRequest)req;
 
-        if (bodyContainer.getValue() instanceof ContractTemplate contractTemplate) {
+        if (bodyContainer.getValue() instanceof ContractDto contractDto) {
             bodyContainer.setSerializationView(ContractViews.DetailedView.class);
             if (request.getHeaders().containsKey("Active-Role")) {
                 String activeRoleOrgaId = Objects.requireNonNull(request.getHeaders().getFirst("Active-Role"))
                         .replaceFirst("(OrgLegRep|OrgRep)_", "");
-                if (contractTemplate.getProviderId().replace("Participant:", "")
+                if (contractDto.getDetails().getProviderId().replace("Participant:", "")
                         .equals(activeRoleOrgaId)) {
                     bodyContainer.setSerializationView(ContractViews.ProviderView.class);
-                } else if (contractTemplate.getConsumerId().replace("Participant:", "")
+                } else if (contractDto.getDetails().getConsumerId().replace("Participant:", "")
                         .equals(activeRoleOrgaId)) {
                     bodyContainer.setSerializationView(ContractViews.ConsumerView.class);
                 }

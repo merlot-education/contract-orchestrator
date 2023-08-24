@@ -1,22 +1,27 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
@@ -24,6 +29,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.http.HttpStatus.*;
@@ -39,8 +45,19 @@ public class ContractStorageService {
 
     private static final String ORGA_PREFIX = "Participant:";
 
+    private static final String CREDENTIAL_SUBJECT = "credentialSubject";
+    private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String VALUE = "@value";
+
     @Autowired
-    private RestTemplate restTemplate;
+    private EntityManager entityManager;
+
+    @Autowired
+    private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
+
+    @Autowired
+    private OrganizationOrchestratorClient organizationOrchestratorClient;
 
     @Autowired
     private MessageQueueService messageQueueService;
@@ -51,188 +68,167 @@ public class ContractStorageService {
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
-    @Value("${serviceoffering-orchestrator.base-uri}")
-    private String serviceOfferingOrchestratorBaseUri;
-
-    @Value("${organizations-orchestrator.base-uri}")
-    private String organizationsOrchestratorBaseUri;
-
-    private JSONObject requestServiceOfferingDetails(String authToken, String offeringId) throws JSONException {
-        // request details about service offering
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", authToken);
-        HttpEntity<String> request = new HttpEntity<>(null, headers);
-        String serviceOfferingResponse = restTemplate.exchange(
-                serviceOfferingOrchestratorBaseUri + "/serviceoffering/" + offeringId,
-                HttpMethod.GET, request, String.class).getBody();
-
-        return new JSONObject(serviceOfferingResponse); // TODO replace this with actual model once common library is created
-    }
-
-    private JSONObject requestOrganizationDetails(String orgaId, String authToken) throws JSONException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", authToken);
-        HttpEntity<String> request = new HttpEntity<>(null, headers);
-
-        String organizationResponse = restTemplate.exchange(
-                organizationsOrchestratorBaseUri + "/organization/" + orgaId,
-                HttpMethod.GET, request, String.class).getBody();
-        return new JSONObject(organizationResponse); // TODO replace this with actual model once common library is created
-    }
+    @Autowired
+    private ContractMapper contractMapper;
 
     private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
-        JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken, contract.getOfferingId());
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
 
         // make sure selections are valid
-        if (contract.getRuntimeSelection() != null
+        if (!StringUtil.isNullOrEmpty(contract.getRuntimeSelection())
                 && !isValidRuntimeSelection(
-                contract.getRuntimeSelection(), serviceOfferingJson)) {
+                contract.getRuntimeSelection(), offeringDetails)) {
             return false;
         }
 
         if (contract instanceof SaasContractTemplate saasContract
-                && saasContract.getUserCountSelection() != null
+                && !StringUtil.isNullOrEmpty(saasContract.getUserCountSelection())
                 && !isValidUserCountSelection(saasContract.getUserCountSelection(),
-                serviceOfferingJson)) {
+                offeringDetails)) {
             return false;
         }
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
-                && dataDeliveryContract.getExchangeCountSelection() != null
+                && !StringUtil.isNullOrEmpty(dataDeliveryContract.getExchangeCountSelection())
                 && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
-                serviceOfferingJson)) {
+                offeringDetails)) {
             return false;
         }
 
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("runtimeOption");
-        if (options == null) {
+    private boolean isValidRuntimeSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
+        JsonNode runtimeOptions = credentialSubject.get("merlot:runtimeOption");
+        if (!runtimeOptions.isArray()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(option.getInt("runtimeCount")
-                    + " " + option.getString("runtimeMeasurement"))) {
+
+        for (final JsonNode option: runtimeOptions) {
+            if (selection.equals(option.get("merlot:runtimeCount").get(VALUE).asText()
+                    + " " + option.get("merlot:runtimeMeasurement").get(VALUE).asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private boolean isValidUserCountSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("userCountOption");
-        if (options == null) {
+    private boolean isValidUserCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
+        JsonNode userCountOptions = credentialSubject.get("merlot:userCountOption");
+        if (!userCountOptions.isArray()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(String.valueOf(option.getInt("userCountUpTo")))) {
+
+        for (final JsonNode option: userCountOptions) {
+            if (selection.equals(option.get("merlot:userCountUpTo").get(VALUE).asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, JSONObject obj) throws JSONException {
-        JSONArray options = obj.optJSONArray("exchangeCountOption");
-        if (options == null) {
+    private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
+        JsonNode exchangeCountOptions = credentialSubject.get("merlot:exchangeCountOption");
+        if (!exchangeCountOptions.isArray()) {
             return false;
         }
-        for (int i = 0; i < options.length(); i++) {
-            JSONObject option = options.getJSONObject(i);
-            if (selection.equals(String.valueOf(option.getInt("exchangeCountUpTo")))) {
+
+        for (final JsonNode option: exchangeCountOptions) {
+            if (selection.equals(option.get("merlot:exchangeCountUpTo").get(VALUE).asText())) {
                 return true;
             }
         }
+
         return false;
     }
 
     private void updateSaasContract(SaasContractTemplate targetContract,
-                                    SaasContractTemplate editedContract) {
+                                    SaasContractDto editedContract) {
         if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setUserCountSelection(editedContract.getUserCountSelection());
+            targetContract.setUserCountSelection(editedContract.getNegotiation().getUserCountSelection());
         }
     }
 
     private void updateDataDeliveryContract(DataDeliveryContractTemplate targetContract,
-                                            DataDeliveryContractTemplate editedContract,
+                                            DataDeliveryContractDto editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
-        DataDeliveryProvisioning targetProvisioning =
-                (DataDeliveryProvisioning) targetContract.getServiceContractProvisioning();
-        DataDeliveryProvisioning editedProvisioning =
-                (DataDeliveryProvisioning) editedContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
 
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(
-                    editedContract.getExchangeCountSelection());
+                    editedContract.getNegotiation().getExchangeCountSelection());
             if (isConsumer) {
                 // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressTargetBucketName(
-                        editedProvisioning.getDataAddressTargetBucketName());
+                        editedContract.getProvisioning().getDataAddressTargetBucketName());
                 targetProvisioning.setDataAddressTargetFileName(
-                        editedProvisioning.getDataAddressTargetFileName());
+                        editedContract.getProvisioning().getDataAddressTargetFileName());
                 targetProvisioning.setSelectedConsumerConnectorId(
-                        editedProvisioning.getSelectedConsumerConnectorId());
+                        editedContract.getProvisioning().getSelectedConsumerConnectorId());
             }
             if (isProvider) {
                 targetProvisioning.setDataAddressType(
-                        editedProvisioning.getDataAddressType());
+                        editedContract.getProvisioning().getDataAddressType());
                 // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressSourceBucketName(
-                        editedProvisioning.getDataAddressSourceBucketName());
+                        editedContract.getProvisioning().getDataAddressSourceBucketName());
                 targetProvisioning.setDataAddressSourceFileName(
-                        editedProvisioning.getDataAddressSourceFileName());
+                        editedContract.getProvisioning().getDataAddressSourceFileName());
                 // TODO verify that this is a valid connectorId
                 targetProvisioning.setSelectedProviderConnectorId(
-                        editedProvisioning.getSelectedProviderConnectorId());
+                        editedContract.getProvisioning().getSelectedProviderConnectorId());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetProvisioning.setDataAddressType(
-                    editedProvisioning.getDataAddressType());
+                    editedContract.getProvisioning().getDataAddressType());
             // TODO verify that this is a bucket that belongs to the connector
             targetProvisioning.setDataAddressSourceBucketName(
-                    editedProvisioning.getDataAddressSourceBucketName());
+                    editedContract.getProvisioning().getDataAddressSourceBucketName());
             targetProvisioning.setDataAddressSourceFileName(
-                    editedProvisioning.getDataAddressSourceFileName());
+                    editedContract.getProvisioning().getDataAddressSourceFileName());
             // TODO verify that this is a valid connectorId
             targetProvisioning.setSelectedProviderConnectorId(
-                    editedProvisioning.getSelectedProviderConnectorId());
+                    editedContract.getProvisioning().getSelectedProviderConnectorId());
         }
     }
 
     private void updateContractDependingOnRole(ContractTemplate targetContract,
-                                               ContractTemplate editedContract,
+                                               ContractDto editedContract,
                                                boolean isConsumer,
                                                boolean isProvider) {
         // TODO consider moving this logic into a DTO pattern
         if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setRuntimeSelection(editedContract.getRuntimeSelection());
+            targetContract.setRuntimeSelection(editedContract.getNegotiation().getRuntimeSelection());
             if (isConsumer) {
-                targetContract.setConsumerMerlotTncAccepted(editedContract.isConsumerMerlotTncAccepted());
-                targetContract.setConsumerProviderTncAccepted(editedContract.isConsumerProviderTncAccepted());
-                targetContract.setConsumerOfferingTncAccepted(editedContract.isConsumerOfferingTncAccepted());
+                targetContract.setConsumerMerlotTncAccepted(editedContract.getNegotiation().isConsumerMerlotTncAccepted());
+                targetContract.setConsumerProviderTncAccepted(editedContract.getNegotiation().isConsumerProviderTncAccepted());
+                targetContract.setConsumerOfferingTncAccepted(editedContract.getNegotiation().isConsumerOfferingTncAccepted());
             }
             if (isProvider) {
-                targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
-                targetContract.setAdditionalAgreements(editedContract.getAdditionalAgreements());
-                targetContract.setOfferingAttachments(editedContract.getOfferingAttachments());
+                targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
+                targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
+                targetContract.setOfferingAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.isProviderMerlotTncAccepted());
+            targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
 
         }
 
         if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
-                editedContract instanceof SaasContractTemplate editedSaasContractTemplate) {
+                editedContract instanceof SaasContractDto editedSaasContractTemplate) {
             updateSaasContract(targetSaasContractTemplate, editedSaasContractTemplate);
         }
 
         if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
-                editedContract instanceof DataDeliveryContractTemplate editedDataDeliveryContractTemplate) {
+                editedContract instanceof DataDeliveryContractDto editedDataDeliveryContractTemplate) {
             updateDataDeliveryContract(targetDataDeliveryContractTemplate, editedDataDeliveryContractTemplate,
                     isConsumer, isProvider);
         }
@@ -255,6 +251,36 @@ public class ContractStorageService {
         return OffsetDateTime.now().plus(temporalAmount);
     }
 
+    private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of(AUTHORIZATION, authToken));
+        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
+                Map.of(AUTHORIZATION, authToken));
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
+    }
+
+    private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
+
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of(AUTHORIZATION, authToken));
+        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
+                Map.of(AUTHORIZATION, authToken));
+        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+
+        if (template instanceof DataDeliveryContractTemplate dataTemplate) {
+            return contractMapper.contractToContractDto(dataTemplate, providerDetails,
+                    consumerDetails, offeringDetails);
+        } else if (template instanceof SaasContractTemplate saasTemplate) {
+            return contractMapper.contractToContractDto(saasTemplate, providerDetails,
+                    consumerDetails, offeringDetails);
+        } else if (template instanceof CooperationContractTemplate coopTemplate) {
+            return contractMapper.contractToContractDto(coopTemplate, providerDetails,
+                    consumerDetails, offeringDetails);
+        }
+        throw new IllegalArgumentException("Unknown contract or offering type.");
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -265,7 +291,7 @@ public class ContractStorageService {
      * @return Instantiated contract object from the database
      */
     @Transactional
-    public ContractTemplate addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
+    public ContractDto addContractTemplate(ContractCreateRequest contractCreateRequest, String authToken)
             throws JSONException {
 
         // check that fields are in a valid format
@@ -274,56 +300,55 @@ public class ContractStorageService {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
-        JSONObject serviceOfferingJson = requestServiceOfferingDetails(authToken,
-                contractCreateRequest.getOfferingId());
-        if (!serviceOfferingJson.getString("merlotState").equals("RELEASED")) {
+        // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
+        ServiceOfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
+                contractCreateRequest.getOfferingId(), Map.of(AUTHORIZATION, authToken));
+
+        // in case someone with access rights to the state attempts to load this check the state as well
+        if (offeringDetails.getMetadata().get("state") != null && !offeringDetails.getMetadata().get("state").asText().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingSaaS")) {
-            contract = new SaasContractTemplate();
-        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingDataDelivery")) {
-            contract = new DataDeliveryContractTemplate();
-            // also store a copy of the data transfer type to later decide who can initiate a transfer
-            ((DataDeliveryContractTemplate) contract).setDataTransferType(serviceOfferingJson.getString("dataTransferType"));
-        } else if (serviceOfferingJson.getString("type").equals("merlot:MerlotServiceOfferingCooperation")) {
-            contract = new CooperationContractTemplate();
-        } else {
-            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
+        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
+
+        switch (credentialSubject.get("@type").asText()) {
+            case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
+            case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
+            case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
+            default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
 
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
+        contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
-        contract.setOfferingName(serviceOfferingJson.getString("name"));
-        contract.setProviderId(serviceOfferingJson.getString("offeredBy"));
-        if (!serviceOfferingJson.isNull("attachments")) {
-            List<String> attachments = new ArrayList<>();
-            JSONArray jsonAttachments = serviceOfferingJson.getJSONArray("attachments");
-            for (int i = 0; i < jsonAttachments.length(); i++) {
-                attachments.add(jsonAttachments.get(0).toString());
+        List<String> attachments = new ArrayList<>();
+        if (credentialSubject.has("merlot:attachments")) {
+            for (JsonNode attachment : credentialSubject.get("merlot:attachments")) {
+                attachments.add(attachment.asText());
             }
-            contract.setOfferingAttachments(attachments);
         }
+        contract.setOfferingAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Provider and consumer must not be equal.");
         }
 
-        JSONObject organizationJson = requestOrganizationDetails(
-                contract.getProviderId().replace(ORGA_PREFIX, ""), authToken);
-        contract.setProviderTncUrl(organizationJson.getString("termsAndConditionsLink"));
+        OrganizationDetails organizationDetails = organizationOrchestratorClient.getOrganizationDetails(
+                contract.getProviderId().replace(ORGA_PREFIX, ""),
+                Map.of(AUTHORIZATION, authToken));
+        contract.setProviderTncUrl(organizationDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
 
-        contract = contractTemplateRepository.save(contract);
-
+        contract = contractTemplateRepository.saveAndFlush(contract);
+        entityManager.refresh(contract); // refresh entity from database to get newly generated discriminator column
         messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
-
-        return contract;
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
@@ -331,10 +356,11 @@ public class ContractStorageService {
      * with a copy of all editable fields. A new ID is generated as well as the signatures are reset.
      *
      * @param contractId         id of the contract to copy
+     * @param authToken          the OAuth2 Token from the user requesting this action
      * @param representedOrgaIds list of organization ids the user represents
      * @return newly generated contract
      */
-    public ContractTemplate regenerateContract(String contractId, Set<String> representedOrgaIds) {
+    public ContractDto regenerateContract(String contractId, Set<String> representedOrgaIds, String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -350,6 +376,10 @@ public class ContractStorageService {
         if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
+
+        // Make sure we can still access the requested offering, otherwise exception is thrown
+        serviceOfferingOrchestratorClient.getOfferingDetails(
+                contract.getOfferingId(), Map.of(AUTHORIZATION, authToken));
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
             contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
@@ -367,24 +397,23 @@ public class ContractStorageService {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
         }
         contractTemplateRepository.save(contract);
-        return contract;
+
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
      * Given an edited ContractTemplate, this function verifies the updated fields and writes them to the database if allowed.
      *
-     * @param editedContract     contract template with edited fields
-     * @param authToken          the OAuth2 Token from the user requesting this action
-     * @param activeRoleOrgaId   the currently selected role of the user
-     * @param representedOrgaIds list of organization ids the user represents
+     * @param editedContract   contract template with edited fields
+     * @param authToken        the OAuth2 Token from the user requesting this action
+     * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
-    public ContractTemplate updateContractTemplate(ContractTemplate editedContract,
+    public ContractDto updateContractTemplate(ContractDto editedContract,
                                                    String authToken,
-                                                   String activeRoleOrgaId,
-                                                   Set<String> representedOrgaIds) throws JSONException {
+                                                   String activeRoleOrgaId) throws JSONException {
 
-        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getId()).orElse(null);
+        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getDetails().getId()).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
@@ -412,7 +441,8 @@ public class ContractStorageService {
         }
 
         // at this point we have a valid requested update, save it in the db
-        return contractTemplateRepository.save(contract);
+        contract = contractTemplateRepository.save(contract);
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
@@ -422,12 +452,14 @@ public class ContractStorageService {
      * @param targetState      target state of the contract template
      * @param activeRoleOrgaId the currently selected role of the user
      * @param userId           the id of the user that requested this action
+     * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
-    public ContractTemplate transitionContractTemplateState(String contractId,
+    public ContractDto transitionContractTemplateState(String contractId,
                                                             ContractState targetState,
                                                             String activeRoleOrgaId,
-                                                            String userId) {
+                                                            String userId,
+                                                            String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -467,7 +499,7 @@ public class ContractStorageService {
             }
             contractTemplateRepository.delete(contract);
             messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
-            return contract;
+            return castAndMapToContractDetailsDto(contract, authToken);
         }
 
         // check if transitioning to the target state is generally allowed
@@ -478,33 +510,40 @@ public class ContractStorageService {
         }
 
         // if all checks passed, save the new state of the contract
-        return contractTemplateRepository.save(contract);
+        contract = contractTemplateRepository.save(contract);
+
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 
     /**
      * Returns all contracts from the database where the specified organization is either the consumer or provider.
      *
-     * @param orgaId   id of the organization requesting this data
-     * @param pageable page request
+     * @param orgaId    id of the organization requesting this data
+     * @param pageable  page request
+     * @param authToken the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractTemplate> getOrganizationContracts(String orgaId, Pageable pageable) {
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
-        return contractTemplateRepository.findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+        Page<ContractTemplate> contractTemplates = contractTemplateRepository.
+                findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+
+        return contractTemplates.map(template -> mapToContractBasicDto(template, authToken));
     }
 
     /**
      * For a given id, return the corresponding contract database entry.
      *
      * @param contractId         id of the contract
-     * @param representedOrgaIds ids of orgas that the user requesting this action represents
+     * @param authToken          the OAuth2 Token from the user requesting this action
      * @return contract object from the database
      */
-    public ContractTemplate getContractDetails(String contractId, Set<String> representedOrgaIds) {
+    public ContractDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
         System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
@@ -515,6 +554,6 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_VIEW_FORBIDDEN);
         }
 
-        return contract;
+        return castAndMapToContractDetailsDto(contract, authToken);
     }
 }

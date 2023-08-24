@@ -1,6 +1,15 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.OrganisationConnectorExtension;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractNegotiationDto;
+import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
+import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
@@ -8,6 +17,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
@@ -51,78 +61,120 @@ class EdcOrchestrationServiceTest {
     @Autowired
     private EdcOrchestrationService edcOrchestrationService;
 
-    private DataDeliveryContractTemplate validPushContract;
-    private DataDeliveryContractTemplate validPullContract;
-    private SaasContractTemplate wrongTypeContract;
-    private DataDeliveryContractTemplate wrongStateContract;
+    private DataDeliveryContractDto validPushContract;
+    private DataDeliveryContractDto validPullContract;
+    private SaasContractDto wrongTypeContract;
+    private DataDeliveryContractDto wrongStateContract;
 
     @BeforeAll
-    public void setUp() {
+    public void setUp() throws JsonProcessingException {
         ReflectionTestUtils.setField(edcOrchestrationService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(edcOrchestrationService, "contractStorageService", contractStorageService);
         ReflectionTestUtils.setField(edcOrchestrationService, "restTemplate", restTemplate);
 
-        validPushContract = new DataDeliveryContractTemplate();
-        validPushContract.setRuntimeSelection("0 unlimited");
-        validPushContract.setConsumerMerlotTncAccepted(true);
-        validPushContract.setConsumerOfferingTncAccepted(true);
-        validPushContract.setConsumerProviderTncAccepted(true);
-        validPushContract.setProviderMerlotTncAccepted(true);
-        validPushContract.setExchangeCountSelection("0");
-        validPushContract.setConsumerId("Participant:10");
-        validPushContract.setProviderId("Participant:20");
-        validPushContract.setConsumerSignature("1234");
-        validPushContract.setConsumerSignerUserId("1234");
-        validPushContract.setProviderSignature("2345");
-        validPushContract.setProviderSignerUserId("2345");
-        validPushContract.setDataTransferType("Push");
-        DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
-        provisioning.setSelectedProviderConnectorId("edc1");
-        provisioning.setDataAddressType("IonosS3");
-        provisioning.setDataAddressSourceFileName("sourcefile.json");
-        provisioning.setDataAddressSourceBucketName("sourcebucket");
-        provisioning.setSelectedConsumerConnectorId("edc2");
-        provisioning.setDataAddressTargetFileName("targetfile.json");
-        provisioning.setDataAddressTargetBucketName("targetbucket");
-        validPushContract.setServiceContractProvisioning(provisioning);
+        ObjectMapper mapper = new ObjectMapper();
 
-        validPushContract.transitionState(ContractState.SIGNED_CONSUMER);
-        validPushContract.transitionState(ContractState.RELEASED);
+        validPushContract = new DataDeliveryContractDto();
+        validPushContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        validPushContract.setNegotiation(new DataDeliveryContractNegotiationDto());
+        validPushContract.setDetails(new DataDeliveryContractDetailsDto());
+        validPushContract.getNegotiation().setRuntimeSelection("0 unlimited");
+        validPushContract.getNegotiation().setConsumerMerlotTncAccepted(true);
+        validPushContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        validPushContract.getNegotiation().setConsumerProviderTncAccepted(true);
+        validPushContract.getNegotiation().setProviderMerlotTncAccepted(true);
+        validPushContract.getNegotiation().setExchangeCountSelection("0");
+        validPushContract.getDetails().setId("validPushContract");
+        validPushContract.getDetails().setConsumerId("Participant:10");
+        validPushContract.getDetails().setProviderId("Participant:20");
+        validPushContract.getDetails().setConsumerSignature("1234");
+        validPushContract.getDetails().setConsumerSignerUser("1234");
+        validPushContract.getDetails().setProviderSignature("2345");
+        validPushContract.getDetails().setProviderSignerUser("2345");
+        validPushContract.getDetails().setState("RELEASED");
+        validPushContract.getProvisioning().setSelectedProviderConnectorId("edc1");
+        validPushContract.getProvisioning().setDataAddressType("IonosS3");
+        validPushContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
+        validPushContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
+        validPushContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
+        validPushContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
+        validPushContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
+        validPushContract.setOffering(new ServiceOfferingDetails());
+        validPushContract.getOffering().setSelfDescription(mapper.readTree("""
+                {
+                    "verifiableCredential": {
+                        "credentialSubject": {
+                            "merlot:dataTransferType": {
+                                    "@type": "xsd:string",
+                                    "@value": "Push"
+                            }
+                        }
+                    }
+                }
+                """));
 
-        validPullContract = new DataDeliveryContractTemplate(validPushContract, true);
-        validPullContract.setConsumerSignature("1234");
-        validPullContract.setConsumerSignerUserId("1234");
-        validPullContract.setProviderSignature("2345");
-        validPullContract.setProviderSignerUserId("2345");
-        validPullContract.setDataTransferType("Pull");
-        validPullContract.transitionState(ContractState.SIGNED_CONSUMER);
-        validPullContract.transitionState(ContractState.RELEASED);
 
-        wrongTypeContract = new SaasContractTemplate();
-        wrongTypeContract.setRuntimeSelection("0 unlimited");
-        wrongTypeContract.setConsumerMerlotTncAccepted(true);
-        wrongTypeContract.setConsumerOfferingTncAccepted(true);
-        wrongTypeContract.setConsumerProviderTncAccepted(true);
-        wrongTypeContract.setProviderMerlotTncAccepted(true);
-        wrongTypeContract.setUserCountSelection("0");
-        wrongTypeContract.setConsumerId("Participant:10");
-        wrongTypeContract.setProviderId("Participant:20");
-        wrongTypeContract.setConsumerSignature("1234");
-        wrongTypeContract.setConsumerSignerUserId("1234");
-        wrongTypeContract.setProviderSignature("2345");
-        wrongTypeContract.setProviderSignerUserId("2345");
+        validPullContract = new DataDeliveryContractDto();
+        validPullContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        validPullContract.setNegotiation(new DataDeliveryContractNegotiationDto());
+        validPullContract.setDetails(new DataDeliveryContractDetailsDto());
+        validPullContract.getNegotiation().setRuntimeSelection("0 unlimited");
+        validPullContract.getNegotiation().setConsumerMerlotTncAccepted(true);
+        validPullContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        validPullContract.getNegotiation().setConsumerProviderTncAccepted(true);
+        validPullContract.getNegotiation().setProviderMerlotTncAccepted(true);
+        validPullContract.getNegotiation().setExchangeCountSelection("0");
+        validPullContract.getDetails().setId("validPullContract");
+        validPullContract.getDetails().setConsumerId("Participant:10");
+        validPullContract.getDetails().setProviderId("Participant:20");
+        validPullContract.getDetails().setConsumerSignature("1234");
+        validPullContract.getDetails().setConsumerSignerUser("1234");
+        validPullContract.getDetails().setProviderSignature("2345");
+        validPullContract.getDetails().setProviderSignerUser("2345");
+        validPullContract.getDetails().setState("RELEASED");
+        validPullContract.getProvisioning().setSelectedProviderConnectorId("edc1");
+        validPullContract.getProvisioning().setDataAddressType("IonosS3");
+        validPullContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
+        validPullContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
+        validPullContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
+        validPullContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
+        validPullContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
+        validPullContract.setOffering(new ServiceOfferingDetails());
+        validPullContract.getOffering().setSelfDescription(mapper.readTree("""
+                {
+                    "verifiableCredential": {
+                        "credentialSubject": {
+                            "merlot:dataTransferType": {
+                                    "@type": "xsd:string",
+                                    "@value": "Pull"
+                            }
+                        }
+                    }
+                }
+                """));
 
-        wrongTypeContract.transitionState(ContractState.SIGNED_CONSUMER);
-        wrongTypeContract.transitionState(ContractState.RELEASED);
+        wrongTypeContract = new SaasContractDto();
+        wrongTypeContract.setDetails(new SaasContractDetailsDto());
+        wrongTypeContract.getDetails().setId("wrongTypeContract");
+        wrongTypeContract.getDetails().setState("RELEASED");
+        wrongTypeContract.getDetails().setConsumerId("Participant:10");
+        wrongTypeContract.getDetails().setProviderId("Participant:20");
 
-        wrongStateContract = new DataDeliveryContractTemplate(validPushContract, true);
+        wrongStateContract = new DataDeliveryContractDto();
+        wrongStateContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        wrongStateContract.setNegotiation(new DataDeliveryContractNegotiationDto());
+        wrongStateContract.setDetails(new DataDeliveryContractDetailsDto());
+        wrongStateContract.getDetails().setId("wrongStateContract");
+        wrongStateContract.getDetails().setState("IN_DRAFT");
+        wrongStateContract.getDetails().setConsumerId("Participant:10");
+        wrongStateContract.getDetails().setProviderId("Participant:20");
 
         //when(contractStorageService.getContractDetails(eq("Contract:validPush"), any())).thenReturn(validPushContract);
 
-        doReturn(validPushContract).when(contractStorageService).getContractDetails(eq(validPushContract.getId()), any());
-        doReturn(validPullContract).when(contractStorageService).getContractDetails(eq(validPullContract.getId()), any());
-        doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getId()), any());
-        doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getId()), any());
+        doReturn(validPushContract).when(contractStorageService).getContractDetails(eq(validPushContract.getDetails().getId()), any(), any());
+        doReturn(validPullContract).when(contractStorageService).getContractDetails(eq(validPullContract.getDetails().getId()), any(), any());
+        doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getDetails().getId()), any(), any());
+        doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getDetails().getId()), any(), any());
 
         OrganisationConnectorExtension edc1 = new OrganisationConnectorExtension();
         edc1.setId("1234");
@@ -243,9 +295,9 @@ class EdcOrchestrationServiceTest {
     void testInitiateNegotiationValidPushProvider() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
-        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPushContract.getDetails().getProviderId().replace("Participant:", ""));
+        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getDetails().getId(),
+                validPushContract.getDetails().getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -258,9 +310,9 @@ class EdcOrchestrationServiceTest {
     void testCheckNegotiationValidPushProvider() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
-        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPushContract.getDetails().getProviderId().replace("Participant:", ""));
+        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getDetails().getId(),
+                validPushContract.getDetails().getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiation);
         assertEquals("edc:ContractNegotiationDto", negotiation.getType());
@@ -277,9 +329,9 @@ class EdcOrchestrationServiceTest {
     void testInitiateTransferValidPushProvider() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
-        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPushContract.getDetails().getProviderId().replace("Participant:", ""));
+        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getDetails().getId(),
+                validPushContract.getDetails().getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferId);
         assertEquals("edc:IdResponseDto", transferId.getType());
@@ -292,9 +344,9 @@ class EdcOrchestrationServiceTest {
     void testGetTransferStatusValidPushProvider() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPushContract.getProviderId().replace("Participant:", ""));
-        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getId(),
-                validPushContract.getProviderId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPushContract.getDetails().getProviderId().replace("Participant:", ""));
+        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getDetails().getId(),
+                validPushContract.getDetails().getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
         assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
@@ -320,30 +372,30 @@ class EdcOrchestrationServiceTest {
     @Test
     void testValidPushWrongRole() {
 
-        String consumer = validPushContract.getConsumerId().replace("Participant:", "");
-        String contractId = validPushContract.getId();
+        String consumer = validPushContract.getDetails().getConsumerId().replace("Participant:", "");
+        String contractId = validPushContract.getDetails().getId();
 
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(consumer);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
     }
@@ -353,9 +405,9 @@ class EdcOrchestrationServiceTest {
     void testInitiateNegotiationValidPullConsumer() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
-        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPullContract.getDetails().getConsumerId().replace("Participant:", ""));
+        IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getDetails().getId(),
+                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -367,9 +419,9 @@ class EdcOrchestrationServiceTest {
     void testCheckNegotiationValidPullConsumer() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
-        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPullContract.getDetails().getConsumerId().replace("Participant:", ""));
+        ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getDetails().getId(),
+                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(negotiation);
 
@@ -387,9 +439,9 @@ class EdcOrchestrationServiceTest {
     void testInitiateTransferValidPullConsumer() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
-        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPullContract.getDetails().getConsumerId().replace("Participant:", ""));
+        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getDetails().getId(),
+                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferId);
         assertNotNull(transferId);
@@ -402,9 +454,9 @@ class EdcOrchestrationServiceTest {
     void testGetTransferStatusValidPullConsumer() {
 
         Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add(validPullContract.getConsumerId().replace("Participant:", ""));
-        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getId(),
-                validPullContract.getConsumerId().replace("Participant:", ""), representedOrgaIds);
+        representedOrgaIds.add(validPullContract.getDetails().getConsumerId().replace("Participant:", ""));
+        IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getDetails().getId(),
+                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
         assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
@@ -430,30 +482,30 @@ class EdcOrchestrationServiceTest {
     @Test
     void testValidPullWrongRole() {
 
-        String provider = validPullContract.getProviderId().replace("Participant:", "");
-        String contractId = validPullContract.getId();
+        String provider = validPullContract.getDetails().getProviderId().replace("Participant:", "");
+        String contractId = validPullContract.getDetails().getId();
 
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(provider);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        provider, representedOrgaIds));
+                        provider, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
 
     }
@@ -462,30 +514,30 @@ class EdcOrchestrationServiceTest {
     @Test
     void testWrongContractType() {
 
-        String consumer = wrongTypeContract.getConsumerId().replace("Participant:", "");
-        String contractId = wrongTypeContract.getId();
+        String consumer = wrongTypeContract.getDetails().getConsumerId().replace("Participant:", "");
+        String contractId = wrongTypeContract.getDetails().getId();
 
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(consumer);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
     }
@@ -493,30 +545,30 @@ class EdcOrchestrationServiceTest {
     @Test
     void testWrongContractState() {
 
-        String consumer = wrongStateContract.getConsumerId().replace("Participant:", "");
-        String contractId = wrongStateContract.getId();
+        String consumer = wrongStateContract.getDetails().getConsumerId().replace("Participant:", "");
+        String contractId = wrongStateContract.getDetails().getId();
 
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(consumer);
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorNegotiation(contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getNegotationStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.initiateConnectorTransfer("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
         ex = assertThrows(ResponseStatusException.class,
                 () -> this.edcOrchestrationService.getTransferStatus("myId", contractId,
-                        consumer, representedOrgaIds));
+                        consumer, representedOrgaIds, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
 
     }

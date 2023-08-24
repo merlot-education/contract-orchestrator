@@ -15,6 +15,7 @@ public class MessageQueueConfig {
     public static final String CONTRACT_CREATED_KEY = "created.contract";
     public static final String CONTRACT_PURGED_KEY = "purged.contract";
     public static final String ORGANIZATION_REQUEST_KEY = "request.organization";
+    public static final String OFFERING_REQUEST_KEY = "request.offering";
     public static final String ORGANIZATIONCONNECTOR_REQUEST_KEY = "request.organizationconnector";
     @Bean
     DirectExchange orchestratorExchange() {

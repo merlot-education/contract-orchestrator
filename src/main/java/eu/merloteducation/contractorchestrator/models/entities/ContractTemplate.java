@@ -48,9 +48,6 @@ public abstract class ContractTemplate {
     private String offeringId;
 
     @JsonView(ContractViews.BasicView.class)
-    private String offeringName;
-
-    @JsonView(ContractViews.BasicView.class)
     private String providerId;
 
     @JsonView(ContractViews.BasicView.class)
@@ -111,7 +108,6 @@ public abstract class ContractTemplate {
         this.id = regenerate ? "Contract:" + UUID.randomUUID() : template.getId();
         this.creationDate = OffsetDateTime.now();
         this.offeringId = template.getOfferingId();
-        this.offeringName = template.getOfferingName();
         this.providerId = template.getProviderId();
         this.consumerId = template.getConsumerId();
         this.runtimeSelection = template.getRuntimeSelection();
