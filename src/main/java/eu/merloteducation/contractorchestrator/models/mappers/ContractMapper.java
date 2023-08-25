@@ -27,12 +27,11 @@ public interface ContractMapper {
     @Mapping(target = "creationDate", source = "contract.creationDate")
     @Mapping(target = "offering", source = "offeringDetails")
     @Mapping(target = "providerLegalName",
-            source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+            source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
     @Mapping(target = "state", source = "contract.state")
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract,
-                                                OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,
                                                 ServiceOfferingDetails offeringDetails);
 
@@ -41,7 +40,7 @@ public interface ContractMapper {
     @Mapping(target = "details.creationDate", source = "contract.creationDate")
     @Mapping(target = "details.providerId", source = "contract.providerId")
     @Mapping(target = "details.providerLegalName",
-            source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+            source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "details.consumerId", source = "contract.consumerId")
     @Mapping(target = "details.consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
@@ -61,20 +60,17 @@ public interface ContractMapper {
     @Mapping(target = "provisioning.validUntil", source = "contract.serviceContractProvisioning.validUntil")
     @Mapping(target = "offering", source = "offeringDetails")
     ContractDto contractToContractDto(ContractTemplate contract,
-                                                OrganizationDetails providerOrgaDetails,
                                                 OrganizationDetails consumerOrgaDetails,
                                                 ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDto")
     CooperationContractDto contractToContractDto(CooperationContractTemplate contract,
-                                                        OrganizationDetails providerOrgaDetails,
                                                         OrganizationDetails consumerOrgaDetails,
                                                         ServiceOfferingDetails offeringDetails);
 
     @InheritConfiguration(name = "contractToContractDto")
     @Mapping(target = "negotiation.userCountSelection", source = "contract.userCountSelection", defaultValue = "")
     SaasContractDto contractToContractDto(SaasContractTemplate contract,
-                                                 OrganizationDetails providerOrgaDetails,
                                                  OrganizationDetails consumerOrgaDetails,
                                                  ServiceOfferingDetails offeringDetails);
 
@@ -88,7 +84,6 @@ public interface ContractMapper {
     @Mapping(target = "provisioning.dataAddressTargetFileName", source = "contract.serviceContractProvisioning.dataAddressTargetFileName", defaultValue = "")
     @Mapping(target = "provisioning.selectedConsumerConnectorId", source = "contract.serviceContractProvisioning.selectedConsumerConnectorId", defaultValue = "")
     DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
-                                                         OrganizationDetails providerOrgaDetails,
                                                          OrganizationDetails consumerOrgaDetails,
                                                          ServiceOfferingDetails offeringDetails);
 }

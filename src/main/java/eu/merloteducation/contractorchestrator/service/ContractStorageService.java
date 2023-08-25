@@ -252,30 +252,26 @@ public class ContractStorageService {
     }
 
     private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
-        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
-                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
-        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
+        return contractMapper.contractToContractBasicDto(template, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
-        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
-                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
-            return contractMapper.contractToContractDto(dataTemplate, providerDetails,
+            return contractMapper.contractToContractDto(dataTemplate,
                     consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
-            return contractMapper.contractToContractDto(saasTemplate, providerDetails,
+            return contractMapper.contractToContractDto(saasTemplate,
                     consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
-            return contractMapper.contractToContractDto(coopTemplate, providerDetails,
+            return contractMapper.contractToContractDto(coopTemplate,
                     consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");

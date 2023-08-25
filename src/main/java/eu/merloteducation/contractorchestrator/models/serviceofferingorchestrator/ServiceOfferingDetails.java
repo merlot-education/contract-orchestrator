@@ -9,4 +9,5 @@ import lombok.Setter;
 public class ServiceOfferingDetails {
     private JsonNode metadata;
     private JsonNode selfDescription;
+    private ProviderDetails providerDetails;
 }
