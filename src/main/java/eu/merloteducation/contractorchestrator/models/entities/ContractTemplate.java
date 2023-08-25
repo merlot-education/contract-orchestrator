@@ -72,6 +72,9 @@ public abstract class ContractTemplate {
     private String providerTncUrl;
 
     @JsonView(ContractViews.DetailedView.class)
+    private String providerTncHash;
+
+    @JsonView(ContractViews.DetailedView.class)
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
@@ -116,6 +119,7 @@ public abstract class ContractTemplate {
         this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
         this.consumerProviderTncAccepted = template.isConsumerProviderTncAccepted();
         this.providerTncUrl = template.getProviderTncUrl();
+        this.providerTncHash = template.getProviderTncHash();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();

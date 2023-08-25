@@ -51,7 +51,9 @@ class MessageQueueServiceTest {
                 .getCredentialSubject();
         credentialSubject.setId("Participant:10");
         credentialSubject.setLegalName(new StringTypeValue("Orga 10"));
-        credentialSubject.setTermsAndConditionsLink(new StringTypeValue("http://example.com"));
+        credentialSubject.setTermsAndConditions(new TermsAndConditions());
+        credentialSubject.getTermsAndConditions().setContent(new StringTypeValue("http://example.com"));
+        credentialSubject.getTermsAndConditions().setHash(new StringTypeValue("hash1234"));
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());
     }
@@ -64,8 +66,10 @@ class MessageQueueServiceTest {
                 details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getId());
         assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getLegalName().getValue(),
                 details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getLegalName().getValue());
-        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue(),
-                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
+        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getContent().getValue(),
+                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getContent().getValue());
+        assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getHash().getValue(),
+                details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getHash().getValue());
     }
 
     @Test
