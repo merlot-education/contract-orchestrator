@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest({DataTransferController.class, WebSecurityConfig.class})
 @AutoConfigureMockMvc()
-public class DataTransferControllerTest {
+class DataTransferControllerTest {
 
     @Autowired
     private MockMvc mvc;

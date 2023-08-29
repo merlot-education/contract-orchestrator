@@ -60,7 +60,7 @@ import static org.mockito.Mockito.lenient;
 @EnableConfigurationProperties
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Transactional
-public class ContractStorageServiceTest {
+class ContractStorageServiceTest {
 
     @Autowired
     private ContractMapper contractMapper;

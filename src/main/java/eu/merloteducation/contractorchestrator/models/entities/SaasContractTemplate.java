@@ -29,12 +29,11 @@ public class SaasContractTemplate extends ContractTemplate {
 
     @Override
     public void transitionState(ContractState targetState) {
-        if (targetState == ContractState.SIGNED_CONSUMER) {
-            if (userCountSelection == null || userCountSelection.isEmpty()) {
-                throw new IllegalStateException(
-                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
-                                getState().name(), targetState.name()));
-            }
+        if (targetState == ContractState.SIGNED_CONSUMER
+                && (userCountSelection == null || userCountSelection.isEmpty())) {
+            throw new IllegalStateException(
+                    String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                            getState().name(), targetState.name()));
         }
         if (targetState == ContractState.REVOKED) {
             throw new IllegalStateException(

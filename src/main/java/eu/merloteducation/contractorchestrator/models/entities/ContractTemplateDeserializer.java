@@ -1,17 +1,12 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import javax.management.modelmbean.InvalidTargetObjectTypeException;
-import javax.xml.crypto.Data;
 import java.io.IOException;
-import java.rmi.UnmarshalException;
 
 public class ContractTemplateDeserializer extends StdDeserializer<ContractTemplate> {
     protected ContractTemplateDeserializer() {

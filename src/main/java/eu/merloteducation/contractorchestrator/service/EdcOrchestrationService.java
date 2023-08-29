@@ -22,6 +22,8 @@ import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3Transf
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,10 @@ import java.util.*;
 public class EdcOrchestrationService {
 
     private static final String ORGA_PREFIX = "Participant:";
+
+    private static final String X_API_KEY = "X-API-Key";
+
+    private final Logger logger = LoggerFactory.getLogger(EdcOrchestrationService.class);
     @Autowired
     private MessageQueueService messageQueueService;
 
@@ -61,61 +67,62 @@ public class EdcOrchestrationService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<DataPlaneCreateRequest> request = new HttpEntity<>(dataPlaneCreateRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/instances",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
+        logger.debug(response);
     }
 
     private IdResponse createAsset(Asset asset, DataAddress dataAddress, String managementUrl, String accessToken) {
-        System.out.println("Create Asset on " + managementUrl + " with token " + accessToken);
+        logger.debug("Create Asset on " + managementUrl + " with token " + accessToken);
         AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
         assetCreateRequest.setAsset(asset);
         assetCreateRequest.setDataAddress(dataAddress);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<AssetCreateRequest> request = new HttpEntity<>(assetCreateRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/assets",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IdResponse idResponse = null;
         try {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC asset");
         }
         return idResponse;
     }
 
     private IdResponse createPolicyUnrestricted(Policy policy, String managementUrl, String accessToken) {
-        System.out.println("Create Policy on " + managementUrl + " with token " + accessToken);
+        logger.debug("Create Policy on " + managementUrl + " with token " + accessToken);
         PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
         policyCreateRequest.setPolicy(policy);
         policyCreateRequest.setId(policy.getId());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<PolicyCreateRequest> request = new HttpEntity<>(policyCreateRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/policydefinitions",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IdResponse idResponse = null;
         try {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC policy");
         }
         return idResponse;
@@ -123,7 +130,7 @@ public class EdcOrchestrationService {
 
     private IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
                                                 String assetId, String managementUrl, String accessToken) {
-        System.out.println("Create contract definition on " + managementUrl + " with token " + accessToken);
+        logger.debug("Create contract definition on " + managementUrl + " with token " + accessToken);
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
         createRequest.setAccessPolicyId(accessPolicyId);
@@ -137,49 +144,49 @@ public class EdcOrchestrationService {
         createRequest.setAssetsSelector(assetSelector);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<ContractDefinitionCreateRequest> request = new HttpEntity<>(createRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/contractdefinitions",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IdResponse idResponse = null;
         try {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not create EDC contract definition");
         }
         return idResponse;
     }
 
     private DcatCatalog queryCatalog(String providerProtocolUrl, String managementUrl, String accessToken) {
-        System.out.println("Query Catalog on " + managementUrl + " with provider url " + providerProtocolUrl + " and token " + accessToken);
+        logger.debug("Query Catalog on " + managementUrl + " with provider url " + providerProtocolUrl + " and token " + accessToken);
         CatalogRequest catalogRequest = new CatalogRequest();
         catalogRequest.setProviderUrl(providerProtocolUrl);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<CatalogRequest> request = new HttpEntity<>(catalogRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/catalog/request",
                         HttpMethod.POST, request, String.class).getBody();
 
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         DcatCatalog catalogResponse = null;
         try {
             catalogResponse = mapper.readValue(response, DcatCatalog.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not query EDC catalog");
         }
-        System.out.println(catalogResponse);
-        System.out.println(response);
+        logger.debug(catalogResponse.toString());
+        logger.debug(response);
         return catalogResponse;
     }
 
@@ -194,19 +201,19 @@ public class EdcOrchestrationService {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(initiateRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/contractnegotiations",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IdResponse idResponse = null;
         try {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could start EDC negotiation");
         }
         return idResponse;
@@ -215,19 +222,19 @@ public class EdcOrchestrationService {
     private ContractNegotiation checkOfferStatus(String negotiationId, String managementUrl, String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/contractnegotiations/" + negotiationId,
                         HttpMethod.GET, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ContractNegotiation contractNegotiation = null;
         try {
             contractNegotiation = mapper.readValue(response, ContractNegotiation.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC negotiation status");
         }
         return contractNegotiation;
@@ -242,23 +249,23 @@ public class EdcOrchestrationService {
         transferRequest.setAssetId(assetId);
         transferRequest.setDataDestination(dataDestination);
 
-        System.out.println((IonosS3DataAddress) transferRequest.getDataDestination());
+        logger.debug(transferRequest.getDataDestination().toString());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<TransferRequest> request = new HttpEntity<>(transferRequest, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/transferprocesses",
                         HttpMethod.POST, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IdResponse idResponse = null;
         try {
             idResponse = mapper.readValue(response, IdResponse.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not start EDC data transfer");
         }
         return idResponse;
@@ -267,19 +274,19 @@ public class EdcOrchestrationService {
     private IonosS3TransferProcess checkTransferStatus(String transferId, String managementUrl, String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-API-Key", accessToken);
+        headers.set(X_API_KEY, accessToken);
         HttpEntity<NegotiationInitiateRequest> request = new HttpEntity<>(null, headers);
         String response =
                 restTemplate.exchange(managementUrl + "/v2/transferprocesses/" + transferId,
                         HttpMethod.GET, request, String.class).getBody();
-        System.out.println(response);
+        logger.debug(response);
 
         ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         IonosS3TransferProcess transferProcess = null;
         try {
             transferProcess = mapper.readValue(response, IonosS3TransferProcess.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.debug(e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not get EDC data transfer status");
         }
         return transferProcess;
@@ -312,7 +319,7 @@ public class EdcOrchestrationService {
     private OrganisationConnectorExtension getOrgaConnector(String orgaId, String connectorId) {
         return messageQueueService
                 .remoteRequestOrganizationConnectorByConnectorId(
-                        orgaId.replace("Participant:", ""), connectorId);
+                        orgaId.replace(ORGA_PREFIX, ""), connectorId);
     }
 
     /**
