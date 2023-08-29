@@ -5,7 +5,6 @@ import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 

@@ -1,10 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.edc.negotiation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
-import eu.merloteducation.contractorchestrator.models.views.ContractViews;
-import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import lombok.Getter;
 import lombok.Setter;
 

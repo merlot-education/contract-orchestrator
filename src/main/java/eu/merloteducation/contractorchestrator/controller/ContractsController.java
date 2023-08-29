@@ -16,9 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +39,7 @@ public class ContractsController {
     private EdcOrchestrationService edcOrchestrationService;
 
     // TODO refactor to library
-    private Set<String> getMerlotRoles(Principal principal) {
+    private Set<String> getMerlotRoles() {
         // get roles from the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -52,8 +50,8 @@ public class ContractsController {
                 .collect(Collectors.toSet());
     }
 
-    private Set<String> getRepresentedOrgaIds(Principal principal) {
-        Set<String> roles = getMerlotRoles(principal);
+    private Set<String> getRepresentedOrgaIds() {
+        Set<String> roles = getMerlotRoles();
         // extract all orgaIds from the OrgRep and OrgLegRep Roles
         return roles
                 .stream()
@@ -74,7 +72,6 @@ public class ContractsController {
      * POST endpoint for creating a new contract in draft state.
      * The user specifies a ContractCreateRequest which gets saved in the system.
      *
-     * @param principal             user data
      * @param authToken             active OAuth2 token of this user
      * @param contractCreateRequest request for creating contract
      * @return basic view of the created contract
@@ -82,9 +79,8 @@ public class ContractsController {
     @PostMapping("")
     @JsonView(ContractViews.ConsumerView.class)
     public ContractDto addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
-                                                  @RequestHeader(name = "Authorization") String authToken,
-                                                  Principal principal) throws Exception {
-        if (!getRepresentedOrgaIds(principal).contains(contractCreateRequest.getConsumerId().replace("Participant:", ""))) {
+                                                  @RequestHeader(name = "Authorization") String authToken) {
+        if (!getRepresentedOrgaIds().contains(contractCreateRequest.getConsumerId().replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to create a contract for this organization.");
         }
 
@@ -96,15 +92,13 @@ public class ContractsController {
      *
      * @param editedContract contract template with updated fields
      * @param authToken      active OAuth2 token of this user
-     * @param principal      user data
      * @return updated contract template
      */
     @PutMapping("")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                                      @RequestHeader(name = "Authorization") String authToken,
-                                                     @RequestHeader(name = "Active-Role") String activeRole,
-                                                     Principal principal) throws Exception {
-        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+                                                     @RequestHeader(name = "Active-Role") String activeRole) {
+        Set<String> orgaIds = getRepresentedOrgaIds();
         String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
         if (!orgaIds.contains(activeRoleOrgaId)) {
             throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
@@ -118,15 +112,13 @@ public class ContractsController {
      * but a new id and signature.
      *
      * @param contractId id of contract to copy
-     * @param principal  user data
      * @param authToken  active OAuth2 token of this user
      * @return newly generated contract
      */
     @PostMapping("/contract/regenerate/{contractId}")
     public ContractDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
-                                                         @RequestHeader(name = "Authorization") String authToken,
-                                                         Principal principal) {
-        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+                                                         @RequestHeader(name = "Authorization") String authToken) {
+        Set<String> orgaIds = getRepresentedOrgaIds();
 
         return contractStorageService.regenerateContract(contractId, orgaIds, authToken);
     }
@@ -146,8 +138,8 @@ public class ContractsController {
                                                          @PathVariable(value = "status") ContractState status,
                                                          @RequestHeader(name = "Active-Role") String activeRole,
                                                          @RequestHeader(name = "Authorization") String authToken,
-                                                         Principal principal) throws Exception {
-        Set<String> orgaIds = getRepresentedOrgaIds(principal);
+                                                         Principal principal) {
+        Set<String> orgaIds = getRepresentedOrgaIds();
         JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
         Jwt jwt = (Jwt) authenticationToken.getCredentials();
         String userId = (String) jwt.getClaims().get("sub");
@@ -167,7 +159,6 @@ public class ContractsController {
      * @param page      page of pageable
      * @param size      size of pageable
      * @param orgaId    organization id to query
-     * @param principal user data
      * @param authToken active OAuth2 token of this user
      * @return page of contracts related to this organization
      */
@@ -176,9 +167,8 @@ public class ContractsController {
     public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
                                                            @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
                                                            @PathVariable(value = "orgaId") String orgaId,
-                                                           @RequestHeader(name = "Authorization") String authToken,
-                                                           Principal principal) {
-        if (!getRepresentedOrgaIds(principal).contains(orgaId.replace("Participant:", ""))) {
+                                                           @RequestHeader(name = "Authorization") String authToken) {
+        if (!getRepresentedOrgaIds().contains(orgaId.replace("Participant:", ""))) {
             throw new ResponseStatusException(FORBIDDEN, "No permission to access contracts of this id.");
         }
 
@@ -190,15 +180,13 @@ public class ContractsController {
      * GET endpoint for requesting detailed information about a contract with the given id.
      *
      * @param contractId id of the contract
-     * @param principal  user data
      * @param authToken  active OAuth2 token of this user
      * @return detailed view of this contract
      */
     @GetMapping("contract/{contractId}")
     public ContractDto getContractDetails(@PathVariable(value = "contractId") String contractId,
-                                                 @RequestHeader(name = "Authorization") String authToken,
-                                                 Principal principal) {
-        return contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(principal), authToken);
+                                                 @RequestHeader(name = "Authorization") String authToken) {
+        return contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(), authToken);
     }
 
 }

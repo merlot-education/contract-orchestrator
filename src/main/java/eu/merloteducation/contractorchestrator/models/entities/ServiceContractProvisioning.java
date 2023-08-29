@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -19,7 +18,6 @@ import java.util.UUID;
 @DiscriminatorColumn(name="discriminator")
 @JsonDeserialize(using = ServiceContractProvisioningDeserializer.class)
 public abstract class ServiceContractProvisioning {
-    // TODO table with all parameters related to number of exchanges, data transfer parameters that can change during contract lifetime etc...
 
     @Id
     @JsonView(ContractViews.BasicView.class)

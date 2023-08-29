@@ -71,7 +71,7 @@ public class ContractStorageService {
     @Autowired
     private ContractMapper contractMapper;
 
-    private boolean isValidFieldSelections(ContractTemplate contract, String authToken) throws JSONException {
+    private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
 
         // make sure selections are valid
@@ -434,7 +434,7 @@ public class ContractStorageService {
         updateContractDependingOnRole(contract, editedContract, isConsumer, isProvider);
 
         // ensure that the selections that were made are valid
-        if (!isValidFieldSelections(contract, authToken)) {
+        if (!isValidFieldSelections(contract)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
@@ -539,7 +539,6 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
-        System.out.println(contractId);
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
 
