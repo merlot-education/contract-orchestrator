@@ -339,7 +339,9 @@ public class ContractStorageService {
                 contract.getProviderId().replace(ORGA_PREFIX, ""),
                 Map.of(AUTHORIZATION, authToken));
         contract.setProviderTncUrl(organizationDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject().getTermsAndConditionsLink().getValue());
+                .getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getContent().getValue());
+        contract.setProviderTncHash(organizationDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getHash().getValue());
 
         contract = contractTemplateRepository.saveAndFlush(contract);
         entityManager.refresh(contract); // refresh entity from database to get newly generated discriminator column

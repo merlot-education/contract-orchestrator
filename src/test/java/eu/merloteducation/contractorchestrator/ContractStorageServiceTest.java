@@ -328,6 +328,10 @@ class ContractStorageServiceTest {
                                         "@value": "12345"
                                     }
                                 },
+                                "merlot:mailAddress": {
+                                    "@type": "xsd:string",
+                                    "@value": "mymail@example.com"
+                                },
                                 "merlot:orgaName": {
                                     "@type": "xsd:string",
                                     "@value": "MyOrga"
@@ -340,9 +344,16 @@ class ContractStorageServiceTest {
                                     "@type": "xsd:string",
                                     "@value": "DE-BER"
                                 },
-                                "merlot:termsConditionsLink": {
-                                    "@type": "xsd:string",
-                                    "@value": "https://www.example.com/"
+                                "gax-trust-framework:termsAndConditions": {
+                                    "gax-trust-framework:content": {
+                                        "@type": "xsd:anyURI",
+                                        "@value": "http://example.com"
+                                    },
+                                    "gax-trust-framework:hash": {
+                                        "@type": "xsd:string",
+                                        "@value": "hash1234"
+                                    },
+                                    "@type": "gax-trust-framework:TermsAndConditions"
                                 }
                             },
                             "issuanceDate": "2022-10-19T18:48:09Z",
