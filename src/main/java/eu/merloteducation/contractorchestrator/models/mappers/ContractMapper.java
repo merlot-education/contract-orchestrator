@@ -3,13 +3,10 @@ package eu.merloteducation.contractorchestrator.models.mappers;
 import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
+import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.dto.*;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import org.mapstruct.*;
 
 import java.time.OffsetDateTime;
@@ -116,28 +113,24 @@ public interface ContractMapper {
     @InheritConfiguration(name = "updateContractAsConsumerInDraft")
     // allow exchange count selection
     @Mapping(target = "exchangeCountSelection", source = "negotiation.exchangeCountSelection")
+
+    void updateContractAsConsumerInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+
+    @BeanMapping(ignoreByDefault = true)
     // allow target bucket
     @Mapping(target = "dataAddressTargetBucketName", source = "provisioning.dataAddressTargetBucketName")
     // allow target file
     @Mapping(target = "dataAddressTargetFileName", source = "provisioning.dataAddressTargetFileName")
     // allow consumer connector id
     @Mapping(target = "selectedConsumerConnectorId", source = "provisioning.selectedConsumerConnectorId")
-    void updateContractAsConsumerInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+    void updateContractProvisioningAsConsumerInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryProvisioning target);
 
     @InheritConfiguration(name = "updateContractAsProviderInDraft")
     // allow exchange count selection
     @Mapping(target = "exchangeCountSelection", source = "negotiation.exchangeCountSelection")
-    // allow data address type
-    @Mapping(target = "dataAddressType", source = "provisioning.dataAddressType")
-    // allow source bucket
-    @Mapping(target = "dataAddressSourceBucketName", source = "provisioning.dataAddressSourceBucketName")
-    // allow source file
-    @Mapping(target = "dataAddressSourceFileName", source = "provisioning.dataAddressSourceFileName")
-    // allow provider connector id
-    @Mapping(target = "selectedProviderConnectorId", source = "provisioning.selectedProviderConnectorId")
     void updateContractAsProviderInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
 
-    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
+    @BeanMapping(ignoreByDefault = true)
     // allow data address type
     @Mapping(target = "dataAddressType", source = "provisioning.dataAddressType")
     // allow source bucket
@@ -146,7 +139,18 @@ public interface ContractMapper {
     @Mapping(target = "dataAddressSourceFileName", source = "provisioning.dataAddressSourceFileName")
     // allow provider connector id
     @Mapping(target = "selectedProviderConnectorId", source = "provisioning.selectedProviderConnectorId")
-    void updateContractAsProviderSignedConsumer(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+    void updateContractProvisioningAsProviderInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryProvisioning target);
+
+    @BeanMapping(ignoreByDefault = true)
+    // allow data address type
+    @Mapping(target = "dataAddressType", source = "provisioning.dataAddressType")
+    // allow source bucket
+    @Mapping(target = "dataAddressSourceBucketName", source = "provisioning.dataAddressSourceBucketName")
+    // allow source file
+    @Mapping(target = "dataAddressSourceFileName", source = "provisioning.dataAddressSourceFileName")
+    // allow provider connector id
+    @Mapping(target = "selectedProviderConnectorId", source = "provisioning.selectedProviderConnectorId")
+    void updateContractProvisioningAsProviderSignedConsumer(DataDeliveryContractDto source, @MappingTarget DataDeliveryProvisioning target);
 
     @InheritConfiguration(name = "updateContractAsConsumerInDraft")
     // allow user count selection
@@ -158,16 +162,5 @@ public interface ContractMapper {
     @Mapping(target = "userCountSelection", source = "negotiation.userCountSelection")
     void updateContractAsProviderInDraft(SaasContractDto source, @MappingTarget SaasContractTemplate target);
 
-    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
-    void updateContractAsProviderSignedConsumer(SaasContractDto source, @MappingTarget SaasContractTemplate target);
-
-    @InheritConfiguration(name = "updateContractAsConsumerInDraft")
-    void updateContractAsConsumerInDraft(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
-
-    @InheritConfiguration(name = "updateContractAsProviderInDraft")
-    void updateContractAsProviderInDraft(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
-
-    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
-    void updateContractAsProviderSignedConsumer(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
 }
 

@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
@@ -147,54 +148,48 @@ public class ContractStorageService {
         return false;
     }
 
-    private void updateSaasContract(SaasContractTemplate targetContract,
-                                    SaasContractDto editedContract) {
-        if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setUserCountSelection(editedContract.getNegotiation().getUserCountSelection());
-        }
-    }
-
     private void updateDataDeliveryContract(DataDeliveryContractTemplate targetContract,
                                             DataDeliveryContractDto editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
-        DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
-
-        if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setExchangeCountSelection(
-                    editedContract.getNegotiation().getExchangeCountSelection());
-            if (isConsumer) {
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressTargetBucketName(
-                        editedContract.getProvisioning().getDataAddressTargetBucketName());
-                targetProvisioning.setDataAddressTargetFileName(
-                        editedContract.getProvisioning().getDataAddressTargetFileName());
-                targetProvisioning.setSelectedConsumerConnectorId(
-                        editedContract.getProvisioning().getSelectedConsumerConnectorId());
-            }
-            if (isProvider) {
-                targetProvisioning.setDataAddressType(
-                        editedContract.getProvisioning().getDataAddressType());
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressSourceBucketName(
-                        editedContract.getProvisioning().getDataAddressSourceBucketName());
-                targetProvisioning.setDataAddressSourceFileName(
-                        editedContract.getProvisioning().getDataAddressSourceFileName());
-                // TODO verify that this is a valid connectorId
-                targetProvisioning.setSelectedProviderConnectorId(
-                        editedContract.getProvisioning().getSelectedProviderConnectorId());
-            }
+        if (targetContract.getState() == ContractState.IN_DRAFT && isConsumer) {
+            contractMapper.updateContractAsConsumerInDraft(editedContract, targetContract);
+            contractMapper.updateContractProvisioningAsConsumerInDraft(editedContract,
+                    targetContract.getServiceContractProvisioning());
+        } else if (targetContract.getState() == ContractState.IN_DRAFT && isProvider) {
+            contractMapper.updateContractAsProviderInDraft(editedContract, targetContract);
+            contractMapper.updateContractProvisioningAsProviderInDraft(editedContract,
+                    targetContract.getServiceContractProvisioning());
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetProvisioning.setDataAddressType(
-                    editedContract.getProvisioning().getDataAddressType());
-            // TODO verify that this is a bucket that belongs to the connector
-            targetProvisioning.setDataAddressSourceBucketName(
-                    editedContract.getProvisioning().getDataAddressSourceBucketName());
-            targetProvisioning.setDataAddressSourceFileName(
-                    editedContract.getProvisioning().getDataAddressSourceFileName());
-            // TODO verify that this is a valid connectorId
-            targetProvisioning.setSelectedProviderConnectorId(
-                    editedContract.getProvisioning().getSelectedProviderConnectorId());
+            contractMapper.updateContractAsProviderSignedConsumer(editedContract, targetContract);
+            contractMapper.updateContractProvisioningAsProviderSignedConsumer(editedContract,
+                    targetContract.getServiceContractProvisioning());
+        }
+    }
+
+    private void updateSaasContract(SaasContractTemplate targetContract,
+                                    SaasContractDto editedContract,
+                                    boolean isConsumer,
+                                    boolean isProvider) {
+        if (targetContract.getState() == ContractState.IN_DRAFT && isConsumer) {
+            contractMapper.updateContractAsConsumerInDraft(editedContract, targetContract);
+        } else if (targetContract.getState() == ContractState.IN_DRAFT && isProvider) {
+            contractMapper.updateContractAsProviderInDraft(editedContract, targetContract);
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
+            contractMapper.updateContractAsProviderSignedConsumer(editedContract, targetContract);
+        }
+    }
+
+    private void updateCooperationContract(CooperationContractTemplate targetContract,
+                                           CooperationContractDto editedContract,
+                                           boolean isConsumer,
+                                           boolean isProvider) {
+        if (targetContract.getState() == ContractState.IN_DRAFT && isConsumer) {
+            contractMapper.updateContractAsConsumerInDraft(editedContract, targetContract);
+        } else if (targetContract.getState() == ContractState.IN_DRAFT && isProvider) {
+            contractMapper.updateContractAsProviderInDraft(editedContract, targetContract);
+        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
+            contractMapper.updateContractAsProviderSignedConsumer(editedContract, targetContract);
         }
     }
 
@@ -202,32 +197,21 @@ public class ContractStorageService {
                                                ContractDto editedContract,
                                                boolean isConsumer,
                                                boolean isProvider) {
-        // TODO consider moving this logic into a DTO pattern
-        if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setRuntimeSelection(editedContract.getNegotiation().getRuntimeSelection());
-            if (isConsumer) {
-                targetContract.setConsumerMerlotTncAccepted(editedContract.getNegotiation().isConsumerMerlotTncAccepted());
-                targetContract.setConsumerProviderTncAccepted(editedContract.getNegotiation().isConsumerProviderTncAccepted());
-                targetContract.setConsumerOfferingTncAccepted(editedContract.getNegotiation().isConsumerOfferingTncAccepted());
-            }
-            if (isProvider) {
-                targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
-                targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setAttachments(editedContract.getNegotiation().getAttachments());
-            }
-        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
-
-        }
-
         if (targetContract instanceof SaasContractTemplate targetSaasContractTemplate &&
-                editedContract instanceof SaasContractDto editedSaasContractTemplate) {
-            updateSaasContract(targetSaasContractTemplate, editedSaasContractTemplate);
+                editedContract instanceof SaasContractDto editedSaasContractDto) {
+            updateSaasContract(targetSaasContractTemplate, editedSaasContractDto,
+                    isConsumer, isProvider);
         }
 
         if (targetContract instanceof DataDeliveryContractTemplate targetDataDeliveryContractTemplate &&
-                editedContract instanceof DataDeliveryContractDto editedDataDeliveryContractTemplate) {
-            updateDataDeliveryContract(targetDataDeliveryContractTemplate, editedDataDeliveryContractTemplate,
+                editedContract instanceof DataDeliveryContractDto editedDataDeliveryContractDto) {
+            updateDataDeliveryContract(targetDataDeliveryContractTemplate, editedDataDeliveryContractDto,
+                    isConsumer, isProvider);
+        }
+
+        if (targetContract instanceof CooperationContractTemplate targetCooperationContractTemplate &&
+                editedContract instanceof CooperationContractDto editedCooperationContractDto) {
+            updateCooperationContract(targetCooperationContractTemplate, editedCooperationContractDto,
                     isConsumer, isProvider);
         }
     }
