@@ -50,6 +50,7 @@ public interface ContractMapper {
     @Mapping(target = "negotiation.consumerMerlotTncAccepted", source = "contract.consumerMerlotTncAccepted")
     @Mapping(target = "negotiation.consumerOfferingTncAccepted", source = "contract.consumerOfferingTncAccepted")
     @Mapping(target = "negotiation.consumerProviderTncAccepted", source = "contract.consumerProviderTncAccepted")
+    @Mapping(target = "negotiation.consumerContractAttachmentsAccepted", source = "contract.consumerContractAttachmentsAccepted")
     @Mapping(target = "negotiation.providerMerlotTncAccepted", source = "contract.providerMerlotTncAccepted")
     @Mapping(target = "provisioning.validUntil", source = "contract.serviceContractProvisioning.validUntil")
     @Mapping(target = "offering", source = "offeringDetails")
@@ -90,6 +91,7 @@ public interface ContractMapper {
     @Mapping(target = "consumerMerlotTncAccepted", source = "negotiation.consumerMerlotTncAccepted")
     @Mapping(target = "consumerOfferingTncAccepted", source = "negotiation.consumerOfferingTncAccepted")
     @Mapping(target = "consumerProviderTncAccepted", source = "negotiation.consumerProviderTncAccepted")
+    @Mapping(target = "consumerContractAttachmentsAccepted", source = "negotiation.consumerContractAttachmentsAccepted")
     // allow runtime selection
     @Mapping(target = "runtimeSelection", source = "negotiation.runtimeSelection")
     void updateContractAsConsumerInDraft(ContractDto source, @MappingTarget ContractTemplate target);

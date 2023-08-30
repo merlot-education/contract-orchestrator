@@ -635,6 +635,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
 
         SaasContractDto result = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "token",
@@ -643,6 +644,7 @@ class ContractStorageServiceTest {
         assertEquals(editedContract.getNegotiation().isConsumerMerlotTncAccepted(), result.getNegotiation().isConsumerMerlotTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerOfferingTncAccepted(), result.getNegotiation().isConsumerOfferingTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerProviderTncAccepted(), result.getNegotiation().isConsumerProviderTncAccepted());
+        assertEquals(editedContract.getNegotiation().isConsumerContractAttachmentsAccepted(), result.getNegotiation().isConsumerContractAttachmentsAccepted());
         assertEquals(editedContract.getNegotiation().getRuntimeSelection(), result.getNegotiation().getRuntimeSelection());
         assertInstanceOf(SaasContractDto.class, result);
     }
@@ -778,6 +780,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         SaasContractDto result = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
 
@@ -787,6 +790,8 @@ class ContractStorageServiceTest {
         assertEquals(saasContract.isConsumerOfferingTncAccepted(), result.getNegotiation().isConsumerOfferingTncAccepted());
         assertNotEquals(editedContract.getNegotiation().isConsumerProviderTncAccepted(), result.getNegotiation().isConsumerProviderTncAccepted());
         assertEquals(saasContract.isConsumerProviderTncAccepted(), result.getNegotiation().isConsumerProviderTncAccepted());
+        assertNotEquals(editedContract.getNegotiation().isConsumerContractAttachmentsAccepted(), result.getNegotiation().isConsumerContractAttachmentsAccepted());
+        assertEquals(saasContract.isConsumerContractAttachmentsAccepted(), result.getNegotiation().isConsumerContractAttachmentsAccepted());
     }
 
     @Test
@@ -899,6 +904,13 @@ class ContractStorageServiceTest {
                 representedOrgaIds, "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+                consumer);
+        contractStorageService.getContractDetails(editedContract.getDetails().getId(),
+                representedOrgaIds, "authToken");
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
@@ -955,6 +967,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
@@ -1037,6 +1050,7 @@ class ContractStorageServiceTest {
         template.setConsumerMerlotTncAccepted(true);
         template.setConsumerProviderTncAccepted(true);
         template.setConsumerOfferingTncAccepted(true);
+        template.setConsumerContractAttachmentsAccepted(true);
         provisioning.setDataAddressTargetFileName("MyFile.json");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setSelectedConsumerConnectorId("edc1");
@@ -1065,6 +1079,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         editedContract.getNegotiation().setUserCountSelection("0");
         editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
         editedContract = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -1103,6 +1118,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
 
         CooperationContractDto result = (CooperationContractDto) contractStorageService
@@ -1202,6 +1218,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
+        editedContract.getNegotiation().setConsumerContractAttachmentsAccepted(true);
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
@@ -1215,6 +1232,7 @@ class ContractStorageServiceTest {
         assertEquals(editedContract.getNegotiation().isConsumerMerlotTncAccepted(), result.getNegotiation().isConsumerMerlotTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerOfferingTncAccepted(), result.getNegotiation().isConsumerOfferingTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerProviderTncAccepted(), result.getNegotiation().isConsumerProviderTncAccepted());
+        assertEquals(editedContract.getNegotiation().isConsumerContractAttachmentsAccepted(), result.getNegotiation().isConsumerContractAttachmentsAccepted());
         assertEquals(editedContract.getNegotiation().getExchangeCountSelection(), result.getNegotiation().getExchangeCountSelection());
         assertEquals(editedContract.getNegotiation().getRuntimeSelection(), result.getNegotiation().getRuntimeSelection());
         assertEquals(editedContract.getProvisioning().getDataAddressTargetBucketName(), result.getProvisioning().getDataAddressTargetBucketName());

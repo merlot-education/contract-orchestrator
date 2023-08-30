@@ -23,6 +23,9 @@ public class ContractNegotiationDto {
     @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerProviderTncAccepted;
 
+    @JsonView(ContractViews.ConsumerView.class)
+    private boolean consumerContractAttachmentsAccepted;
+
     @JsonView(ContractViews.ProviderView.class)
     private boolean providerMerlotTncAccepted;
 

@@ -67,6 +67,9 @@ public abstract class ContractTemplate {
     @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerProviderTncAccepted;
 
+    @JsonView(ContractViews.ConsumerView.class)
+    private boolean consumerContractAttachmentsAccepted;
+
     @JsonView(ContractViews.DetailedView.class)
     private String providerTncUrl;
 
@@ -117,6 +120,7 @@ public abstract class ContractTemplate {
         this.providerMerlotTncAccepted = template.isProviderMerlotTncAccepted();
         this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
         this.consumerProviderTncAccepted = template.isConsumerProviderTncAccepted();
+        this.consumerContractAttachmentsAccepted = template.isConsumerContractAttachmentsAccepted();
         this.providerTncUrl = template.getProviderTncUrl();
         this.providerTncHash = template.getProviderTncHash();
         this.additionalAgreements = template.getAdditionalAgreements();
@@ -134,7 +138,7 @@ public abstract class ContractTemplate {
                     (StringUtil.isNullOrEmpty(runtimeSelection)
                             || StringUtil.isNullOrEmpty(consumerSignerUserId)
                             || StringUtil.isNullOrEmpty(consumerSignature)
-                            || !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
+                            || !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted || !consumerContractAttachmentsAccepted)) ||
                     (targetState == ContractState.RELEASED &&
                             (StringUtil.isNullOrEmpty(providerSignerUserId)
                                     || StringUtil.isNullOrEmpty(providerSignature) ||
