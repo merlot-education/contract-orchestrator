@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -78,7 +77,7 @@ public abstract class ContractTemplate {
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
-    private List<String> offeringAttachments;
+    private List<String> attachments;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
@@ -101,7 +100,7 @@ public abstract class ContractTemplate {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
-        this.offeringAttachments = new ArrayList<>();
+        this.attachments = new ArrayList<>();
         this.additionalAgreements = "";
         this.serviceContractProvisioning = new DefaultProvisioning();
     }
@@ -121,7 +120,7 @@ public abstract class ContractTemplate {
         this.providerTncUrl = template.getProviderTncUrl();
         this.providerTncHash = template.getProviderTncHash();
         this.additionalAgreements = template.getAdditionalAgreements();
-        this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
+        this.attachments = new ArrayList<>(template.getAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
         this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();

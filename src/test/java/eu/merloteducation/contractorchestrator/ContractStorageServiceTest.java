@@ -5,15 +5,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractNegotiationDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractNegotiationDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
@@ -35,17 +31,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -764,7 +756,6 @@ class ContractStorageServiceTest {
 
         editedContract.getDetails().setConsumerId("Participant:99");
         editedContract.getDetails().setProviderId("Participant:99");
-        editedContract.getDetails().setProviderTncUrl("garbage");
 
         SaasContractDto result = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
@@ -773,8 +764,6 @@ class ContractStorageServiceTest {
         assertEquals(saasContract.getConsumerId(), result.getDetails().getConsumerId());
         assertNotEquals(editedContract.getDetails().getProviderId(), result.getDetails().getProviderId());
         assertEquals(saasContract.getProviderId(), result.getDetails().getProviderId());
-        assertNotEquals(editedContract.getDetails().getProviderTncUrl(), result.getDetails().getProviderTncUrl());
-        assertEquals(saasContract.getProviderTncUrl(), result.getDetails().getProviderTncUrl());
     }
 
     @Test
@@ -822,7 +811,7 @@ class ContractStorageServiceTest {
         assertNotEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertEquals(dataDeliveryContract.getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertNotEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
-        assertEquals(dataDeliveryContract.getOfferingAttachments(), result.getNegotiation().getAttachments());
+        assertEquals(dataDeliveryContract.getAttachments(), result.getNegotiation().getAttachments());
 
     }
 

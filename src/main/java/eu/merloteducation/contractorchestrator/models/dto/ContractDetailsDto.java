@@ -23,8 +23,6 @@ public class ContractDetailsDto {
 
     private String state;
 
-    private String providerTncUrl;
-
     private String providerSignerUser;
 
     private String providerSignature;

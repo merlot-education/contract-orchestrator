@@ -10,9 +10,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import org.mapstruct.InheritConfiguration;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.mapstruct.*;
 
 import java.time.OffsetDateTime;
 
@@ -45,20 +43,21 @@ public interface ContractMapper {
     @Mapping(target = "details.consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
     @Mapping(target = "details.state", source = "contract.state")
-    @Mapping(target = "details.providerTncUrl", source = "contract.providerTncUrl")
     @Mapping(target = "details.providerSignerUser", source = "contract.providerSignerUserId")
     @Mapping(target = "details.providerSignature", source = "contract.providerSignature")
     @Mapping(target = "details.consumerSignerUser", source = "contract.consumerSignerUserId")
     @Mapping(target = "details.consumerSignature", source = "contract.consumerSignature")
     @Mapping(target = "negotiation.runtimeSelection", source = "contract.runtimeSelection", defaultValue = "")
     @Mapping(target = "negotiation.additionalAgreements", source = "contract.additionalAgreements")
-    @Mapping(target = "negotiation.attachments", source = "contract.offeringAttachments")
+    @Mapping(target = "negotiation.attachments", source = "contract.attachments")
     @Mapping(target = "negotiation.consumerMerlotTncAccepted", source = "contract.consumerMerlotTncAccepted")
     @Mapping(target = "negotiation.consumerOfferingTncAccepted", source = "contract.consumerOfferingTncAccepted")
     @Mapping(target = "negotiation.consumerProviderTncAccepted", source = "contract.consumerProviderTncAccepted")
     @Mapping(target = "negotiation.providerMerlotTncAccepted", source = "contract.providerMerlotTncAccepted")
     @Mapping(target = "provisioning.validUntil", source = "contract.serviceContractProvisioning.validUntil")
     @Mapping(target = "offering", source = "offeringDetails")
+    @Mapping(target = "offering.providerDetails.providerTncContent", source = "contract.providerTncUrl")
+    @Mapping(target = "offering.providerDetails.providerTncHash", source = "contract.providerTncHash")
     ContractDto contractToContractDto(ContractTemplate contract,
                                                 OrganizationDetails consumerOrgaDetails,
                                                 ServiceOfferingDetails offeringDetails);
@@ -86,5 +85,89 @@ public interface ContractMapper {
     DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
                                                          OrganizationDetails consumerOrgaDetails,
                                                          ServiceOfferingDetails offeringDetails);
+
+
+
+    @BeanMapping(ignoreByDefault = true)
+    // allow tnc
+    @Mapping(target = "consumerMerlotTncAccepted", source = "negotiation.consumerMerlotTncAccepted")
+    @Mapping(target = "consumerOfferingTncAccepted", source = "negotiation.consumerOfferingTncAccepted")
+    @Mapping(target = "consumerProviderTncAccepted", source = "negotiation.consumerProviderTncAccepted")
+    // allow runtime selection
+    @Mapping(target = "runtimeSelection", source = "negotiation.runtimeSelection")
+    void updateContractAsConsumerInDraft(ContractDto source, @MappingTarget ContractTemplate target);
+
+    @BeanMapping(ignoreByDefault = true)
+    // allow tnc
+    @Mapping(target = "providerMerlotTncAccepted", source = "negotiation.providerMerlotTncAccepted")
+    // allow runtime selection
+    @Mapping(target = "runtimeSelection", source = "negotiation.runtimeSelection")
+    // allow additional agreements
+    @Mapping(target = "additionalAgreements", source = "negotiation.additionalAgreements")
+    // allow attachments
+    @Mapping(target = "attachments", source = "negotiation.attachments")
+    void updateContractAsProviderInDraft(ContractDto source, @MappingTarget ContractTemplate target);
+
+    @BeanMapping(ignoreByDefault = true)
+    // allow tnc
+    @Mapping(target = "providerMerlotTncAccepted", source = "negotiation.providerMerlotTncAccepted")
+    void updateContractAsProviderSignedConsumer(ContractDto source, @MappingTarget ContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsConsumerInDraft")
+    // allow exchange count selection
+    @Mapping(target = "exchangeCountSelection", source = "negotiation.exchangeCountSelection")
+    // allow target bucket
+    @Mapping(target = "dataAddressTargetBucketName", source = "provisioning.dataAddressTargetBucketName")
+    // allow target file
+    @Mapping(target = "dataAddressTargetFileName", source = "provisioning.dataAddressTargetFileName")
+    // allow consumer connector id
+    @Mapping(target = "selectedConsumerConnectorId", source = "provisioning.selectedConsumerConnectorId")
+    void updateContractAsConsumerInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderInDraft")
+    // allow exchange count selection
+    @Mapping(target = "exchangeCountSelection", source = "negotiation.exchangeCountSelection")
+    // allow data address type
+    @Mapping(target = "dataAddressType", source = "provisioning.dataAddressType")
+    // allow source bucket
+    @Mapping(target = "dataAddressSourceBucketName", source = "provisioning.dataAddressSourceBucketName")
+    // allow source file
+    @Mapping(target = "dataAddressSourceFileName", source = "provisioning.dataAddressSourceFileName")
+    // allow provider connector id
+    @Mapping(target = "selectedProviderConnectorId", source = "provisioning.selectedProviderConnectorId")
+    void updateContractAsProviderInDraft(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
+    // allow data address type
+    @Mapping(target = "dataAddressType", source = "provisioning.dataAddressType")
+    // allow source bucket
+    @Mapping(target = "dataAddressSourceBucketName", source = "provisioning.dataAddressSourceBucketName")
+    // allow source file
+    @Mapping(target = "dataAddressSourceFileName", source = "provisioning.dataAddressSourceFileName")
+    // allow provider connector id
+    @Mapping(target = "selectedProviderConnectorId", source = "provisioning.selectedProviderConnectorId")
+    void updateContractAsProviderSignedConsumer(DataDeliveryContractDto source, @MappingTarget DataDeliveryContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsConsumerInDraft")
+    // allow user count selection
+    @Mapping(target = "userCountSelection", source = "negotiation.userCountSelection")
+    void updateContractAsConsumerInDraft(SaasContractDto source, @MappingTarget SaasContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderInDraft")
+    // allow user count selection
+    @Mapping(target = "userCountSelection", source = "negotiation.userCountSelection")
+    void updateContractAsProviderInDraft(SaasContractDto source, @MappingTarget SaasContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
+    void updateContractAsProviderSignedConsumer(SaasContractDto source, @MappingTarget SaasContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsConsumerInDraft")
+    void updateContractAsConsumerInDraft(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderInDraft")
+    void updateContractAsProviderInDraft(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
+
+    @InheritConfiguration(name = "updateContractAsProviderSignedConsumer")
+    void updateContractAsProviderSignedConsumer(CooperationContractDto source, @MappingTarget CooperationContractTemplate target);
 }
 

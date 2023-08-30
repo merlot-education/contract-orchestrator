@@ -3,9 +3,7 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
@@ -215,7 +213,7 @@ public class ContractStorageService {
             if (isProvider) {
                 targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setOfferingAttachments(editedContract.getNegotiation().getAttachments());
+                targetContract.setAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
@@ -323,12 +321,7 @@ public class ContractStorageService {
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
         List<String> attachments = new ArrayList<>();
-        if (credentialSubject.has("merlot:attachments")) {
-            for (JsonNode attachment : credentialSubject.get("merlot:attachments")) {
-                attachments.add(attachment.asText());
-            }
-        }
-        contract.setOfferingAttachments(attachments);
+        contract.setAttachments(attachments);
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
