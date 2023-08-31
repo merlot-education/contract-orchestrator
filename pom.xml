@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>eu.merlot-education</groupId>
 	<artifactId>contract-orchestrator</artifactId>
-	<version>1.4.2</version>
+	<version>1.5.0</version>
 	<name>contract-orchestrator</name>
 	<description>Orchestrator for Contracts in the Merlot MPO</description>
 	<parent>
