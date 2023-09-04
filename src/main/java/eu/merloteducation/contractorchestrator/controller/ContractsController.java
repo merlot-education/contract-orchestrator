@@ -61,14 +61,6 @@ public class ContractsController {
     }
 
     /**
-     * GET Health endpoint, return 200 when service is running.
-     */
-    @GetMapping("health")
-    public void getHealth() {
-        // always return code 200
-    }
-
-    /**
      * POST endpoint for creating a new contract in draft state.
      * The user specifies a ContractCreateRequest which gets saved in the system.
      *

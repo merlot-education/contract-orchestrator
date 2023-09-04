@@ -60,6 +60,15 @@ serviceoffering-orchestrator:
 organizations-orchestrator:
   base-uri: http://localhost:8082/api
 
+management:
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path: "/"
+  endpoint:
+    health:
+      enabled: true
+
 cors:
   global:
     origins:

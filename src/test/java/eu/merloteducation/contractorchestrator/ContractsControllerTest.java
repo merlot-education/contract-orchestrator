@@ -108,12 +108,6 @@ class ContractsControllerTest {
     }
 
     @Test
-    void getHealthUnauthenticated() throws Exception {
-        mvc.perform(MockMvcRequestBuilders
-                        .get("/health"))
-                .andExpect(status().isOk());
-    }
-    @Test
     void postAddContractUnauthorized() throws Exception
     {
         ContractCreateRequest request = new ContractCreateRequest();
