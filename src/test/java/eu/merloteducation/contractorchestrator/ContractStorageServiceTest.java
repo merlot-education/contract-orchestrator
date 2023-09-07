@@ -344,7 +344,7 @@ class ContractStorageServiceTest {
                                     "@type": "xsd:string",
                                     "@value": "DE-BER"
                                 },
-                                "gax-trust-framework:termsAndConditions": {
+                                "merlot:termsAndConditions": {
                                     "gax-trust-framework:content": {
                                         "@type": "xsd:anyURI",
                                         "@value": "http://example.com"
