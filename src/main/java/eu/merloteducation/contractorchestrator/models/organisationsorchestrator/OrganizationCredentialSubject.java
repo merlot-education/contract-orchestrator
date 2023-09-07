@@ -13,6 +13,6 @@ public class OrganizationCredentialSubject {
     @JsonProperty("gax-trust-framework:legalName")
     private StringTypeValue legalName;
 
-    @JsonProperty("gax-trust-framework:termsAndConditions")
+    @JsonProperty("merlot:termsAndConditions")
     private TermsAndConditions termsAndConditions;
 }
