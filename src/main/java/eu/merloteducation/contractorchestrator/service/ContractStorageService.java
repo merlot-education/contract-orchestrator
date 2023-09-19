@@ -3,9 +3,7 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
@@ -105,7 +103,7 @@ public class ContractStorageService {
             return false;
         }
 
-        for (final JsonNode option: runtimeOptions) {
+        for (final JsonNode option : runtimeOptions) {
             if (selection.equals(option.get("merlot:runtimeCount").get(VALUE).asText()
                     + " " + option.get("merlot:runtimeMeasurement").get(VALUE).asText())) {
                 return true;
@@ -123,7 +121,7 @@ public class ContractStorageService {
             return false;
         }
 
-        for (final JsonNode option: userCountOptions) {
+        for (final JsonNode option : userCountOptions) {
             if (selection.equals(option.get("merlot:userCountUpTo").get(VALUE).asText())) {
                 return true;
             }
@@ -140,7 +138,7 @@ public class ContractStorageService {
             return false;
         }
 
-        for (final JsonNode option: exchangeCountOptions) {
+        for (final JsonNode option : exchangeCountOptions) {
             if (selection.equals(option.get("merlot:exchangeCountUpTo").get(VALUE).asText())) {
                 return true;
             }
@@ -408,8 +406,8 @@ public class ContractStorageService {
      * @return updated contract template from database
      */
     public ContractDto updateContractTemplate(ContractDto editedContract,
-                                                   String authToken,
-                                                   String activeRoleOrgaId) throws JSONException {
+                                              String authToken,
+                                              String activeRoleOrgaId) throws JSONException {
 
         ContractTemplate contract = contractTemplateRepository.findById(editedContract.getDetails().getId()).orElse(null);
 
@@ -450,14 +448,14 @@ public class ContractStorageService {
      * @param targetState      target state of the contract template
      * @param activeRoleOrgaId the currently selected role of the user
      * @param userId           the id of the user that requested this action
-     * @param authToken the OAuth2 Token from the user requesting this action
+     * @param authToken        the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
     public ContractDto transitionContractTemplateState(String contractId,
-                                                            ContractState targetState,
-                                                            String activeRoleOrgaId,
-                                                            String userId,
-                                                            String authToken) {
+                                                       ContractState targetState,
+                                                       String activeRoleOrgaId,
+                                                       String userId,
+                                                       String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
@@ -516,17 +514,24 @@ public class ContractStorageService {
     /**
      * Returns all contracts from the database where the specified organization is either the consumer or provider.
      *
-     * @param orgaId    id of the organization requesting this data
-     * @param pageable  page request
-     * @param authToken the OAuth2 Token from the user requesting this action
+     * @param orgaId       id of the organization requesting this data
+     * @param pageable     page request
+     * @param statusFilter optional status filter for the contracts
+     * @param authToken    the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, String authToken) {
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter, 
+                                                           String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
-        Page<ContractTemplate> contractTemplates = contractTemplateRepository.
-                findAllByProviderIdOrConsumerId(orgaId, orgaId, pageable);
+        Page<ContractTemplate> contractTemplates;
+        if (statusFilter == null) {
+            contractTemplates = contractTemplateRepository.findAllByOrgaId(orgaId, pageable);
+        } else {
+            contractTemplates = contractTemplateRepository.findAllByOrgaIdAndState(orgaId, statusFilter, pageable);
+        }
+
 
         return contractTemplates.map(template -> mapToContractBasicDto(template, authToken));
     }
@@ -534,8 +539,8 @@ public class ContractStorageService {
     /**
      * For a given id, return the corresponding contract database entry.
      *
-     * @param contractId         id of the contract
-     * @param authToken          the OAuth2 Token from the user requesting this action
+     * @param contractId id of the contract
+     * @param authToken  the OAuth2 Token from the user requesting this action
      * @return contract object from the database
      */
     public ContractDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {

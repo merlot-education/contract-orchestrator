@@ -150,6 +150,7 @@ public class ContractsController {
      *
      * @param page      page of pageable
      * @param size      size of pageable
+     * @param status    optional status filter
      * @param orgaId    organization id to query
      * @param authToken active OAuth2 token of this user
      * @return page of contracts related to this organization
@@ -158,6 +159,7 @@ public class ContractsController {
     @JsonView(ContractViews.BasicView.class)
     public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
                                                            @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
+                                                           @RequestParam(value = "status", required = false) ContractState status,
                                                            @PathVariable(value = "orgaId") String orgaId,
                                                            @RequestHeader(name = "Authorization") String authToken) {
         if (!getRepresentedOrgaIds().contains(orgaId.replace("Participant:", ""))) {
@@ -165,7 +167,7 @@ public class ContractsController {
         }
 
         return contractStorageService.getOrganizationContracts(orgaId, PageRequest.of(page, size,
-                Sort.by("creationDate").descending()), authToken);
+                Sort.by("creationDate").descending()), status, authToken);
     }
 
     /**
