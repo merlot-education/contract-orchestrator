@@ -26,8 +26,12 @@ public interface ContractMapper {
     @Mapping(target = "id", source = "contract.id")
     @Mapping(target = "creationDate", source = "contract.creationDate")
     @Mapping(target = "offering", source = "offeringDetails")
+    @Mapping(target = "providerId",
+            source = "offeringDetails.providerDetails.providerId")
     @Mapping(target = "providerLegalName",
             source = "offeringDetails.providerDetails.providerLegalName")
+    @Mapping(target = "consumerId",
+            source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.id")
     @Mapping(target = "consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
     @Mapping(target = "state", source = "contract.state")
