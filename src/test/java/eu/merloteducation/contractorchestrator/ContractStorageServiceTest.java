@@ -542,6 +542,17 @@ class ContractStorageServiceTest {
     }
 
     @Test
+    void getOrganizationContractsFilteredExisting() {
+        Page<ContractBasicDto> contracts = contractStorageService.getOrganizationContracts("Participant:10",
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), ContractState.RELEASED , "authToken");
+
+        assertTrue(contracts.isEmpty());
+        contracts = contractStorageService.getOrganizationContracts("Participant:10",
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), ContractState.IN_DRAFT , "authToken");
+        assertFalse(contracts.isEmpty());
+    }
+
+    @Test
     void getContractByIdExistent() {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("10");
