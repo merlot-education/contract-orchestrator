@@ -10,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@Builder
 public class ContractOffer {
     private static final String TYPE = EdcConstants.EDC_PREFIX + "ContractOfferDescription";
 

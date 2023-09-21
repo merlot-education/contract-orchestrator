@@ -2,15 +2,13 @@ package eu.merloteducation.contractorchestrator.models.edc.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Asset {
     private static final String TYPE = EdcConstants.EDC_PREFIX + "Asset";
 

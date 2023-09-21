@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.models.edc.transfer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import eu.merloteducation.contractorchestrator.models.edc.asset.DataAddress;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -12,6 +13,7 @@ import java.util.Map;
 @Getter
 @Setter
 @ToString
+@Builder
 public class TransferRequest {
     private static final Map<String, String> CONTEXT = EdcConstants.EDC_CONTEXT;
 
@@ -35,18 +37,6 @@ public class TransferRequest {
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "dataDestination")
     private DataAddress dataDestination;
-
-    public TransferRequest(String connectorId,
-                           String connectorAddress,
-                           String contractId,
-                           String assetId,
-                           DataAddress dataDestination) {
-        this.connectorId = connectorId;
-        this.connectorAddress = connectorAddress;
-        this.contractId = contractId;
-        this.assetId = assetId;
-        this.dataDestination = dataDestination;
-    }
 
     @JsonProperty("@type")
     public String getType() {

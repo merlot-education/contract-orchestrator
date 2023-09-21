@@ -2,6 +2,7 @@ package eu.merloteducation.contractorchestrator.models.edc.catalog;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 @Getter
 @Setter
+@AllArgsConstructor
 @ToString
 public class CatalogRequest {
     private static final Map<String, String> CONTEXT = EdcConstants.EDC_CONTEXT;
@@ -18,11 +20,6 @@ public class CatalogRequest {
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "providerUrl")
     private String providerUrl;
-
-    public CatalogRequest(String providerUrl) {
-        this.providerUrl = providerUrl;
-    }
-
 
     @JsonProperty("@context")
     public Map<String, String> getContext() {

@@ -46,10 +46,10 @@ public class EdcOrchestrationService {
     private ObjectProvider<EdcClient> edcClientProvider;
 
     private DataDeliveryContractDto validateContract(ContractDto template) {
-        if (!(template instanceof DataDeliveryContractDto dataDeliveryContractDetailsDto)){
+        if (!(template instanceof DataDeliveryContractDto dataDeliveryContractDetailsDto)) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
         }
-        if (!template.getDetails().getState().equals(ContractState.RELEASED.name())){
+        if (!template.getDetails().getState().equals(ContractState.RELEASED.name())) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is in wrong state.");
         }
         return dataDeliveryContractDetailsDto;
@@ -63,7 +63,7 @@ public class EdcOrchestrationService {
                 .get("credentialSubject").get("merlot:dataTransferType").get("@value").asText();
 
         if (!((dataTransferType.equals("Push") && isProvider) ||
-                        (dataTransferType.equals("Pull")&& isConsumer)
+                (dataTransferType.equals("Pull") && isConsumer)
         )) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Your role is not authorized to perform the data transfer");
         }
@@ -79,10 +79,10 @@ public class EdcOrchestrationService {
      * Given a contract id, a role and a set of represented organizations, start the automated EDC negotiation
      * over the contract.
      *
-     * @param contractId contract id
-     * @param activeRoleOrgaId currently active role
+     * @param contractId         contract id
+     * @param activeRoleOrgaId   currently active role
      * @param representedOrgaIds represented organizations
-     * @param authToken user auth token
+     * @param authToken          user auth token
      * @return negotiation initiation response
      */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
@@ -111,32 +111,54 @@ public class EdcOrchestrationService {
 
         // provider side
         // create asset
-        AssetCreateRequest assetCreateRequest = new AssetCreateRequest(
-                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
-                new IonosS3DataAddress(
-                        template.getProvisioning().getDataAddressSourceBucketName(),
-                        template.getProvisioning().getDataAddressSourceBucketName(),
-                        providerConnector.getOrgaId(),
-                        template.getProvisioning().getDataAddressSourceFileName(),
-                        template.getProvisioning().getDataAddressSourceFileName(),
-                        "s3-eu-central-1.ionoscloud.com"));
+        AssetCreateRequest assetCreateRequest = AssetCreateRequest.builder()
+                .asset(Asset.builder()
+                        .id(assetId)
+                        .properties(AssetProperties.builder()
+                                .name(assetName)
+                                .description(assetDescription)
+                                .version("")
+                                .contenttype("")
+                                .build())
+                        .build())
+                .dataAddress(IonosS3DataAddress.builder()
+                        .name(template.getProvisioning().getDataAddressSourceBucketName())
+                        .bucketName(template.getProvisioning().getDataAddressSourceBucketName())
+                        .container(providerConnector.getOrgaId())
+                        .blobName(template.getProvisioning().getDataAddressSourceFileName())
+                        .keyName(template.getProvisioning().getDataAddressSourceFileName())
+                        .storage("s3-eu-central-1.ionoscloud.com")
+                        .build())
+                .build();
         logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
         IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
 
         // create policy
-        PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest(new Policy(policyId));
+        PolicyCreateRequest policyCreateRequest = PolicyCreateRequest.builder()
+                .id(policyId)
+                .policy(Policy.builder()
+                        .id(policyId)
+                        .obligation(Collections.emptyList())
+                        .prohibition(Collections.emptyList())
+                        .permission(Collections.emptyList())
+                        .build())
+                .build();
         logger.debug("Creating Policy {} on {}", policyCreateRequest, providerConnector);
         IdResponse policyIdResponse = providerEdcClient.createPolicy(policyCreateRequest);
 
         // create contract definition
-        ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest(
-                contractDefinitionId,
-                policyIdResponse.getId(),
-                policyIdResponse.getId(),
-                List.of(new Criterion("https://w3id.org/edc/v0.0.1/ns/id","=", assetId))
-        );
-        logger.debug("Creating Contract Definition {} on {}", createRequest, providerConnector);
-        providerEdcClient.createContractDefinition(createRequest);
+        ContractDefinitionCreateRequest contractDefinitionCreateRequest = ContractDefinitionCreateRequest.builder()
+                .id(contractDefinitionId)
+                .contractPolicyId(policyIdResponse.getId())
+                .accessPolicyId(policyIdResponse.getId())
+                .assetsSelector(List.of(Criterion.builder()
+                        .operandLeft("https://w3id.org/edc/v0.0.1/ns/id")
+                        .operator("=")
+                        .operandRight(assetId)
+                        .build()))
+                .build();
+        logger.debug("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
+        providerEdcClient.createContractDefinition(contractDefinitionCreateRequest);
 
         // consumer side
         // find the offering we are interested in
@@ -145,32 +167,35 @@ public class EdcOrchestrationService {
         DcatCatalog catalog = consumerEdcClient.queryCatalog(catalogRequest);
         List<DcatDataset> matches =
                 catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
-        if(matches.size() != 1) {
+        if (matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
         DcatDataset dataset = matches.get(0);
 
         // negotiate offer
-        NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest(
-                catalog.getParticipantId(),
-                consumerConnector.getConnectorId(),
-                catalog.getParticipantId(),
-                providerConnector.getProtocolBaseUrl(),
-                new ContractOffer(
-                        dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)
-                ));
-        logger.debug("Negotiate Offer with request {} on {}", initiateRequest, consumerConnector);
-        return consumerEdcClient.negotiateOffer(initiateRequest);
+        NegotiationInitiateRequest negotiationInitiateRequest = NegotiationInitiateRequest.builder()
+                .connectorId(catalog.getParticipantId())
+                .providerId(catalog.getParticipantId())
+                .consumerId(consumerConnector.getConnectorId())
+                .connectorAddress(providerConnector.getProtocolBaseUrl())
+                .offer(ContractOffer.builder()
+                        .offerId(dataset.getHasPolicy().get(0).getId())
+                        .assetId(dataset.getAssetId())
+                        .policy(dataset.getHasPolicy().get(0))
+                        .build())
+                .build();
+        logger.debug("Negotiate Offer with request {} on {}", negotiationInitiateRequest, consumerConnector);
+        return consumerEdcClient.negotiateOffer(negotiationInitiateRequest);
     }
 
     /**
      * Given a negotiation id and a contract, return the current status of the automated EDC negotiation.
      *
-     * @param negotiationId negotiation id
-     * @param contractId contract id
-     * @param activeRoleOrgaId currently active role
+     * @param negotiationId      negotiation id
+     * @param contractId         contract id
+     * @param activeRoleOrgaId   currently active role
      * @param representedOrgaIds represented organizations
-     * @param authToken user auth token
+     * @param authToken          user auth token
      * @return status of negotiation
      */
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
@@ -190,11 +215,11 @@ public class EdcOrchestrationService {
     /**
      * Given a (completed) EDC negotiation id and a contract id, start the EDC data transfer over the contract.
      *
-     * @param negotiationId negotiation id
-     * @param contractId contract id
-     * @param activeRoleOrgaId currently active role
+     * @param negotiationId      negotiation id
+     * @param contractId         contract id
+     * @param activeRoleOrgaId   currently active role
      * @param representedOrgaIds represented organizations
-     * @param authToken user auth token
+     * @param authToken          user auth token
      * @return transfer initiation response
      */
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
@@ -214,20 +239,20 @@ public class EdcOrchestrationService {
                 representedOrgaIds, authToken);
 
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
-        TransferRequest transferRequest = new TransferRequest(
-                providerConnector.getConnectorId(),
-                negotiation.getCounterPartyAddress(),
-                negotiation.getContractAgreementId(),
-                negotiation.getContractAgreementId().split(":")[1],
-                new IonosS3DataAddress(
-                        template.getProvisioning().getDataAddressTargetBucketName(),
-                        template.getProvisioning().getDataAddressTargetBucketName(),
-                        template.getDetails().getConsumerId(),
-                        template.getProvisioning().getDataAddressTargetFileName(),
-                        template.getProvisioning().getDataAddressTargetFileName(),
-                        "s3-eu-central-1.ionoscloud.com"
-                )
-        );
+        TransferRequest transferRequest = TransferRequest.builder()
+                .connectorId(providerConnector.getConnectorId())
+                .connectorAddress(negotiation.getCounterPartyAddress())
+                .contractId(negotiation.getContractAgreementId())
+                .assetId(negotiation.getContractAgreementId().split(":")[1])
+                .dataDestination(IonosS3DataAddress.builder()
+                        .name(template.getProvisioning().getDataAddressTargetBucketName())
+                        .bucketName(template.getProvisioning().getDataAddressTargetBucketName())
+                        .container(template.getDetails().getConsumerId())
+                        .blobName(template.getProvisioning().getDataAddressTargetFileName())
+                        .keyName(template.getProvisioning().getDataAddressTargetFileName())
+                        .storage("s3-eu-central-1.ionoscloud.com")
+                        .build())
+                .build();
         logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
         return consumerEdcClient.initiateTransfer(transferRequest);
     }
@@ -235,11 +260,11 @@ public class EdcOrchestrationService {
     /**
      * Given a transfer id and a contract, get the current status of the data transfer.
      *
-     * @param transferId transfer id
-     * @param contractId contract id
-     * @param activeRoleOrgaId currently active role
+     * @param transferId         transfer id
+     * @param contractId         contract id
+     * @param activeRoleOrgaId   currently active role
      * @param representedOrgaIds represented organizations
-     * @param authToken user auth token
+     * @param authToken          user auth token
      * @return status of transfer
      */
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
