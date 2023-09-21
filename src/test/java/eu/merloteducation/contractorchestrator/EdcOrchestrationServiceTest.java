@@ -55,7 +55,7 @@ class EdcOrchestrationServiceTest {
     private MessageQueueService messageQueueService;
 
     @Mock
-    private ObjectProvider<IEdcClient> edcClientProvider;
+    private ObjectProvider<EdcClient> edcClientProvider;
 
     @Autowired
     private EdcOrchestrationService edcOrchestrationService;

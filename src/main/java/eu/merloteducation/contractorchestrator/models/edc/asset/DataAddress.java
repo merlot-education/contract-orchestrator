@@ -10,7 +10,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Builder
 public abstract class DataAddress {
     private static final String TYPE = EdcConstants.EDC_PREFIX + "DataAddress";
 

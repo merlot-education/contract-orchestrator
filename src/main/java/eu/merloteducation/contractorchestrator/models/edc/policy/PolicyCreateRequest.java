@@ -19,11 +19,6 @@ public class PolicyCreateRequest {
     @JsonProperty(EdcConstants.EDC_PREFIX + "policy")
     private Policy policy;
 
-    public PolicyCreateRequest(Policy policy) {
-        this.policy = policy;
-        this.id = policy.getId();
-    }
-
     @JsonProperty("@context")
     public Map<String, String> getContext() {
         return CONTEXT;
