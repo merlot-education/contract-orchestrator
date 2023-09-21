@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EdcClient {
+public class EdcClient implements IEdcClient {
 
     private final Logger logger = LoggerFactory.getLogger(EdcClient.class);
 
@@ -42,31 +42,8 @@ public class EdcClient {
                 .defaultHeader("X-API-Key", this.connector.getConnectorAccessToken())
                 .build();
     }
-    public IdResponse createDataPlane(String transferUrl, String publicApiUrl) {
-        logger.debug("Create Data-plane on {}", this.connector.getManagementBaseUrl());
-        DataPlaneCreateRequest dataPlaneCreateRequest = new DataPlaneCreateRequest();
-        dataPlaneCreateRequest.setId("http-push-dataplane");
-        dataPlaneCreateRequest.setUrl(transferUrl);
-        List<String> sourceTypes = new ArrayList<>();
-        sourceTypes.add("HttpData");
-        sourceTypes.add("HttpProxy");
-        dataPlaneCreateRequest.setAllowedSourceTypes(sourceTypes);
-        List<String> destTypes = new ArrayList<>();
-        destTypes.add("HttpData");
-        dataPlaneCreateRequest.setAllowedDestTypes(destTypes);
-        Map<String, String> properties = new HashMap<>();
-        properties.put("publicApiUrl", publicApiUrl);
-        dataPlaneCreateRequest.setProperties(properties);
 
-        return webClient
-                .post()
-                .uri("/instances")
-                .bodyValue(dataPlaneCreateRequest)
-                .retrieve()
-                .bodyToMono(IdResponse.class)
-                .block();
-    }
-
+    @Override
     public IdResponse createAsset(Asset asset, DataAddress dataAddress) {
         logger.debug("Create Asset on {}", this.connector.getManagementBaseUrl());
         AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
@@ -82,6 +59,7 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public IdResponse createPolicyUnrestricted(Policy policy) {
         logger.debug("Create Policy on {}", this.connector.getManagementBaseUrl());
         PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
@@ -97,8 +75,9 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid,
-                                                String assetId) {
+                                               String assetId) {
         logger.debug("Create Contract Definition on {}", this.connector.getManagementBaseUrl());
         ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
         createRequest.setId(contractDefinitionId);
@@ -121,6 +100,7 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public DcatCatalog queryCatalog(String providerProtocolUrl) {
         logger.debug("Query Catalog on {} with provider url {}", this.connector.getManagementBaseUrl(), providerProtocolUrl);
         CatalogRequest catalogRequest = new CatalogRequest();
@@ -135,8 +115,9 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public IdResponse negotiateOffer(String connectorId, String providerId, String connectorAddress,
-                                      ContractOffer offer) {
+                                     ContractOffer offer) {
         logger.debug("Negotiate offer on {}", this.connector.getManagementBaseUrl());
         NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest();
         initiateRequest.setConnectorId(connectorId);
@@ -154,6 +135,7 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public ContractNegotiation checkOfferStatus(String negotiationId) {
         logger.debug("Requesting offer status on {} with id {}", this.connector.getManagementBaseUrl(), negotiationId);
         return webClient
@@ -164,8 +146,9 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public IdResponse initiateTransfer(String connectorId, String connectorAddress, String agreementId, String assetId,
-                                        DataAddress dataDestination) {
+                                       DataAddress dataDestination) {
         logger.debug("Initiating transfer on {}", this.connector.getManagementBaseUrl());
 
         TransferRequest transferRequest = new TransferRequest();
@@ -184,6 +167,7 @@ public class EdcClient {
                 .block();
     }
 
+    @Override
     public IonosS3TransferProcess checkTransferStatus(String transferId) {
         logger.debug("Requesting transfer status on {} with id {}", this.connector.getManagementBaseUrl(), transferId);
         return webClient

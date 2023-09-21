@@ -15,10 +15,10 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -37,7 +37,7 @@ public class EdcOrchestrationService {
     private ContractStorageService contractStorageService;
 
     @Autowired
-    private WebClient.Builder webClientBuilder;
+    private ObjectProvider<IEdcClient> edcClientProvider;
 
     private DataDeliveryContractDto validateContract(ContractDto template) {
         if (!(template instanceof DataDeliveryContractDto dataDeliveryContractDetailsDto)){
@@ -85,10 +85,10 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        EdcClient providerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId()), webClientBuilder);
-        EdcClient consumerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()), webClientBuilder);
+        IEdcClient providerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getProviderId(),
+                template.getProvisioning().getSelectedProviderConnectorId()));
+        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId()));
 
         String contractUuid = template.getDetails().getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
@@ -152,8 +152,8 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        EdcClient consumerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()), webClientBuilder);
+        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId()));
 
         return consumerEdcClient.checkOfferStatus(negotiationId);
     }
@@ -174,10 +174,10 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        EdcClient providerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId()), webClientBuilder);
-        EdcClient consumerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()), webClientBuilder);
+        IEdcClient providerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getProviderId(),
+                template.getProvisioning().getSelectedProviderConnectorId()));
+        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId()));
 
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId,
                 representedOrgaIds, authToken);
@@ -214,8 +214,8 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        EdcClient consumerEdcClient = new EdcClient(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()), webClientBuilder);
+        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId()));
 
         return consumerEdcClient.checkTransferStatus(transferId);
     }
