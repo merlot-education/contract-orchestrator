@@ -520,7 +520,7 @@ class ContractStorageServiceTest {
     @Test
     void getOrganizationContractsExisting() {
         Page<ContractBasicDto> contracts = contractStorageService.getOrganizationContracts("Participant:10",
-                PageRequest.of(0, 9, Sort.by("creationDate").descending()), "authToken");
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), null , "authToken");
 
         assertFalse(contracts.isEmpty());
     }
@@ -528,7 +528,7 @@ class ContractStorageServiceTest {
     @Test
     void getOrganizationContractsNonExisting() {
         Page<ContractBasicDto> contracts = contractStorageService.getOrganizationContracts("Participant:99",
-                PageRequest.of(0, 9, Sort.by("creationDate").descending()), "authToken");
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), null, "authToken");
 
         assertTrue(contracts.isEmpty());
     }
@@ -536,9 +536,20 @@ class ContractStorageServiceTest {
     @Test
     void getOrganizationContractsInvalidOrgaId() {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
-                contractStorageService.getOrganizationContracts("garbage", this.defaultPageRequest, "authToken"));
+                contractStorageService.getOrganizationContracts("garbage", this.defaultPageRequest, null, "authToken"));
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
+    }
+
+    @Test
+    void getOrganizationContractsFilteredExisting() {
+        Page<ContractBasicDto> contracts = contractStorageService.getOrganizationContracts("Participant:10",
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), ContractState.RELEASED , "authToken");
+
+        assertTrue(contracts.isEmpty());
+        contracts = contractStorageService.getOrganizationContracts("Participant:10",
+                PageRequest.of(0, 9, Sort.by("creationDate").descending()), ContractState.IN_DRAFT , "authToken");
+        assertFalse(contracts.isEmpty());
     }
 
     @Test

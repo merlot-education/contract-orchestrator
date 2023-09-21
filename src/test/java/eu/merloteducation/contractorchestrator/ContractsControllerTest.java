@@ -103,7 +103,7 @@ class ContractsControllerTest {
                 .thenReturn(template);
         lenient().when(contractStorageService.updateContractTemplate(any(), any(), any()))
                 .thenReturn(template);
-        lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any()))
+        lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any(), any()))
                 .thenReturn(contractTemplatesPage);
     }
 

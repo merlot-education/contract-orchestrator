@@ -15,7 +15,11 @@ public class ContractBasicDto {
 
     private ServiceOfferingDetails offering;
 
+    private String providerId;
+
     private String providerLegalName;
+
+    private String consumerId;
 
     private String consumerLegalName;
 
