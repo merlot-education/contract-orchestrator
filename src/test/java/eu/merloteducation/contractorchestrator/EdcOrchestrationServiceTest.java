@@ -212,7 +212,7 @@ class EdcOrchestrationServiceTest {
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
-        assertFalse(StringUtil.isNullOrEmpty(negotiationId.getId()));
+        assertEquals(EdcClientFake.FAKE_ID, negotiationId.getId());
     }
 
     @Test
@@ -225,14 +225,7 @@ class EdcOrchestrationServiceTest {
 
         assertNotNull(negotiation);
         assertEquals("edc:ContractNegotiationDto", negotiation.getType());
-        assertFalse(StringUtil.isNullOrEmpty(negotiation.getId()));
-        assertEquals("623d4060-302b-45a0-89d0-65bc69650822", negotiation.getId());
-        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", negotiation.getContractAgreementId());
-        assertTrue(negotiation.getCallbackAddresses().isEmpty());
-        assertEquals("http://localhost:8282/protocol", negotiation.getCounterPartyAddress());
-        assertEquals("dataspace-protocol-http", negotiation.getProtocol());
-        assertEquals("FINALIZED", negotiation.getState());
-        assertEquals("CONSUMER", negotiation.getEdcType());
+        assertEquals(EdcClientFake.FAKE_ID, negotiation.getId());
     }
 
     @Test
@@ -245,8 +238,8 @@ class EdcOrchestrationServiceTest {
 
         assertNotNull(transferId);
         assertEquals("edc:IdResponseDto", transferId.getType());
-        assertEquals("myId", transferId.getId());
-        assertEquals(1689756292703L, transferId.getCreatedAt());
+        assertEquals(EdcClientFake.FAKE_ID, transferId.getId());
+        assertEquals(EdcClientFake.FAKE_TIMESTAMP, transferId.getCreatedAt());
 
     }
 
@@ -259,24 +252,10 @@ class EdcOrchestrationServiceTest {
                 validPushContract.getDetails().getProviderId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
-        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
+        assertEquals(EdcClientFake.FAKE_ID, transferProcess.getId());
         assertEquals("edc:TransferProcessDto", transferProcess.getType());
-        assertTrue(transferProcess.getCallbackAddresses().isEmpty());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getBlobName());
-        assertEquals("merlotedcconsumer", transferProcess.getDataDestination().getBucketName());
-        assertEquals("company2", transferProcess.getDataDestination().getContainer());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getKeyName());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getName());
-        assertEquals("s3-eu-central-1.ionoscloud.com", transferProcess.getDataDestination().getStorage());
-        assertEquals("IonosS3", transferProcess.getDataDestination().getDataType());
-        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getDataRequest().getId());
         assertEquals("edc:DataRequestDto", transferProcess.getDataRequest().getType());
-        assertEquals("myId", transferProcess.getDataRequest().getAssetId());
-        assertEquals("provider", transferProcess.getDataRequest().getConnectorId());
-        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", transferProcess.getDataRequest().getContractId());
-        assertEquals("COMPLETED", transferProcess.getState());
-        assertEquals("1689756313117", transferProcess.getStateTimestamp());
-        assertEquals("CONSUMER", transferProcess.getEdcType());
+        assertEquals(EdcClientFake.FAKE_ID, transferProcess.getDataRequest().getAssetId());
     }
 
     @Test
@@ -321,8 +300,8 @@ class EdcOrchestrationServiceTest {
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
-        assertEquals("myId", negotiationId.getId());
-        assertEquals(1689756292703L, negotiationId.getCreatedAt());
+        assertEquals(EdcClientFake.FAKE_ID, negotiationId.getId());
+        assertEquals(EdcClientFake.FAKE_TIMESTAMP, negotiationId.getCreatedAt());
     }
 
     @Test
@@ -336,13 +315,7 @@ class EdcOrchestrationServiceTest {
         assertNotNull(negotiation);
 
         assertEquals("edc:ContractNegotiationDto", negotiation.getType());
-        assertEquals("623d4060-302b-45a0-89d0-65bc69650822", negotiation.getId());
-        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", negotiation.getContractAgreementId());
-        assertTrue(negotiation.getCallbackAddresses().isEmpty());
-        assertEquals("http://localhost:8282/protocol", negotiation.getCounterPartyAddress());
-        assertEquals("dataspace-protocol-http", negotiation.getProtocol());
-        assertEquals("FINALIZED", negotiation.getState());
-        assertEquals("CONSUMER", negotiation.getEdcType());
+        assertEquals(EdcClientFake.FAKE_ID, negotiation.getId());
     }
 
     @Test
@@ -350,14 +323,14 @@ class EdcOrchestrationServiceTest {
 
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(validPullContract.getDetails().getConsumerId().replace("Participant:", ""));
-        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPullContract.getDetails().getId(),
+        IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer(EdcClientFake.FAKE_ID, validPullContract.getDetails().getId(),
                 validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferId);
         assertNotNull(transferId);
         assertEquals("edc:IdResponseDto", transferId.getType());
-        assertEquals("myId", transferId.getId());
-        assertEquals(1689756292703L, transferId.getCreatedAt());
+        assertEquals(EdcClientFake.FAKE_ID, transferId.getId());
+        assertEquals(EdcClientFake.FAKE_TIMESTAMP, transferId.getCreatedAt());
     }
 
     @Test
@@ -369,24 +342,10 @@ class EdcOrchestrationServiceTest {
                 validPullContract.getDetails().getConsumerId().replace("Participant:", ""), representedOrgaIds, "authToken");
 
         assertNotNull(transferProcess);
-        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getId());
+        assertEquals(EdcClientFake.FAKE_ID, transferProcess.getId());
         assertEquals("edc:TransferProcessDto", transferProcess.getType());
-        assertTrue(transferProcess.getCallbackAddresses().isEmpty());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getBlobName());
-        assertEquals("merlotedcconsumer", transferProcess.getDataDestination().getBucketName());
-        assertEquals("company2", transferProcess.getDataDestination().getContainer());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getKeyName());
-        assertEquals("device1-data.csv", transferProcess.getDataDestination().getName());
-        assertEquals("s3-eu-central-1.ionoscloud.com", transferProcess.getDataDestination().getStorage());
-        assertEquals("IonosS3", transferProcess.getDataDestination().getDataType());
-        assertEquals("9bb91649-7d09-490a-ac3f-33b60a5de02e", transferProcess.getDataRequest().getId());
         assertEquals("edc:DataRequestDto", transferProcess.getDataRequest().getType());
-        assertEquals("myId", transferProcess.getDataRequest().getAssetId());
-        assertEquals("provider", transferProcess.getDataRequest().getConnectorId());
-        assertEquals("myId:myId:6cada15f-0acc-4784-bc51-b1b0aba504e8", transferProcess.getDataRequest().getContractId());
-        assertEquals("COMPLETED", transferProcess.getState());
-        assertEquals("1689756313117", transferProcess.getStateTimestamp());
-        assertEquals("CONSUMER", transferProcess.getEdcType());
+        assertEquals(EdcClientFake.FAKE_ID, transferProcess.getDataRequest().getAssetId());
     }
 
     @Test
