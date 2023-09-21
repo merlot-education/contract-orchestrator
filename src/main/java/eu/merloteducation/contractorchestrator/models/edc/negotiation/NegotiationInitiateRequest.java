@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Map;
 
 @Getter
 @Setter
+@ToString
 public class NegotiationInitiateRequest {
     private static final Map<String, String> CONTEXT = EdcConstants.EDC_CONTEXT;
 
@@ -30,6 +32,18 @@ public class NegotiationInitiateRequest {
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "offer")
     private ContractOffer offer;
+
+    public NegotiationInitiateRequest(String connectorId,
+                                      String consumerId,
+                                      String providerId,
+                                      String connectorAddress,
+                                      ContractOffer offer) {
+        this.connectorId = connectorId;
+        this.consumerId = consumerId;
+        this.providerId = providerId;
+        this.connectorAddress = connectorAddress;
+        this.offer = offer;
+    }
 
     @JsonProperty("@context")
     public Map<String, String> getContext() {

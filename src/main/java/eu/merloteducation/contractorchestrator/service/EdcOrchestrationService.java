@@ -111,58 +111,55 @@ public class EdcOrchestrationService {
 
         // provider side
         // create asset
-        AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
-        assetCreateRequest.setAsset(
-                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")));
-        assetCreateRequest.setDataAddress(
+        AssetCreateRequest assetCreateRequest = new AssetCreateRequest(
+                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
                 new IonosS3DataAddress(
-                template.getProvisioning().getDataAddressSourceBucketName(),
-                template.getProvisioning().getDataAddressSourceBucketName(),
-                providerConnector.getOrgaId(),
-                template.getProvisioning().getDataAddressSourceFileName(),
-                template.getProvisioning().getDataAddressSourceFileName(),
-                "s3-eu-central-1.ionoscloud.com"));
+                        template.getProvisioning().getDataAddressSourceBucketName(),
+                        template.getProvisioning().getDataAddressSourceBucketName(),
+                        providerConnector.getOrgaId(),
+                        template.getProvisioning().getDataAddressSourceFileName(),
+                        template.getProvisioning().getDataAddressSourceFileName(),
+                        "s3-eu-central-1.ionoscloud.com"));
+        logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
         IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
 
         // create policy
-        Policy policy = new Policy(policyId);
-        PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
-        policyCreateRequest.setPolicy(policy);
-        policyCreateRequest.setId(policy.getId());
+        PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest(new Policy(policyId));
+        logger.debug("Creating Policy {} on {}", policyCreateRequest, providerConnector);
         IdResponse policyIdResponse = providerEdcClient.createPolicy(policyCreateRequest);
 
         // create contract definition
-        ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
-        createRequest.setId(contractDefinitionId);
-        createRequest.setAccessPolicyId(policyIdResponse.getId());
-        createRequest.setContractPolicyId(policyIdResponse.getId());
-        Criterion assetCriterion = new Criterion();
-        assetCriterion.setOperator("=");
-        assetCriterion.setOperandLeft("https://w3id.org/edc/v0.0.1/ns/id");
-        assetCriterion.setOperandRight(assetId);
-        createRequest.setAssetsSelector(List.of(assetCriterion));
+        ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest(
+                contractDefinitionId,
+                policyIdResponse.getId(),
+                policyIdResponse.getId(),
+                List.of(new Criterion("https://w3id.org/edc/v0.0.1/ns/id","=", assetId))
+        );
+        logger.debug("Creating Contract Definition {} on {}", createRequest, providerConnector);
         providerEdcClient.createContractDefinition(createRequest);
 
         // consumer side
         // find the offering we are interested in
-        CatalogRequest catalogRequest = new CatalogRequest();
-        catalogRequest.setProviderUrl(providerConnector.getProtocolBaseUrl());
+        CatalogRequest catalogRequest = new CatalogRequest(providerConnector.getProtocolBaseUrl());
+        logger.debug("Query Catalog with request {} on {}", catalogRequest, consumerConnector);
         DcatCatalog catalog = consumerEdcClient.queryCatalog(catalogRequest);
-        List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
+        List<DcatDataset> matches =
+                catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
         DcatDataset dataset = matches.get(0);
 
         // negotiate offer
-        NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest();
-        initiateRequest.setConnectorId(catalog.getParticipantId());
-        initiateRequest.setConsumerId(consumerConnector.getConnectorId());
-        initiateRequest.setProviderId(catalog.getParticipantId());
-        initiateRequest.setConnectorAddress(providerConnector.getProtocolBaseUrl());
-        initiateRequest.setOffer(new ContractOffer(
-                dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)
-        ));
+        NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest(
+                catalog.getParticipantId(),
+                consumerConnector.getConnectorId(),
+                catalog.getParticipantId(),
+                providerConnector.getProtocolBaseUrl(),
+                new ContractOffer(
+                        dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)
+                ));
+        logger.debug("Negotiate Offer with request {} on {}", initiateRequest, consumerConnector);
         return consumerEdcClient.negotiateOffer(initiateRequest);
     }
 
@@ -186,7 +183,7 @@ public class EdcOrchestrationService {
                 template.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-
+        logger.debug("Check status of offer {} on {}", negotiationId, consumerConnector);
         return consumerEdcClient.checkOfferStatus(negotiationId);
     }
 
@@ -217,19 +214,21 @@ public class EdcOrchestrationService {
                 representedOrgaIds, authToken);
 
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
-        TransferRequest transferRequest = new TransferRequest();
-        transferRequest.setConnectorId(providerConnector.getConnectorId());
-        transferRequest.setConnectorAddress(negotiation.getCounterPartyAddress());
-        transferRequest.setContractId(negotiation.getContractAgreementId());
-        transferRequest.setAssetId(negotiation.getContractAgreementId().split(":")[1]);
-        transferRequest.setDataDestination(new IonosS3DataAddress(
-                template.getProvisioning().getDataAddressTargetBucketName(),
-                template.getProvisioning().getDataAddressTargetBucketName(),
-                template.getDetails().getConsumerId(),
-                template.getProvisioning().getDataAddressTargetFileName(),
-                template.getProvisioning().getDataAddressTargetFileName(),
-                "s3-eu-central-1.ionoscloud.com"
-        ));
+        TransferRequest transferRequest = new TransferRequest(
+                providerConnector.getConnectorId(),
+                negotiation.getCounterPartyAddress(),
+                negotiation.getContractAgreementId(),
+                negotiation.getContractAgreementId().split(":")[1],
+                new IonosS3DataAddress(
+                        template.getProvisioning().getDataAddressTargetBucketName(),
+                        template.getProvisioning().getDataAddressTargetBucketName(),
+                        template.getDetails().getConsumerId(),
+                        template.getProvisioning().getDataAddressTargetFileName(),
+                        template.getProvisioning().getDataAddressTargetFileName(),
+                        "s3-eu-central-1.ionoscloud.com"
+                )
+        );
+        logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
         return consumerEdcClient.initiateTransfer(transferRequest);
     }
 
@@ -253,7 +252,7 @@ public class EdcOrchestrationService {
                 template.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-
+        logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
         return consumerEdcClient.checkTransferStatus(transferId);
     }
 

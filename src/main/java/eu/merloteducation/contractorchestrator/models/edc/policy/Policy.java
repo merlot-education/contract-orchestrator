@@ -5,6 +5,7 @@ import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class Policy {
 
     private static final String TYPE = EdcConstants.ODRL_PREFIX + "Set";

@@ -2,11 +2,13 @@ package eu.merloteducation.contractorchestrator.models.organisationsorchestrator
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 
 @Getter
 @Setter
+@ToString
 public class OrganisationConnectorExtension {
 
     private String id;
