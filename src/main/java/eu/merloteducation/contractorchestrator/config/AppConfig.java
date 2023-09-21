@@ -2,10 +2,8 @@ package eu.merloteducation.contractorchestrator.config;
 
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.service.EdcClient;
-import eu.merloteducation.contractorchestrator.service.IEdcClient;
 import eu.merloteducation.contractorchestrator.service.OrganizationOrchestratorClient;
 import eu.merloteducation.contractorchestrator.service.ServiceOfferingOrchestratorClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +20,6 @@ public class AppConfig {
 
     @Value("${organizations-orchestrator.base-uri}")
     private String organizationsOrchestratorBaseUri;
-
-    @Autowired
-    private WebClient.Builder webClientBuilder;
 
     @Bean
     public ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient() {
@@ -50,7 +45,14 @@ public class AppConfig {
 
     @Bean
     @Scope(value = "prototype")
-    public IEdcClient edcClient(OrganisationConnectorExtension connector) {
-        return new EdcClient(connector, webClientBuilder);
+    public EdcClient edcClient(OrganisationConnectorExtension connector) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl(connector.getManagementBaseUrl())
+                .defaultHeader("X-API-Key", connector.getConnectorAccessToken())
+                .build();
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(webClient))
+                .build();
+        return httpServiceProxyFactory.createClient(EdcClient.class);
     }
 }

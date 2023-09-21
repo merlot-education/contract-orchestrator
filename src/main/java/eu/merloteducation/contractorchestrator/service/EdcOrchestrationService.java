@@ -2,6 +2,12 @@ package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
+import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.ContractDefinitionCreateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.Criterion;
+import eu.merloteducation.contractorchestrator.models.edc.negotiation.NegotiationInitiateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.models.edc.asset.*;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
@@ -37,7 +43,7 @@ public class EdcOrchestrationService {
     private ContractStorageService contractStorageService;
 
     @Autowired
-    private ObjectProvider<IEdcClient> edcClientProvider;
+    private ObjectProvider<EdcClient> edcClientProvider;
 
     private DataDeliveryContractDto validateContract(ContractDto template) {
         if (!(template instanceof DataDeliveryContractDto dataDeliveryContractDetailsDto)){
@@ -85,10 +91,13 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        IEdcClient providerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId()));
-        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()));
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getDetails().getProviderId(),
+                template.getProvisioning().getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId());
+
+        EdcClient providerEdcClient = edcClientProvider.getObject(providerConnector);
+        EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
         String contractUuid = template.getDetails().getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
@@ -101,39 +110,60 @@ public class EdcOrchestrationService {
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
         // provider side
-
-        IdResponse assetIdResponse = providerEdcClient.createAsset(
-                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")),
+        // create asset
+        AssetCreateRequest assetCreateRequest = new AssetCreateRequest();
+        assetCreateRequest.setAsset(
+                new Asset(assetId, new AssetProperties(assetName, assetDescription, "", "")));
+        assetCreateRequest.setDataAddress(
                 new IonosS3DataAddress(
-                        template.getProvisioning().getDataAddressSourceBucketName(),
-                        template.getProvisioning().getDataAddressSourceBucketName(),
-                        providerEdcClient.getConnector().getOrgaId(),
-                        template.getProvisioning().getDataAddressSourceFileName(),
-                        template.getProvisioning().getDataAddressSourceFileName(),
-                        "s3-eu-central-1.ionoscloud.com")
-        );
-        IdResponse policyIdResponse = providerEdcClient.createPolicyUnrestricted(new Policy(policyId));
-        providerEdcClient.createContractDefinition(contractDefinitionId, policyIdResponse.getId(),
-                policyIdResponse.getId(), assetIdResponse.getId());
+                template.getProvisioning().getDataAddressSourceBucketName(),
+                template.getProvisioning().getDataAddressSourceBucketName(),
+                providerConnector.getOrgaId(),
+                template.getProvisioning().getDataAddressSourceFileName(),
+                template.getProvisioning().getDataAddressSourceFileName(),
+                "s3-eu-central-1.ionoscloud.com"));
+        IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
 
+        // create policy
+        Policy policy = new Policy(policyId);
+        PolicyCreateRequest policyCreateRequest = new PolicyCreateRequest();
+        policyCreateRequest.setPolicy(policy);
+        policyCreateRequest.setId(policy.getId());
+        IdResponse policyIdResponse = providerEdcClient.createPolicy(policyCreateRequest);
+
+        // create contract definition
+        ContractDefinitionCreateRequest createRequest = new ContractDefinitionCreateRequest();
+        createRequest.setId(contractDefinitionId);
+        createRequest.setAccessPolicyId(policyIdResponse.getId());
+        createRequest.setContractPolicyId(policyIdResponse.getId());
+        Criterion assetCriterion = new Criterion();
+        assetCriterion.setOperator("=");
+        assetCriterion.setOperandLeft("https://w3id.org/edc/v0.0.1/ns/id");
+        assetCriterion.setOperandRight(assetId);
+        createRequest.setAssetsSelector(List.of(assetCriterion));
+        providerEdcClient.createContractDefinition(createRequest);
 
         // consumer side
         // find the offering we are interested in
-        DcatCatalog catalog = consumerEdcClient.queryCatalog(providerEdcClient.getConnector().getProtocolBaseUrl());
+        CatalogRequest catalogRequest = new CatalogRequest();
+        catalogRequest.setProviderUrl(providerConnector.getProtocolBaseUrl());
+        DcatCatalog catalog = consumerEdcClient.queryCatalog(catalogRequest);
         List<DcatDataset> matches = catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
         if(matches.size() != 1) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find the asset in the provider catalog.");
         }
         DcatDataset dataset = matches.get(0);
 
-        return consumerEdcClient.negotiateOffer(
-                catalog.getParticipantId(),
-                catalog.getParticipantId(),
-                providerEdcClient.getConnector().getProtocolBaseUrl(),
-                new ContractOffer(
-                        dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)
-                )
-        );
+        // negotiate offer
+        NegotiationInitiateRequest initiateRequest = new NegotiationInitiateRequest();
+        initiateRequest.setConnectorId(catalog.getParticipantId());
+        initiateRequest.setConsumerId(consumerConnector.getConnectorId());
+        initiateRequest.setProviderId(catalog.getParticipantId());
+        initiateRequest.setConnectorAddress(providerConnector.getProtocolBaseUrl());
+        initiateRequest.setOffer(new ContractOffer(
+                dataset.getHasPolicy().get(0).getId(), dataset.getAssetId(), dataset.getHasPolicy().get(0)
+        ));
+        return consumerEdcClient.negotiateOffer(initiateRequest);
     }
 
     /**
@@ -152,8 +182,10 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()));
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId());
+
+        EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
         return consumerEdcClient.checkOfferStatus(negotiationId);
     }
@@ -174,28 +206,31 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        IEdcClient providerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId()));
-        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()));
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getDetails().getProviderId(),
+                template.getProvisioning().getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId());
+
+        EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId,
                 representedOrgaIds, authToken);
 
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
-        return consumerEdcClient.initiateTransfer(providerEdcClient.getConnector().getConnectorId(),
-                negotiation.getCounterPartyAddress(),
-                negotiation.getContractAgreementId(),
-                negotiation.getContractAgreementId().split(":")[1],
-                new IonosS3DataAddress(
-                        template.getProvisioning().getDataAddressTargetBucketName(),
-                        template.getProvisioning().getDataAddressTargetBucketName(),
-                        template.getDetails().getConsumerId(),
-                        template.getProvisioning().getDataAddressTargetFileName(),
-                        template.getProvisioning().getDataAddressTargetFileName(),
-                        "s3-eu-central-1.ionoscloud.com"
-                )
-        );
+        TransferRequest transferRequest = new TransferRequest();
+        transferRequest.setConnectorId(providerConnector.getConnectorId());
+        transferRequest.setConnectorAddress(negotiation.getCounterPartyAddress());
+        transferRequest.setContractId(negotiation.getContractAgreementId());
+        transferRequest.setAssetId(negotiation.getContractAgreementId().split(":")[1]);
+        transferRequest.setDataDestination(new IonosS3DataAddress(
+                template.getProvisioning().getDataAddressTargetBucketName(),
+                template.getProvisioning().getDataAddressTargetBucketName(),
+                template.getDetails().getConsumerId(),
+                template.getProvisioning().getDataAddressTargetFileName(),
+                template.getProvisioning().getDataAddressTargetFileName(),
+                "s3-eu-central-1.ionoscloud.com"
+        ));
+        return consumerEdcClient.initiateTransfer(transferRequest);
     }
 
     /**
@@ -214,8 +249,10 @@ public class EdcOrchestrationService {
                 contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken));
         checkTransferAuthorization(template, activeRoleOrgaId);
 
-        IEdcClient consumerEdcClient = edcClientProvider.getObject(getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId()));
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
+                template.getProvisioning().getSelectedConsumerConnectorId());
+
+        EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
         return consumerEdcClient.checkTransferStatus(transferId);
     }

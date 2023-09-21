@@ -1,17 +1,18 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.edc.asset.Asset;
-import eu.merloteducation.contractorchestrator.models.edc.asset.DataAddress;
+import eu.merloteducation.contractorchestrator.models.edc.asset.AssetCreateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
 import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
+import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.ContractDefinitionCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
-import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractOffer;
-import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
+import eu.merloteducation.contractorchestrator.models.edc.negotiation.NegotiationInitiateRequest;
+import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.service.IEdcClient;
+import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
+import eu.merloteducation.contractorchestrator.service.EdcClient;
 
-public class EdcClientFake implements IEdcClient  {
+public class EdcClientFake implements EdcClient {
 
     private IdResponse generateFakeIdResponse() {
         IdResponse response = new IdResponse();
@@ -21,27 +22,27 @@ public class EdcClientFake implements IEdcClient  {
         return response;
     }
     @Override
-    public IdResponse createAsset(Asset asset, DataAddress dataAddress) {
+    public IdResponse createAsset(AssetCreateRequest assetCreateRequest) {
         return generateFakeIdResponse();
     }
 
     @Override
-    public IdResponse createPolicyUnrestricted(Policy policy) {
+    public IdResponse createPolicy(PolicyCreateRequest policyCreateRequest) {
         return generateFakeIdResponse();
     }
 
     @Override
-    public IdResponse createContractDefinition(String contractDefinitionId, String accessPolicyId, String contractPolicyid, String assetId) {
+    public IdResponse createContractDefinition(ContractDefinitionCreateRequest contractDefinitionCreateRequest) {
         return generateFakeIdResponse();
     }
 
     @Override
-    public DcatCatalog queryCatalog(String providerProtocolUrl) {
+    public DcatCatalog queryCatalog(CatalogRequest catalogRequest) {
         return new DcatCatalog();
     }
 
     @Override
-    public IdResponse negotiateOffer(String connectorId, String providerId, String connectorAddress, ContractOffer offer) {
+    public IdResponse negotiateOffer(NegotiationInitiateRequest negotiationInitiateRequest) {
         return generateFakeIdResponse();
     }
 
@@ -54,17 +55,12 @@ public class EdcClientFake implements IEdcClient  {
     }
 
     @Override
-    public IdResponse initiateTransfer(String connectorId, String connectorAddress, String agreementId, String assetId, DataAddress dataDestination) {
+    public IdResponse initiateTransfer(TransferRequest transferRequest) {
         return generateFakeIdResponse();
     }
 
     @Override
     public IonosS3TransferProcess checkTransferStatus(String transferId) {
         return new IonosS3TransferProcess();
-    }
-
-    @Override
-    public OrganisationConnectorExtension getConnector() {
-        return new OrganisationConnectorExtension();
     }
 }
