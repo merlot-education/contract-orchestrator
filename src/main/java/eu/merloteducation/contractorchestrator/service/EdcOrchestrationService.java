@@ -128,7 +128,7 @@ public class EdcOrchestrationService {
                         .container(providerConnector.getOrgaId())
                         .blobName(contractDto.getProvisioning().getDataAddressSourceFileName())
                         .keyName(contractDto.getProvisioning().getDataAddressSourceFileName())
-                        .storage("s3-eu-central-1.ionoscloud.com")
+                        .storage("s3-eu-central-1.ionoscloud.com")  // TODO move this to bucket parameters?
                         .build())
                 .build();
         logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
@@ -273,6 +273,10 @@ public class EdcOrchestrationService {
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
+
+        // TODO deprovision on finalized transfer
+        // curl -X POST -H 'X-Api-Key: password' "http://localhost:9192/management/v2/transferprocesses/{transferProcessId}/deprovision"
+
         return consumerEdcClient.checkTransferStatus(transferId);
     }
 
