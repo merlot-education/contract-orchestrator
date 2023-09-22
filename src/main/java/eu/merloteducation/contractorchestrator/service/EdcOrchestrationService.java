@@ -58,10 +58,10 @@ public class EdcOrchestrationService {
         return dataDeliveryContractDetailsDto;
     }
 
-    private void checkTransferAuthorization(DataDeliveryContractDto template, String activeRoleOrgaId) {
-        boolean isConsumer = activeRoleOrgaId.equals(template.getDetails().getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(template.getDetails().getProviderId().replace(ORGA_PREFIX, ""));
-        ServiceOfferingDetails offeringDetails = template.getOffering();
+    private void checkTransferAuthorization(DataDeliveryContractDto contractDto, String activeRoleOrgaId) {
+        boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId().replace(ORGA_PREFIX, ""));
+        boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId().replace(ORGA_PREFIX, ""));
+        ServiceOfferingDetails offeringDetails = contractDto.getOffering();
         String dataTransferType = offeringDetails.getSelfDescription().get("verifiableCredential")
                 .get("credentialSubject").get("merlot:dataTransferType").get("@value").asText();
 
@@ -90,23 +90,23 @@ public class EdcOrchestrationService {
      */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto template = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
 
-        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId());
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId());
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
+                contractDto.getProvisioning().getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+                contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient providerEdcClient = edcClientProvider.getObject(providerConnector);
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
-        String contractUuid = template.getDetails().getId().replace("Contract:", "");
+        String contractUuid = contractDto.getDetails().getId().replace("Contract:", "");
         String instanceUuid = contractUuid + "_" + UUID.randomUUID();
 
         String assetId = instanceUuid + "_Asset";
         String assetName = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()
-                + "/contract/" + template.getDetails().getId();
-        String assetDescription = "Asset automatically generated from MERLOT to execute contract " + template.getDetails().getId();
+                + "/contract/" + contractDto.getDetails().getId();
+        String assetDescription = "Asset automatically generated from MERLOT to execute contract " + contractDto.getDetails().getId();
         String policyId = instanceUuid + "_Policy";
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
@@ -123,11 +123,11 @@ public class EdcOrchestrationService {
                                 .build())
                         .build())
                 .dataAddress(IonosS3DataAddress.builder()
-                        .name(template.getProvisioning().getDataAddressSourceBucketName())
-                        .bucketName(template.getProvisioning().getDataAddressSourceBucketName())
+                        .name(contractDto.getProvisioning().getDataAddressSourceBucketName())
+                        .bucketName(contractDto.getProvisioning().getDataAddressSourceBucketName())
                         .container(providerConnector.getOrgaId())
-                        .blobName(template.getProvisioning().getDataAddressSourceFileName())
-                        .keyName(template.getProvisioning().getDataAddressSourceFileName())
+                        .blobName(contractDto.getProvisioning().getDataAddressSourceFileName())
+                        .keyName(contractDto.getProvisioning().getDataAddressSourceFileName())
                         .storage("s3-eu-central-1.ionoscloud.com")
                         .build())
                 .build();
@@ -201,10 +201,10 @@ public class EdcOrchestrationService {
      */
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
                                                    Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto template = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
 
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+                contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of offer {} on {}", negotiationId, consumerConnector);
@@ -223,12 +223,12 @@ public class EdcOrchestrationService {
      */
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto template = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
 
-        OrganisationConnectorExtension providerConnector = getOrgaConnector(template.getDetails().getProviderId(),
-                template.getProvisioning().getSelectedProviderConnectorId());
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId());
+        OrganisationConnectorExtension providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
+                contractDto.getProvisioning().getSelectedProviderConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+                contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
@@ -242,11 +242,11 @@ public class EdcOrchestrationService {
                 .contractId(negotiation.getContractAgreementId())
                 .assetId(negotiation.getContractAgreementId().split(":")[1])
                 .dataDestination(IonosS3DataAddress.builder()
-                        .name(template.getProvisioning().getDataAddressTargetBucketName())
-                        .bucketName(template.getProvisioning().getDataAddressTargetBucketName())
-                        .container(template.getDetails().getConsumerId())
-                        .blobName(template.getProvisioning().getDataAddressTargetFileName())
-                        .keyName(template.getProvisioning().getDataAddressTargetFileName())
+                        .name(contractDto.getProvisioning().getDataAddressTargetBucketName())
+                        .bucketName(contractDto.getProvisioning().getDataAddressTargetBucketName())
+                        .container(contractDto.getDetails().getConsumerId())
+                        .blobName(contractDto.getProvisioning().getDataAddressTargetFileName())
+                        .keyName(contractDto.getProvisioning().getDataAddressTargetFileName())
                         .storage("s3-eu-central-1.ionoscloud.com")
                         .build())
                 .build();
@@ -266,10 +266,10 @@ public class EdcOrchestrationService {
      */
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
                                                     Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto template = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
 
-        OrganisationConnectorExtension consumerConnector = getOrgaConnector(template.getDetails().getConsumerId(),
-                template.getProvisioning().getSelectedConsumerConnectorId());
+        OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+                contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
