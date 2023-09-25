@@ -9,6 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@Builder
 public class IonosS3DataAddress extends DataAddress{
 
     private static final String TYPE = "IonosS3";

@@ -2,14 +2,18 @@ package eu.merloteducation.contractorchestrator.models.edc.contractdefinition;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.List;
 import java.util.Map;
 
 @Getter
 @Setter
+@ToString
+@Builder
 public class ContractDefinitionCreateRequest {
     private static final Map<String, String> CONTEXT = EdcConstants.EDC_CONTEXT;
 
@@ -25,7 +29,6 @@ public class ContractDefinitionCreateRequest {
 
     @JsonProperty(EdcConstants.EDC_PREFIX + "contractPolicyId")
     private String contractPolicyId;
-
 
     @JsonProperty("@context")
     public Map<String, String> getContext() {

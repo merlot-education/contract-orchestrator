@@ -3,11 +3,12 @@ package eu.merloteducation.contractorchestrator.models.edc.contractdefinition;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Criterion {
 
     @JsonProperty("@type")
@@ -22,4 +23,13 @@ public class Criterion {
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     @JsonProperty(EdcConstants.EDC_PREFIX + "operandRight")
     private Object operandRight;
+
+    @Builder
+    public Criterion(Object operandLeft,
+                     String operator,
+                     Object operandRight) {
+        this.operandLeft = operandLeft;
+        this.operator = operator;
+        this.operandRight = operandRight;
+    }
 }

@@ -1,10 +1,13 @@
 package eu.merloteducation.contractorchestrator.config;
 
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
+import eu.merloteducation.contractorchestrator.service.EdcClient;
 import eu.merloteducation.contractorchestrator.service.OrganizationOrchestratorClient;
 import eu.merloteducation.contractorchestrator.service.ServiceOfferingOrchestratorClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -38,5 +41,18 @@ public class AppConfig {
                 .builder(WebClientAdapter.forClient(webClient))
                 .build();
         return httpServiceProxyFactory.createClient(OrganizationOrchestratorClient.class);
+    }
+
+    @Bean
+    @Scope(value = "prototype")
+    public EdcClient edcClient(OrganisationConnectorExtension connector) {
+        WebClient webClient = WebClient.builder()
+                .baseUrl(connector.getManagementBaseUrl())
+                .defaultHeader("X-API-Key", connector.getConnectorAccessToken())
+                .build();
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
+                .builder(WebClientAdapter.forClient(webClient))
+                .build();
+        return httpServiceProxyFactory.createClient(EdcClient.class);
     }
 }

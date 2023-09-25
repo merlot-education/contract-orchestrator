@@ -3,15 +3,14 @@ package eu.merloteducation.contractorchestrator.models.edc.negotiation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.merloteducation.contractorchestrator.models.edc.EdcConstants;
 import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
+@Builder
 public class ContractOffer {
     private static final String TYPE = EdcConstants.EDC_PREFIX + "ContractOfferDescription";
 
