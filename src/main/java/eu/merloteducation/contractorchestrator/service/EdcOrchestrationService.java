@@ -45,9 +45,8 @@ public class EdcOrchestrationService {
     @Autowired
     private ObjectProvider<EdcClient> edcClientProvider;
 
-    private DataDeliveryContractDto loadContract(String contractId, Set<String> representedOrgaIds,
-                                                 String activeRoleOrgaId, String authToken) {
-        ContractDto contract = contractStorageService.getContractDetails(contractId, representedOrgaIds, authToken);
+    private DataDeliveryContractDto loadContract(String contractId, String activeRoleOrgaId, String authToken) {
+        ContractDto contract = contractStorageService.getContractDetails(contractId, authToken);
         if (!(contract instanceof DataDeliveryContractDto dataDeliveryContractDetailsDto)) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Provided contract is not of type Data Delivery.");
         }
@@ -84,13 +83,11 @@ public class EdcOrchestrationService {
      *
      * @param contractId         contract id
      * @param activeRoleOrgaId   currently active role
-     * @param representedOrgaIds represented organizations
      * @param authToken          user auth token
      * @return negotiation initiation response
      */
-    public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId,
-                                                   Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+    public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId, String authToken) {
+        DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganisationConnectorExtension providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 contractDto.getProvisioning().getSelectedProviderConnectorId());
@@ -195,13 +192,12 @@ public class EdcOrchestrationService {
      * @param negotiationId      negotiation id
      * @param contractId         contract id
      * @param activeRoleOrgaId   currently active role
-     * @param representedOrgaIds represented organizations
      * @param authToken          user auth token
      * @return status of negotiation
      */
     public ContractNegotiation getNegotationStatus(String negotiationId, String contractId, String activeRoleOrgaId,
-                                                   Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+                                                   String authToken) {
+        DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
@@ -217,13 +213,12 @@ public class EdcOrchestrationService {
      * @param negotiationId      negotiation id
      * @param contractId         contract id
      * @param activeRoleOrgaId   currently active role
-     * @param representedOrgaIds represented organizations
      * @param authToken          user auth token
      * @return transfer initiation response
      */
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
-                                                Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+                                                String authToken) {
+        DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganisationConnectorExtension providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 contractDto.getProvisioning().getSelectedProviderConnectorId());
@@ -232,8 +227,7 @@ public class EdcOrchestrationService {
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
-        ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId,
-                representedOrgaIds, authToken);
+        ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, authToken);
 
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
         TransferRequest transferRequest = TransferRequest.builder()
@@ -260,13 +254,12 @@ public class EdcOrchestrationService {
      * @param transferId         transfer id
      * @param contractId         contract id
      * @param activeRoleOrgaId   currently active role
-     * @param representedOrgaIds represented organizations
      * @param authToken          user auth token
      * @return status of transfer
      */
     public IonosS3TransferProcess getTransferStatus(String transferId, String contractId, String activeRoleOrgaId,
-                                                    Set<String> representedOrgaIds, String authToken) {
-        DataDeliveryContractDto contractDto = loadContract(contractId, representedOrgaIds, activeRoleOrgaId, authToken);
+                                                    String authToken) {
+        DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganisationConnectorExtension consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
