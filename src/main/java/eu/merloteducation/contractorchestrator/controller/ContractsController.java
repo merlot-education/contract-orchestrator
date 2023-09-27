@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -70,12 +72,9 @@ public class ContractsController {
      */
     @PostMapping("")
     @JsonView(ContractViews.ConsumerView.class)
+    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #contractCreateRequest.consumerId)")
     public ContractDto addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
                                                   @RequestHeader(name = "Authorization") String authToken) {
-        if (!getRepresentedOrgaIds().contains(contractCreateRequest.getConsumerId().replace("Participant:", ""))) {
-            throw new ResponseStatusException(FORBIDDEN, "No permission to create a contract for this organization.");
-        }
-
         return this.contractStorageService.addContractTemplate(contractCreateRequest, authToken);
     }
 
@@ -87,16 +86,13 @@ public class ContractsController {
      * @return updated contract template
      */
     @PutMapping("")
+    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                                      @RequestHeader(name = "Authorization") String authToken,
-                                                     @RequestHeader(name = "Active-Role") String activeRole) {
-        Set<String> orgaIds = getRepresentedOrgaIds();
-        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
-        if (!orgaIds.contains(activeRoleOrgaId)) {
-            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
-        }
+                                                     @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
 
-        return contractStorageService.updateContractTemplate(editedContract, authToken, activeRoleOrgaId);
+
+        return contractStorageService.updateContractTemplate(editedContract, authToken, activeRole.getOrganizationId());
     }
 
     /**
@@ -126,22 +122,18 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
+    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)")
     public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                          @PathVariable(value = "status") ContractState status,
-                                                         @RequestHeader(name = "Active-Role") String activeRole,
+                                                         @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                          @RequestHeader(name = "Authorization") String authToken,
                                                          Principal principal) {
-        Set<String> orgaIds = getRepresentedOrgaIds();
         JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
         Jwt jwt = (Jwt) authenticationToken.getCredentials();
         String userId = (String) jwt.getClaims().get("sub");
 
-        String activeRoleOrgaId = activeRole.replaceFirst("(OrgLegRep|OrgRep)_", "");
-        if (!orgaIds.contains(activeRoleOrgaId)) {
-            throw new ResponseStatusException(FORBIDDEN, "Invalid active role.");
-        }
-
-        return contractStorageService.transitionContractTemplateState(contractId, status, activeRoleOrgaId, userId, authToken);
+        return contractStorageService.transitionContractTemplateState(contractId, status,
+            activeRole.getOrganizationId(), userId, authToken);
     }
 
 
@@ -157,15 +149,12 @@ public class ContractsController {
      */
     @GetMapping("organization/{orgaId}")
     @JsonView(ContractViews.BasicView.class)
+    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #orgaId)")
     public Page<ContractBasicDto> getOrganizationContracts(@RequestParam(value = "page", defaultValue = "0") int page,
                                                            @RequestParam(value = "size", defaultValue = "9") @Max(15) int size,
                                                            @RequestParam(value = "status", required = false) ContractState status,
                                                            @PathVariable(value = "orgaId") String orgaId,
                                                            @RequestHeader(name = "Authorization") String authToken) {
-        if (!getRepresentedOrgaIds().contains(orgaId.replace("Participant:", ""))) {
-            throw new ResponseStatusException(FORBIDDEN, "No permission to access contracts of this id.");
-        }
-
         return contractStorageService.getOrganizationContracts(orgaId, PageRequest.of(page, size,
                 Sort.by("creationDate").descending()), status, authToken);
     }
