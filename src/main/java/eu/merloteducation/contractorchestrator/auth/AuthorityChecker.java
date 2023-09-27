@@ -11,12 +11,9 @@ public class AuthorityChecker {
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             if (authority instanceof OrganizationRoleGrantedAuthority orgaRoleAuthority
                     && (orgaRoleAuthority.getOrganizationId().equals(numOrgaId))) {
-                    return true;
+                return true;
             }
         }
         return false;
-    }
-    public boolean representsOrganization(Authentication authentication, OrganizationRoleGrantedAuthority orgaRole) {
-        return representsOrganization(authentication, orgaRole.getOrganizationId());
     }
 }
