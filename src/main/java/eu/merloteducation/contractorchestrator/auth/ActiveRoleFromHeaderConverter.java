@@ -6,9 +6,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ActiveRoleFromHeaderConverter implements Converter<String, OrganizationRoleGrantedAuthority> {
-  @Override
-  public OrganizationRoleGrantedAuthority convert(@NotNull String activeRoleString) {
+    @Override
+    public OrganizationRoleGrantedAuthority convert(@NotNull String activeRoleString) {
 
-    return new OrganizationRoleGrantedAuthority(activeRoleString);
-  }
+        return new OrganizationRoleGrantedAuthority(activeRoleString);
+    }
 }
