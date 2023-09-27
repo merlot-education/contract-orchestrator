@@ -2,25 +2,24 @@ package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import eu.merloteducation.contractorchestrator.auth.AuthorityChecker;
+import eu.merloteducation.contractorchestrator.auth.JwtAuthConverter;
+import eu.merloteducation.contractorchestrator.auth.JwtAuthConverterProperties;
+import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.security.JwtAuthConverter;
-import eu.merloteducation.contractorchestrator.security.JwtAuthConverterProperties;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -29,29 +28,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({ContractsController.class, WebSecurityConfig.class})
+@WebMvcTest({ContractsController.class, WebSecurityConfig.class, AuthorityChecker.class})
 @AutoConfigureMockMvc()
 class ContractsControllerTest {
 
@@ -122,7 +111,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -143,7 +132,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -161,7 +150,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -184,7 +173,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -201,7 +190,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -219,12 +208,12 @@ class ContractsControllerTest {
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "garbage")
+                        .header("Active-Role", "OrgLegRep_20")
                         .content(objectAsJsonString(contractDto))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -241,12 +230,12 @@ class ContractsControllerTest {
                         .patch("/contract/status/1234/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "garbage")
+                        .header("Active-Role", "OrgLegRep_20")
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andExpect(status().isForbidden());
     }
@@ -267,7 +256,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -283,7 +272,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -299,7 +288,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -315,7 +304,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_20")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_20")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -331,7 +320,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new SimpleGrantedAuthority("ROLE_OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
