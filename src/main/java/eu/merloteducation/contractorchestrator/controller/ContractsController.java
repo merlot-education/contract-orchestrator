@@ -74,7 +74,7 @@ public class ContractsController {
      * @return newly generated contract
      */
     @PostMapping("/contract/regenerate/{contractId}")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #editedContract.details.id)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public ContractDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                   @RequestHeader(name = "Authorization") String authToken,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {

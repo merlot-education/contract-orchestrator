@@ -169,6 +169,38 @@ class ContractsControllerTest {
     }
 
     @Test
+    void postRegenerateContractAuthorized() throws Exception {
+        mvc.perform(MockMvcRequestBuilders
+                        .post("/contract/regenerate/" + template.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "")
+                        .header("Active-Role", "OrgLegRep_10")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                        )))
+                .andDo(print())
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void postRegenerateContractUnauthorized() throws Exception {
+        mvc.perform(MockMvcRequestBuilders
+                        .post("/contract/regenerate/" + template.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "")
+                        .header("Active-Role", "OrgLegRep_99")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .with(csrf())
+                        .with(jwt().authorities(
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_99")
+                        )))
+                .andDo(print())
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void putUpdateContractValid() throws Exception
     {
         SaasContractDto contractDto = new SaasContractDto();
