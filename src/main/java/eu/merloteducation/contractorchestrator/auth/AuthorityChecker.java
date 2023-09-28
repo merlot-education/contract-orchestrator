@@ -19,6 +19,14 @@ public class AuthorityChecker {
         }
         return representedOrgaIds;
     }
+
+    /**
+     * Checks whether the user with the currently active authorization represents a given organization by the id.
+     *
+     * @param authentication current authentication
+     * @param orgaId         id of the organization to request
+     * @return user represents given organization
+     */
     public boolean representsOrganization(Authentication authentication, String orgaId) {
         String numOrgaId = orgaId.replace("Participant:", "");
         Set<String> representedOrgaIds = getRepresentedOrgaIds(authentication);
