@@ -11,6 +11,8 @@ import java.util.Set;
 @Component("contractAuthorityChecker")
 public class ContractAuthorityChecker {
 
+    private static final String PARTICIPANT = "Participant:";
+
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
@@ -20,8 +22,8 @@ public class ContractAuthorityChecker {
     public boolean canAccessContract(OrganizationRoleGrantedAuthority activeRole, String contractId) {
         ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
         if (template != null) {
-            String consumerId = template.getConsumerId().replace("Participant:", "");
-            String providerId = template.getProviderId().replace("Participant:", "");
+            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
+            String providerId = template.getProviderId().replace(PARTICIPANT, "");
             return (activeRole.getOrganizationId().equals(consumerId) || activeRole.getOrganizationId().equals(providerId));
         }
         return false;
@@ -31,8 +33,8 @@ public class ContractAuthorityChecker {
         ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
         Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
         if (template != null) {
-            String consumerId = template.getConsumerId().replace("Participant:", "");
-            String providerId = template.getProviderId().replace("Participant:", "");
+            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
+            String providerId = template.getProviderId().replace(PARTICIPANT, "");
             return (representedOrgaIds.contains(consumerId) || representedOrgaIds.contains(providerId));
         }
         return false;

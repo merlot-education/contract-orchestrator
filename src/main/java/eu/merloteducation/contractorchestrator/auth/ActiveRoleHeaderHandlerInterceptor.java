@@ -20,14 +20,13 @@ public class ActiveRoleHeaderHandlerInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request,
                              @NotNull HttpServletResponse response,
                              @NotNull Object handler) {
-        if (request.getHeader("Active-Role") == null) {
-            return true;
-        }
-        OrganizationRoleGrantedAuthority activeRole =
-                new OrganizationRoleGrantedAuthority(request.getHeader("Active-Role"));
-        if (!authorityChecker.representsOrganization(SecurityContextHolder.getContext().getAuthentication(),
-                activeRole.getOrganizationId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (request.getHeader("Active-Role") != null) {
+            OrganizationRoleGrantedAuthority activeRole =
+                    new OrganizationRoleGrantedAuthority(request.getHeader("Active-Role"));
+            if (!authorityChecker.representsOrganization(SecurityContextHolder.getContext().getAuthentication(),
+                    activeRole.getOrganizationId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            }
         }
         return true;
     }
