@@ -53,11 +53,11 @@ public class ContractsController {
      *
      * @param editedContract contract template with updated fields
      * @param authToken      active OAuth2 token of this user
+     * @param activeRole active user role
      * @return updated contract template
      */
     @PutMapping("")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #editedContract.details.id)")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                               @RequestHeader(name = "Authorization") String authToken,
                                               @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
@@ -70,12 +70,14 @@ public class ContractsController {
      *
      * @param contractId id of contract to copy
      * @param authToken  active OAuth2 token of this user
+     * @param activeRole active user role
      * @return newly generated contract
      */
     @PostMapping("/contract/regenerate/{contractId}")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #editedContract.details.id)")
     public ContractDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
-                                                  @RequestHeader(name = "Authorization") String authToken) {
+                                                  @RequestHeader(name = "Authorization") String authToken,
+                                                  @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
         return contractStorageService.regenerateContract(contractId, authToken);
     }
 
@@ -90,8 +92,7 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #editedContract.details.id)")
     public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "status") ContractState status,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,

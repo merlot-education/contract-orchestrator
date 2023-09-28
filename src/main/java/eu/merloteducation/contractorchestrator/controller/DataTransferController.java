@@ -22,10 +22,6 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 @RequestMapping("/transfers")
 public class DataTransferController {
 
-    private static final String ROLE_PREFIX_REGEX = "(OrgLegRep|OrgRep)_";
-
-    private static final String INVALID_ACTIVE_ROLE = "Invalid active role.";
-
     @Autowired
     private EdcOrchestrationService edcOrchestrationService;
 
@@ -38,8 +34,7 @@ public class DataTransferController {
      * @return negotiation initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/start")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public EdcIdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken) {
@@ -56,8 +51,7 @@ public class DataTransferController {
      * @return status of negotiation
      */
     @GetMapping("/contract/{contractId}/negotiation/{negotiationId}/status")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public EdcNegotiationStatus getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
                                                              @PathVariable(value = "negotiationId") String negotiationId,
                                                              @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
@@ -77,8 +71,7 @@ public class DataTransferController {
      * @return transfer initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/{negotiationId}/transfer/start")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public EdcIdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
                                                  @PathVariable(value = "negotiationId") String negotiationId,
                                                  @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
@@ -97,8 +90,7 @@ public class DataTransferController {
      * @return status of transfer
      */
     @GetMapping("/contract/{contractId}/transfer/{transferId}/status")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)" +
-            "and @contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public EdcTransferStatus getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "transferId") String transferId,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
