@@ -19,16 +19,6 @@ public class ContractAuthorityChecker {
     @Autowired
     private AuthorityChecker authorityChecker;
 
-    public boolean canAccessContract(OrganizationRoleGrantedAuthority activeRole, String contractId) {
-        ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
-        if (template != null) {
-            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
-            String providerId = template.getProviderId().replace(PARTICIPANT, "");
-            return (activeRole.getOrganizationId().equals(consumerId) || activeRole.getOrganizationId().equals(providerId));
-        }
-        return false;
-    }
-
     public boolean canAccessContract(Authentication authentication, String contractId) {
         ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
         Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
