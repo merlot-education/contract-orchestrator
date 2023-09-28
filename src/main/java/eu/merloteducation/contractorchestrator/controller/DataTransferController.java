@@ -34,7 +34,7 @@ public class DataTransferController {
      * @return negotiation initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/start")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public EdcIdResponse startContractNegotiation(@PathVariable(value = "contractId") String contractId,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken) {
@@ -51,7 +51,7 @@ public class DataTransferController {
      * @return status of negotiation
      */
     @GetMapping("/contract/{contractId}/negotiation/{negotiationId}/status")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public EdcNegotiationStatus getContractNegotiationStatus(@PathVariable(value = "contractId") String contractId,
                                                              @PathVariable(value = "negotiationId") String negotiationId,
                                                              @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
@@ -71,7 +71,7 @@ public class DataTransferController {
      * @return transfer initiation response
      */
     @PostMapping("/contract/{contractId}/negotiation/{negotiationId}/transfer/start")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public EdcIdResponse initiateEdcDataTransfer(@PathVariable(value = "contractId") String contractId,
                                                  @PathVariable(value = "negotiationId") String negotiationId,
                                                  @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
@@ -90,7 +90,7 @@ public class DataTransferController {
      * @return status of transfer
      */
     @GetMapping("/contract/{contractId}/transfer/{transferId}/status")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public EdcTransferStatus getEdcTransferStatus(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "transferId") String transferId,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
