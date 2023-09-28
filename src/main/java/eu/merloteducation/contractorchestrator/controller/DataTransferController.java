@@ -7,16 +7,7 @@ import eu.merloteducation.contractorchestrator.models.EdcTransferStatus;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @RestController
 @RequestMapping("/transfers")
