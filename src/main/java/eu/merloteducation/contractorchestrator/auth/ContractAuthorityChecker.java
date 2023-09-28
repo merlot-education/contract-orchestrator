@@ -19,6 +19,14 @@ public class ContractAuthorityChecker {
     @Autowired
     private AuthorityChecker authorityChecker;
 
+    /**
+     * Given the current authentication and a contract id, check whether the requesting party either
+     * represents the consumer or provider of this contract.
+     *
+     * @param authentication current authentication
+     * @param contractId     id of the contract to request
+     * @return can access the requested contract
+     */
     public boolean canAccessContract(Authentication authentication, String contractId) {
         ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
         Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
