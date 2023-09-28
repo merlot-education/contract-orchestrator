@@ -2,10 +2,7 @@ package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import eu.merloteducation.contractorchestrator.auth.AuthorityChecker;
-import eu.merloteducation.contractorchestrator.auth.JwtAuthConverter;
-import eu.merloteducation.contractorchestrator.auth.JwtAuthConverterProperties;
-import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
+import eu.merloteducation.contractorchestrator.auth.*;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
@@ -14,6 +11,7 @@ import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetai
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
@@ -33,6 +31,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -40,7 +39,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({ContractsController.class, WebSecurityConfig.class, AuthorityChecker.class})
+@WebMvcTest({ContractsController.class, WebSecurityConfig.class, AuthorityChecker.class,
+        ContractAuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class})
 @AutoConfigureMockMvc()
 class ContractsControllerTest {
 
@@ -51,6 +51,9 @@ class ContractsControllerTest {
     private ContractStorageService contractStorageService;
 
     @MockBean
+    private ContractTemplateRepository contractTemplateRepository;
+
+    @MockBean
     private EdcOrchestrationService edcOrchestrationService;
 
     @Autowired
@@ -58,6 +61,8 @@ class ContractsControllerTest {
 
     @MockBean
     private JwtAuthConverterProperties jwtAuthConverterProperties;
+
+    private SaasContractTemplate template;
 
 
     private String objectAsJsonString(final Object obj) {
@@ -72,26 +77,33 @@ class ContractsControllerTest {
 
     @BeforeEach
     public void beforeEach() throws JSONException {
+
+        template = new SaasContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+
         List<ContractDto> contractTemplates = new ArrayList<>();
-        SaasContractDto template = new SaasContractDto();
-        template.setDetails(new SaasContractDetailsDto());
-        template.getDetails().setProviderId("Participant:10");
-        template.getDetails().setConsumerId("Participant:20");
-        contractTemplates.add(template);
+        SaasContractDto saasContractDto = new SaasContractDto();
+        saasContractDto.setDetails(new SaasContractDetailsDto());
+        saasContractDto.getDetails().setProviderId("Participant:10");
+        saasContractDto.getDetails().setConsumerId("Participant:20");
+        contractTemplates.add(saasContractDto);
+
+        lenient().when(contractTemplateRepository.findById(template.getId())).thenReturn(Optional.of(template));
 
         ContractBasicDto contractBasicDto = new ContractBasicDto();
-        contractBasicDto.setId("1234");
+        contractBasicDto.setId(template.getId());
         List<ContractBasicDto> contractDtos = new ArrayList<>();
         contractDtos.add(contractBasicDto);
 
         Page<ContractBasicDto> contractTemplatesPage = new PageImpl<>(contractDtos);
 
         lenient().when(contractStorageService.addContractTemplate(any(), any()))
-                .thenReturn(template);
-        lenient().when(contractStorageService.getContractDetails(any(), any(), any()))
-                .thenReturn(template);
+                .thenReturn(saasContractDto);
+        lenient().when(contractStorageService.getContractDetails(any(), any()))
+                .thenReturn(saasContractDto);
         lenient().when(contractStorageService.updateContractTemplate(any(), any(), any()))
-                .thenReturn(template);
+                .thenReturn(saasContractDto);
         lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any(), any()))
                 .thenReturn(contractTemplatesPage);
     }
@@ -163,6 +175,7 @@ class ContractsControllerTest {
         contractDto.setDetails(new SaasContractDetailsDto());
         contractDto.getDetails().setProviderId("Participant:10");
         contractDto.getDetails().setConsumerId("Participant:20");
+        contractDto.getDetails().setId(template.getId());
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
@@ -227,7 +240,7 @@ class ContractsControllerTest {
         template.setConsumerId("Participant:20");
 
         mvc.perform(MockMvcRequestBuilders
-                        .patch("/contract/status/1234/IN_DRAFT")
+                        .patch("/contract/status/" + template.getId() + "/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .header("Active-Role", "OrgLegRep_20")
@@ -243,16 +256,11 @@ class ContractsControllerTest {
     @Test
     void patchTransitionContractValid() throws Exception
     {
-        ContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
-
         mvc.perform(MockMvcRequestBuilders
-                        .patch("/contract/status/1234/IN_DRAFT")
+                        .patch("/contract/status/" + template.getId() + "/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .header("Active-Role", "OrgLegRep_10")
-                        .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
@@ -298,7 +306,7 @@ class ContractsControllerTest {
     void getContractDetailsValidRequestConsumer() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
-                        .get("/contract/Contract:1234")
+                        .get("/contract/" + template.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
@@ -314,7 +322,7 @@ class ContractsControllerTest {
     void getContractDetailsValidRequestProvider() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
-                        .get("/contract/Contract:1234")
+                        .get("/contract/" + template.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)

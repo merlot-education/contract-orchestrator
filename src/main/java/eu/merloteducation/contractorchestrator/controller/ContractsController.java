@@ -92,7 +92,7 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #editedContract.details.id)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(#activeRole, #contractId)")
     public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "status") ContractState status,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
