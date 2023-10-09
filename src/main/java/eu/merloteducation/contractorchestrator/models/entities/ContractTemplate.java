@@ -56,16 +56,13 @@ public abstract class ContractTemplate {
     private String runtimeSelection;
 
     @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerMerlotTncAccepted;
+    private boolean consumerTncAccepted;
 
     @JsonView(ContractViews.ProviderView.class)
-    private boolean providerMerlotTncAccepted;
+    private boolean providerTncAccepted;
 
     @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerOfferingTncAccepted;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerProviderTncAccepted;
+    private boolean consumerAttachmentsAccepted;
 
     @JsonView(ContractViews.DetailedView.class)
     @ElementCollection
@@ -75,7 +72,7 @@ public abstract class ContractTemplate {
     private String additionalAgreements;
 
     @JsonView(ContractViews.DetailedView.class)
-    private List<String> offeringAttachments;
+    private List<String> contractAttachments;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
@@ -98,7 +95,7 @@ public abstract class ContractTemplate {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
-        this.offeringAttachments = new ArrayList<>();
+        this.contractAttachments = new ArrayList<>();
         this.additionalAgreements = "";
         this.serviceContractProvisioning = new DefaultProvisioning();
     }
@@ -111,13 +108,12 @@ public abstract class ContractTemplate {
         this.providerId = template.getProviderId();
         this.consumerId = template.getConsumerId();
         this.runtimeSelection = template.getRuntimeSelection();
-        this.consumerMerlotTncAccepted = template.isConsumerMerlotTncAccepted();
-        this.providerMerlotTncAccepted = template.isProviderMerlotTncAccepted();
-        this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
-        this.consumerProviderTncAccepted = template.isConsumerProviderTncAccepted();
+        this.consumerTncAccepted = template.isConsumerTncAccepted();
+        this.consumerAttachmentsAccepted = template.isConsumerAttachmentsAccepted();
+        this.providerTncAccepted = template.isProviderTncAccepted();
         this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
-        this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
+        this.contractAttachments = new ArrayList<>(template.getContractAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
         this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
@@ -131,11 +127,12 @@ public abstract class ContractTemplate {
                     (StringUtil.isNullOrEmpty(runtimeSelection)
                             || StringUtil.isNullOrEmpty(consumerSignerUserId)
                             || StringUtil.isNullOrEmpty(consumerSignature)
-                            || !consumerMerlotTncAccepted || !consumerOfferingTncAccepted || !consumerProviderTncAccepted)) ||
-                    (targetState == ContractState.RELEASED &&
+                            || !consumerTncAccepted
+                            || (!contractAttachments.isEmpty() && !consumerAttachmentsAccepted)))
+                    || (targetState == ContractState.RELEASED &&
                             (StringUtil.isNullOrEmpty(providerSignerUserId)
                                     || StringUtil.isNullOrEmpty(providerSignature) ||
-                                    !providerMerlotTncAccepted))) {
+                                    !providerTncAccepted))) {
                 throw new IllegalStateException(
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",
                                 state.name(), targetState.name()));

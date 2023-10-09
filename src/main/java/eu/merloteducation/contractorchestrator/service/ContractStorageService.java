@@ -1,7 +1,6 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
@@ -217,7 +216,7 @@ public class ContractStorageService {
             if (isProvider) {
                 targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setOfferingAttachments(editedContract.getNegotiation().getAttachments());
+                targetContract.setContractAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
@@ -325,7 +324,7 @@ public class ContractStorageService {
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
         // initialize attachment list
-        contract.setOfferingAttachments(new ArrayList<>());
+        contract.setContractAttachments(new ArrayList<>());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {

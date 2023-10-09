@@ -53,6 +53,7 @@ public interface ContractMapper {
     @Mapping(target = "details.providerSignature", source = "contract.providerSignature")
     @Mapping(target = "details.consumerSignerUser", source = "contract.consumerSignerUserId")
     @Mapping(target = "details.consumerSignature", source = "contract.consumerSignature")
+    @Mapping(target = "details.termsAndConditions", source = "contract.termsAndConditions")
     @Mapping(target = "negotiation.runtimeSelection", source = "contract.runtimeSelection", defaultValue = "")
     @Mapping(target = "negotiation.additionalAgreements", source = "contract.additionalAgreements")
     @Mapping(target = "negotiation.attachments", source = "contract.offeringAttachments")

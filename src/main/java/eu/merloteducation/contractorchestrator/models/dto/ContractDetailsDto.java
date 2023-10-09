@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.List;
+
 @Getter
 @Setter
 @ToString
@@ -23,7 +25,7 @@ public class ContractDetailsDto {
 
     private String state;
 
-    private String providerTncUrl;
+    private List<ContractTncDto> termsAndConditions;
 
     private String providerSignerUser;
 
