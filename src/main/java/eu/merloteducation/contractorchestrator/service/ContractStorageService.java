@@ -1,11 +1,15 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
+import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.TermsAndConditions;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
@@ -25,10 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.springframework.http.HttpStatus.*;
 
@@ -68,6 +69,9 @@ public class ContractStorageService {
 
     @Autowired
     private ContractMapper contractMapper;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
@@ -320,26 +324,24 @@ public class ContractStorageService {
         contract.setConsumerId(contractCreateRequest.getConsumerId());
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
-        List<String> attachments = new ArrayList<>();
-        if (credentialSubject.has("merlot:attachments")) {
-            for (JsonNode attachment : credentialSubject.get("merlot:attachments")) {
-                attachments.add(attachment.asText());
-            }
-        }
-        contract.setOfferingAttachments(attachments);
+        // initialize attachment list
+        contract.setOfferingAttachments(new ArrayList<>());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Provider and consumer must not be equal.");
         }
 
-        OrganizationDetails organizationDetails = organizationOrchestratorClient.getOrganizationDetails(
-                contract.getProviderId().replace(ORGA_PREFIX, ""),
-                Map.of(AUTHORIZATION, authToken));
-        contract.setProviderTncUrl(organizationDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getContent().getValue());
-        contract.setProviderTncHash(organizationDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject().getTermsAndConditions().getHash().getValue());
+        // copy all terms and conditions entries from offering to contract
+        try {
+            List<ContractTnc> offeringTnC = Arrays.stream(objectMapper.treeToValue(
+                    credentialSubject.get("gax-trust-framework:termsAndConditions"), TermsAndConditions[].class))
+                    .map(ContractTnc::new).toList();
+            contract.setTermsAndConditions(offeringTnC);
+        } catch (JsonProcessingException e) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Invalid offering terms and conditions.");
+        }
+
 
         contract = contractTemplateRepository.saveAndFlush(contract);
         entityManager.refresh(contract); // refresh entity from database to get newly generated discriminator column

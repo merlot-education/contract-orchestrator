@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -69,10 +68,8 @@ public abstract class ContractTemplate {
     private boolean consumerProviderTncAccepted;
 
     @JsonView(ContractViews.DetailedView.class)
-    private String providerTncUrl;
-
-    @JsonView(ContractViews.DetailedView.class)
-    private String providerTncHash;
+    @ElementCollection
+    private List<ContractTnc> termsAndConditions;
 
     @JsonView(ContractViews.DetailedView.class)
     private String additionalAgreements;
@@ -118,8 +115,7 @@ public abstract class ContractTemplate {
         this.providerMerlotTncAccepted = template.isProviderMerlotTncAccepted();
         this.consumerOfferingTncAccepted = template.isConsumerOfferingTncAccepted();
         this.consumerProviderTncAccepted = template.isConsumerProviderTncAccepted();
-        this.providerTncUrl = template.getProviderTncUrl();
-        this.providerTncHash = template.getProviderTncHash();
+        this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.offeringAttachments = new ArrayList<>(template.getOfferingAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
