@@ -812,7 +812,7 @@ class ContractStorageServiceTest {
         assertNotEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertEquals(dataDeliveryContract.getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertNotEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
-        assertEquals(dataDeliveryContract.getContractAttachments(), result.getNegotiation().getAttachments());
+        assertEquals(dataDeliveryContract.getAttachments(), result.getNegotiation().getAttachments());
 
     }
 

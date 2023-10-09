@@ -13,9 +13,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@JsonDeserialize
 public class DataDeliveryContractTemplate extends ContractTemplate {
-    @JsonView(ContractViews.DetailedView.class)
     private String exchangeCountSelection;
 
     public DataDeliveryContractTemplate() {

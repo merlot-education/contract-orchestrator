@@ -209,17 +209,16 @@ public class ContractStorageService {
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setRuntimeSelection(editedContract.getNegotiation().getRuntimeSelection());
             if (isConsumer) {
-                targetContract.setConsumerMerlotTncAccepted(editedContract.getNegotiation().isConsumerMerlotTncAccepted());
-                targetContract.setConsumerProviderTncAccepted(editedContract.getNegotiation().isConsumerProviderTncAccepted());
-                targetContract.setConsumerOfferingTncAccepted(editedContract.getNegotiation().isConsumerOfferingTncAccepted());
+                targetContract.setConsumerTncAccepted(editedContract.getNegotiation().isConsumerTncAccepted());
+                targetContract.setConsumerAttachmentsAccepted(editedContract.getNegotiation().isConsumerAttachmentsAccepted());
             }
             if (isProvider) {
-                targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
+                targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setContractAttachments(editedContract.getNegotiation().getAttachments());
+                targetContract.setAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetContract.setProviderMerlotTncAccepted(editedContract.getNegotiation().isProviderMerlotTncAccepted());
+            targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
 
         }
 
@@ -324,7 +323,7 @@ public class ContractStorageService {
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
         // initialize attachment list
-        contract.setContractAttachments(new ArrayList<>());
+        contract.setAttachments(new ArrayList<>());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {

@@ -1,9 +1,5 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,81 +17,60 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "discriminator")
-@JsonDeserialize(using = ContractTemplateDeserializer.class)
 public abstract class ContractTemplate {
     @Id
-    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private String id;
 
     @Column(name="discriminator", insertable = false, updatable = false)
-    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
-    @JsonProperty("type")
     private String type;
 
     @Enumerated(EnumType.STRING)
     @Setter(AccessLevel.NONE)
-    @JsonView(ContractViews.BasicView.class)
     private ContractState state;
 
-    @JsonView(ContractViews.BasicView.class)
     @Setter(AccessLevel.NONE)
     private OffsetDateTime creationDate;
 
-    @JsonView(ContractViews.BasicView.class)
     private String offeringId;
 
-    @JsonView(ContractViews.BasicView.class)
     private String providerId;
 
-    @JsonView(ContractViews.BasicView.class)
     private String consumerId;
 
-    @JsonView(ContractViews.DetailedView.class)
     private String runtimeSelection;
 
-    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerTncAccepted;
 
-    @JsonView(ContractViews.ProviderView.class)
     private boolean providerTncAccepted;
 
-    @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerAttachmentsAccepted;
 
-    @JsonView(ContractViews.DetailedView.class)
     @ElementCollection
     private List<ContractTnc> termsAndConditions;
 
-    @JsonView(ContractViews.DetailedView.class)
     private String additionalAgreements;
 
-    @JsonView(ContractViews.DetailedView.class)
-    private List<String> contractAttachments;
+    private List<String> attachments;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
-    @JsonView(ContractViews.DetailedView.class)
     private ServiceContractProvisioning serviceContractProvisioning;
 
-    @JsonView(ContractViews.ConsumerView.class)
     private String consumerSignerUserId;
 
-    @JsonView(ContractViews.ConsumerView.class)
     private String consumerSignature;
 
-    @JsonView(ContractViews.ProviderView.class)
     private String providerSignerUserId;
 
-    @JsonView(ContractViews.ProviderView.class)
     private String providerSignature;
 
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
-        this.contractAttachments = new ArrayList<>();
+        this.attachments = new ArrayList<>();
         this.additionalAgreements = "";
         this.serviceContractProvisioning = new DefaultProvisioning();
     }
@@ -113,7 +88,7 @@ public abstract class ContractTemplate {
         this.providerTncAccepted = template.isProviderTncAccepted();
         this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
-        this.contractAttachments = new ArrayList<>(template.getContractAttachments());
+        this.attachments = new ArrayList<>(template.getAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
         this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
@@ -128,7 +103,7 @@ public abstract class ContractTemplate {
                             || StringUtil.isNullOrEmpty(consumerSignerUserId)
                             || StringUtil.isNullOrEmpty(consumerSignature)
                             || !consumerTncAccepted
-                            || (!contractAttachments.isEmpty() && !consumerAttachmentsAccepted)))
+                            || (!attachments.isEmpty() && !consumerAttachmentsAccepted)))
                     || (targetState == ContractState.RELEASED &&
                             (StringUtil.isNullOrEmpty(providerSignerUserId)
                                     || StringUtil.isNullOrEmpty(providerSignature) ||
