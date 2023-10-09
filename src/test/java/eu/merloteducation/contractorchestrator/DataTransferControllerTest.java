@@ -1,13 +1,12 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.auth.AuthorityChecker;
-import eu.merloteducation.contractorchestrator.auth.JwtAuthConverter;
-import eu.merloteducation.contractorchestrator.auth.JwtAuthConverterProperties;
-import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
+import eu.merloteducation.contractorchestrator.auth.*;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
+import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
@@ -24,6 +23,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -31,7 +32,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({DataTransferController.class, WebSecurityConfig.class, AuthorityChecker.class})
+@WebMvcTest({DataTransferController.class, WebSecurityConfig.class, AuthorityChecker.class,
+        ContractAuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class})
 @AutoConfigureMockMvc()
 class DataTransferControllerTest {
 
@@ -53,6 +55,9 @@ class DataTransferControllerTest {
     @MockBean
     private MessageQueueService messageQueueService;
 
+    @MockBean
+    private ContractTemplateRepository contractTemplateRepository;
+
     @BeforeEach
     public void beforeEach() throws JSONException {
 
@@ -68,10 +73,16 @@ class DataTransferControllerTest {
         transferProcess.setId("234");
         transferProcess.setState("COMPLETED");
 
-        lenient().when(edcOrchestrationService.initiateConnectorNegotiation(any(), any(), any(), any())).thenReturn(idResponse);
-        lenient().when(edcOrchestrationService.initiateConnectorTransfer(any(), any(), any(), any(), any())).thenReturn(idResponse);
-        lenient().when(edcOrchestrationService.getNegotationStatus(any(), any(), any(), any(), any())).thenReturn(negotiation);
-        lenient().when(edcOrchestrationService.getTransferStatus(any(), any(), any(), any(), any())).thenReturn(transferProcess);
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
+        template.setProviderId("Participant:10");
+        template.setConsumerId("Participant:20");
+
+        lenient().when(contractTemplateRepository.findById(any())).thenReturn(Optional.of(template));
+
+        lenient().when(edcOrchestrationService.initiateConnectorNegotiation(any(), any(), any())).thenReturn(idResponse);
+        lenient().when(edcOrchestrationService.initiateConnectorTransfer(any(), any(), any(), any())).thenReturn(idResponse);
+        lenient().when(edcOrchestrationService.getNegotationStatus(any(), any(), any(), any())).thenReturn(negotiation);
+        lenient().when(edcOrchestrationService.getTransferStatus(any(), any(), any(), any())).thenReturn(transferProcess);
     }
 
     @Test

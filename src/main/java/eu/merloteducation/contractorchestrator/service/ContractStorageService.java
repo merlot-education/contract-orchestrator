@@ -353,20 +353,13 @@ public class ContractStorageService {
      *
      * @param contractId         id of the contract to copy
      * @param authToken          the OAuth2 Token from the user requesting this action
-     * @param representedOrgaIds list of organization ids the user represents
      * @return newly generated contract
      */
-    public ContractDto regenerateContract(String contractId, Set<String> representedOrgaIds, String authToken) {
+    public ContractDto regenerateContract(String contractId, String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
-
-        // user must be either consumer or provider of contract
-        if (!(representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""))
-                || representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, "")))) {
-            throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
         }
 
         if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
@@ -543,17 +536,11 @@ public class ContractStorageService {
      * @param authToken  the OAuth2 Token from the user requesting this action
      * @return contract object from the database
      */
-    public ContractDto getContractDetails(String contractId, Set<String> representedOrgaIds, String authToken) {
+    public ContractDto getContractDetails(String contractId, String authToken) {
         ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
 
         if (contract == null) {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
-
-        if (!(representedOrgaIds.contains(contract.getConsumerId().replace(ORGA_PREFIX, ""))
-                || representedOrgaIds.contains(contract.getProviderId().replace(ORGA_PREFIX, "")))) {
-            throw new ResponseStatusException(FORBIDDEN, CONTRACT_VIEW_FORBIDDEN);
         }
 
         return castAndMapToContractDetailsDto(contract, authToken);

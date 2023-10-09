@@ -16,19 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.Principal;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @RestController
 @RequestMapping("/")
@@ -39,28 +31,6 @@ public class ContractsController {
 
     @Autowired
     private EdcOrchestrationService edcOrchestrationService;
-
-    // TODO refactor to library
-    private Set<String> getMerlotRoles() {
-        // get roles from the authenticated user
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-
-        return authentication.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<String> getRepresentedOrgaIds() {
-        Set<String> roles = getMerlotRoles();
-        // extract all orgaIds from the OrgRep and OrgLegRep Roles
-        return roles
-                .stream()
-                .filter(s -> s.startsWith("ROLE_OrgRep_") || s.startsWith("ROLE_OrgLegRep_"))
-                .map(s -> s.replace("ROLE_OrgRep_", "").replace("ROLE_OrgLegRep_", ""))
-                .collect(Collectors.toSet());
-    }
 
     /**
      * POST endpoint for creating a new contract in draft state.
@@ -74,7 +44,7 @@ public class ContractsController {
     @JsonView(ContractViews.ConsumerView.class)
     @PreAuthorize("@authorityChecker.representsOrganization(authentication, #contractCreateRequest.consumerId)")
     public ContractDto addContractTemplate(@Valid @RequestBody ContractCreateRequest contractCreateRequest,
-                                                  @RequestHeader(name = "Authorization") String authToken) {
+                                           @RequestHeader(name = "Authorization") String authToken) {
         return this.contractStorageService.addContractTemplate(contractCreateRequest, authToken);
     }
 
@@ -83,15 +53,14 @@ public class ContractsController {
      *
      * @param editedContract contract template with updated fields
      * @param authToken      active OAuth2 token of this user
+     * @param activeRole active user role
      * @return updated contract template
      */
     @PutMapping("")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id)")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
-                                                     @RequestHeader(name = "Authorization") String authToken,
-                                                     @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
-
-
+                                              @RequestHeader(name = "Authorization") String authToken,
+                                              @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
         return contractStorageService.updateContractTemplate(editedContract, authToken, activeRole.getOrganizationId());
     }
 
@@ -104,11 +73,10 @@ public class ContractsController {
      * @return newly generated contract
      */
     @PostMapping("/contract/regenerate/{contractId}")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ContractDto regenerateContractTemplate(@PathVariable(value = "contractId") String contractId,
-                                                         @RequestHeader(name = "Authorization") String authToken) {
-        Set<String> orgaIds = getRepresentedOrgaIds();
-
-        return contractStorageService.regenerateContract(contractId, orgaIds, authToken);
+                                                  @RequestHeader(name = "Authorization") String authToken) {
+        return contractStorageService.regenerateContract(contractId, authToken);
     }
 
     /**
@@ -122,18 +90,18 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
-    @PreAuthorize("@authorityChecker.representsOrganization(authentication, #activeRole.organizationId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
-                                                         @PathVariable(value = "status") ContractState status,
-                                                         @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
-                                                         @RequestHeader(name = "Authorization") String authToken,
-                                                         Principal principal) {
+                                                  @PathVariable(value = "status") ContractState status,
+                                                  @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
+                                                  @RequestHeader(name = "Authorization") String authToken,
+                                                  Principal principal) {
         JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
         Jwt jwt = (Jwt) authenticationToken.getCredentials();
         String userId = (String) jwt.getClaims().get("sub");
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
-            activeRole.getOrganizationId(), userId, authToken);
+                activeRole.getOrganizationId(), userId, authToken);
     }
 
 
@@ -167,9 +135,10 @@ public class ContractsController {
      * @return detailed view of this contract
      */
     @GetMapping("contract/{contractId}")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ContractDto getContractDetails(@PathVariable(value = "contractId") String contractId,
-                                                 @RequestHeader(name = "Authorization") String authToken) {
-        return contractStorageService.getContractDetails(contractId, getRepresentedOrgaIds(), authToken);
+                                          @RequestHeader(name = "Authorization") String authToken) {
+        return contractStorageService.getContractDetails(contractId, authToken);
     }
 
 }

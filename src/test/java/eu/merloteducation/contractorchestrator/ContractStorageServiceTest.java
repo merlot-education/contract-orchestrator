@@ -556,7 +556,7 @@ class ContractStorageServiceTest {
     void getContractByIdExistent() {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("10");
-        ContractDto contract = contractStorageService.getContractDetails(saasContract.getId(), representedOrgaIds, "authToken");
+        ContractDto contract = contractStorageService.getContractDetails(saasContract.getId(), "authToken");
 
         assertEquals(saasContract.getConsumerId(), contract.getDetails().getConsumerId());
     }
@@ -566,20 +566,9 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add("10");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.getContractDetails("Contract:1234", representedOrgaIds, "authToken"));
+                () -> contractStorageService.getContractDetails("Contract:1234", "authToken"));
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-    }
-
-    @Test
-    void getContractByIdNotAllowed() {
-        String contractId = saasContract.getId();
-        Set<String> representedOrgaIds = new HashSet<>();
-        representedOrgaIds.add("1234");
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> contractStorageService.getContractDetails(contractId, representedOrgaIds, "authToken"));
-
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     @Test
@@ -648,8 +637,7 @@ class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumer() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(saasContract.getConsumerId().replace("Participant:", ""));
-        SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+        SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(), "authToken");
 
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
@@ -671,8 +659,7 @@ class ContractStorageServiceTest {
     void updateContractExistingAllowedAsConsumerSaas() throws JSONException {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(saasContract.getConsumerId().replace("Participant:", ""));
-        SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+        SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(), "authToken");
 
         editedContract.getDetails().setId(saasContract.getId());
         editedContract.getNegotiation().setUserCountSelection("0");
@@ -690,7 +677,7 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(dataDeliveryContract.getConsumerId().replace("Participant:", ""));
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setExchangeCountSelection("0");
 
@@ -707,7 +694,7 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         representedOrgaIds.add(saasContract.getProviderId().replace("Participant:", ""));
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setProviderMerlotTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("agreement");
@@ -771,7 +758,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getDetails().setConsumerId("Participant:99");
         editedContract.getDetails().setProviderId("Participant:99");
@@ -796,7 +783,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(provider);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
@@ -819,7 +806,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setProviderMerlotTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("garbage");
@@ -845,7 +832,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         editedContract.getNegotiation().setRuntimeSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(editedContract, "authToken", consumer);
     }
@@ -858,7 +845,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         editedContract.getNegotiation().setUserCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(editedContract, "authToken", consumer);
     }
@@ -871,7 +858,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         editedContract.getNegotiation().setExchangeCountSelection("garbage");
         assertUpdateThrowsUnprocessableEntity(editedContract, "authToken", consumer);
     }
@@ -896,7 +883,7 @@ class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
 
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
@@ -904,49 +891,49 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setConsumerOfferingTncAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
@@ -970,7 +957,7 @@ class ContractStorageServiceTest {
         contractTemplateRepository.save(template);
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
@@ -1082,7 +1069,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(provider);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
@@ -1120,7 +1107,7 @@ class ContractStorageServiceTest {
         CooperationContractTemplate template = new CooperationContractTemplate(coopContract, false);
 
         CooperationContractDto editedContract = (CooperationContractDto) contractStorageService.getContractDetails(coopContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
@@ -1219,7 +1206,7 @@ class ContractStorageServiceTest {
                 (DataDeliveryProvisioning) template.getServiceContractProvisioning();
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
-                representedOrgaIds, "authToken");
+                "authToken");
 
         editedContract.getNegotiation().setConsumerMerlotTncAccepted(true);
         editedContract.getNegotiation().setConsumerProviderTncAccepted(true);
@@ -1283,7 +1270,7 @@ class ContractStorageServiceTest {
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         DataDeliveryContractDto template = (DataDeliveryContractDto) this.contractStorageService.transitionContractTemplateState(dataDeliveryContract.getId(), ContractState.DELETED, consumer, "1234", "authToken");
-        template = (DataDeliveryContractDto) this.contractStorageService.regenerateContract(dataDeliveryContract.getId(), representedOrgaIds, "authToken");
+        template = (DataDeliveryContractDto) this.contractStorageService.regenerateContract(dataDeliveryContract.getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), dataDeliveryContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
@@ -1299,7 +1286,7 @@ class ContractStorageServiceTest {
         String consumer = saasContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         SaasContractDto template = (SaasContractDto) this.contractStorageService.transitionContractTemplateState(saasContract.getId(), ContractState.DELETED, consumer, "1234", "authToken");
-        template = (SaasContractDto) this.contractStorageService.regenerateContract(saasContract.getId(), representedOrgaIds, "authToken");
+        template = (SaasContractDto) this.contractStorageService.regenerateContract(saasContract.getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), saasContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
@@ -1316,7 +1303,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
         CooperationContractDto template = (CooperationContractDto) this.contractStorageService.transitionContractTemplateState(coopContract.getId(),
                 ContractState.DELETED, consumer, "1234", "authToken");
-        template = (CooperationContractDto) this.contractStorageService.regenerateContract(template.getDetails().getId(), representedOrgaIds, "authToken");
+        template = (CooperationContractDto) this.contractStorageService.regenerateContract(template.getDetails().getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), coopContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
@@ -1333,7 +1320,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
         String templateId = dataDeliveryContract.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->this.contractStorageService.regenerateContract(templateId, representedOrgaIds, "authToken"));
+                () ->this.contractStorageService.regenerateContract(templateId, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1343,7 +1330,7 @@ class ContractStorageServiceTest {
         representedOrgaIds.add("garbage");
         String templateId = dataDeliveryContract.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->this.contractStorageService.regenerateContract(templateId, representedOrgaIds, "authToken"));
+                () ->this.contractStorageService.regenerateContract(templateId, "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1351,7 +1338,7 @@ class ContractStorageServiceTest {
     void regenerateContractNonExistent() {
         Set<String> representedOrgaIds = new HashSet<>();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () ->this.contractStorageService.regenerateContract("garbage", representedOrgaIds, "authToken"));
+                () ->this.contractStorageService.regenerateContract("garbage", "authToken"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
