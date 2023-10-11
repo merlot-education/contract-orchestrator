@@ -80,10 +80,9 @@ class EdcOrchestrationServiceTest {
         validPushContract.setNegotiation(new DataDeliveryContractNegotiationDto());
         validPushContract.setDetails(new DataDeliveryContractDetailsDto());
         validPushContract.getNegotiation().setRuntimeSelection("0 unlimited");
-        validPushContract.getNegotiation().setConsumerMerlotTncAccepted(true);
-        validPushContract.getNegotiation().setConsumerOfferingTncAccepted(true);
-        validPushContract.getNegotiation().setConsumerProviderTncAccepted(true);
-        validPushContract.getNegotiation().setProviderMerlotTncAccepted(true);
+        validPushContract.getNegotiation().setConsumerTncAccepted(true);
+        validPushContract.getNegotiation().setConsumerAttachmentsAccepted(true);
+        validPushContract.getNegotiation().setProviderTncAccepted(true);
         validPushContract.getNegotiation().setExchangeCountSelection("0");
         validPushContract.getDetails().setId("validPushContract");
         validPushContract.getDetails().setConsumerId("Participant:10");
@@ -120,10 +119,9 @@ class EdcOrchestrationServiceTest {
         validPullContract.setNegotiation(new DataDeliveryContractNegotiationDto());
         validPullContract.setDetails(new DataDeliveryContractDetailsDto());
         validPullContract.getNegotiation().setRuntimeSelection("0 unlimited");
-        validPullContract.getNegotiation().setConsumerMerlotTncAccepted(true);
-        validPullContract.getNegotiation().setConsumerOfferingTncAccepted(true);
-        validPullContract.getNegotiation().setConsumerProviderTncAccepted(true);
-        validPullContract.getNegotiation().setProviderMerlotTncAccepted(true);
+        validPullContract.getNegotiation().setConsumerTncAccepted(true);
+        validPullContract.getNegotiation().setConsumerAttachmentsAccepted(true);
+        validPullContract.getNegotiation().setProviderTncAccepted(true);
         validPullContract.getNegotiation().setExchangeCountSelection("0");
         validPullContract.getDetails().setId("validPullContract");
         validPullContract.getDetails().setConsumerId("Participant:10");
