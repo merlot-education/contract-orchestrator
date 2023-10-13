@@ -15,15 +15,12 @@ public class ContractNegotiationDto {
     private List<String> attachments;
 
     @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerMerlotTncAccepted;
+    private boolean consumerTncAccepted;
 
     @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerOfferingTncAccepted;
-
-    @JsonView(ContractViews.ConsumerView.class)
-    private boolean consumerProviderTncAccepted;
+    private boolean consumerAttachmentsAccepted;
 
     @JsonView(ContractViews.ProviderView.class)
-    private boolean providerMerlotTncAccepted;
+    private boolean providerTncAccepted;
 
 }
