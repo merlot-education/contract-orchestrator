@@ -35,6 +35,9 @@ spring:
       enabled: true
       refresh:
         enabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
 
 jwt:
   auth:
