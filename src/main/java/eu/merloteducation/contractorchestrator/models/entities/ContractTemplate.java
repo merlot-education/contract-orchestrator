@@ -119,4 +119,14 @@ public abstract class ContractTemplate {
                     String.format("Not allowed to transition from state %s to %s", state.name(), targetState.name()));
         }
     }
+
+    public void addAttachment(String attachment) {
+        if (this.state != ContractState.IN_DRAFT) {
+            throw new IllegalStateException("Cannot add attachment to contract since it is not in draft");
+        }
+        if (this.attachments == null) {
+            this.attachments = new ArrayList<>();
+        }
+        this.attachments.add(attachment);
+    }
 }

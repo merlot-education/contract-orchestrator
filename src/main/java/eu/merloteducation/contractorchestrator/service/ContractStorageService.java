@@ -18,13 +18,16 @@ import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepo
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
@@ -544,5 +547,56 @@ public class ContractStorageService {
         }
 
         return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    public ContractDto addContractAttachment(String contractId, MultipartFile attachment, String activeRoleOrgaId,
+                                             String authToken) throws IOException {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
+        }
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
+
+        if (!isProvider || (contract.getAttachments() != null && contract.getAttachments().size() >= 10)) {
+            throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
+        }
+
+        // TODO store file in bucket
+        System.out.println("Storing " + attachment.getOriginalFilename());
+        System.out.println("Data " + Arrays.toString(attachment.getBytes()));
+
+        // add stored file to contract, TODO consider order of bucket/db save
+        contract.addAttachment(attachment.getOriginalFilename());
+
+        contractTemplateRepository.save(contract);
+
+        return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    public ContractDto deleteContractAttachment(String contractId, String attachmentId, String activeRoleOrgaId,
+                                                String authToken) {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
+        }
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
+
+        if (!isProvider) {
+            throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
+        }
+
+        boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
+
+        if (!attachmentDeleted) {
+            throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in this contract.");
+        }
+
+        return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    public byte[] getContractAttachment(String contractId, String attachmentId) {
+        return new byte[]{};
     }
 }

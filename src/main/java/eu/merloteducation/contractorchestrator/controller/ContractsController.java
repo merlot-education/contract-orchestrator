@@ -11,15 +11,21 @@ import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.security.Principal;
 
 @RestController
@@ -102,6 +108,32 @@ public class ContractsController {
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
                 activeRole.getOrganizationId(), userId, authToken);
+    }
+
+
+    /**
+     * Given an attachment PDF file, save it in the bucket and provide a reference in the database
+     *
+     * @param contractId id of contract template to add an attachment to
+     * @param files multipart attachment files
+     * @param activeRole active user role
+     * @param authToken  active OAuth2 token of this user
+     * @return updated contract with new attachment
+     */
+    @PatchMapping(value = "/contract/{contractId}/attachment")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    public ContractDto addContractAttachment(@PathVariable(value = "contractId") String contractId,
+                                             @RequestPart("file") MultipartFile[] files,
+                                             @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
+                                             @RequestHeader(name = "Authorization") String authToken) {
+        if (files.length != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Too many files specified");
+        }
+        try(PDDocument ignored = Loader.loadPDF(files[0].getBytes())) {
+            return contractStorageService.addContractAttachment(contractId, files[0], activeRole.getOrganizationId(), authToken);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid contract attachment file.");
+        }
     }
 
 
