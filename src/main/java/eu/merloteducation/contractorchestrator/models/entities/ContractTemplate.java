@@ -2,6 +2,7 @@ package eu.merloteducation.contractorchestrator.models.entities;
 
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -52,6 +53,7 @@ public abstract class ContractTemplate {
 
     private String additionalAgreements;
 
+    @Size(max=10)
     private List<String> attachments;
 
     @OneToOne(cascade = CascadeType.ALL)

@@ -19,6 +19,29 @@ public class ContractAuthorityChecker {
     @Autowired
     private AuthorityChecker authorityChecker;
 
+    private boolean canAccessContract(Authentication authentication, ContractTemplate template) {
+        return this.isContractConsumer(authentication, template) || this.isContractProvider(authentication, template);
+    }
+
+    private boolean isContractProvider(Authentication authentication, ContractTemplate template) {
+        Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
+        if (template != null) {
+            String providerId = template.getProviderId().replace(PARTICIPANT, "");
+            return representedOrgaIds.contains(providerId);
+        }
+        return false;
+    }
+
+    private boolean isContractConsumer(Authentication authentication, ContractTemplate template) {
+        Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
+        if (template != null) {
+            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
+            return representedOrgaIds.contains(consumerId);
+        }
+        return false;
+    }
+
+
     /**
      * Given the current authentication and a contract id, check whether the requesting party either
      * represents the consumer or provider of this contract.
@@ -29,12 +52,11 @@ public class ContractAuthorityChecker {
      */
     public boolean canAccessContract(Authentication authentication, String contractId) {
         ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
-        Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
-        if (template != null) {
-            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
-            String providerId = template.getProviderId().replace(PARTICIPANT, "");
-            return (representedOrgaIds.contains(consumerId) || representedOrgaIds.contains(providerId));
-        }
-        return false;
+        return this.canAccessContract(authentication, template);
+    }
+
+    public boolean isContractProvider(Authentication authentication, String contractId) {
+        ContractTemplate template = contractTemplateRepository.findById(contractId).orElse(null);
+        return this.isContractProvider(authentication, template);
     }
 }

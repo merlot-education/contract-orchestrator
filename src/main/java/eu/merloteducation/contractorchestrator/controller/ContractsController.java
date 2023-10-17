@@ -116,21 +116,19 @@ public class ContractsController {
      *
      * @param contractId id of contract template to add an attachment to
      * @param files multipart attachment files
-     * @param activeRole active user role
      * @param authToken  active OAuth2 token of this user
      * @return updated contract with new attachment
      */
     @PatchMapping(value = "/contract/{contractId}/attachment")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.isContractProvider(authentication, #contractId)")
     public ContractDto addContractAttachment(@PathVariable(value = "contractId") String contractId,
                                              @RequestPart("file") MultipartFile[] files,
-                                             @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                              @RequestHeader(name = "Authorization") String authToken) {
         if (files.length != 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Too many files specified");
         }
         try(PDDocument ignored = Loader.loadPDF(files[0].getBytes())) {
-            return contractStorageService.addContractAttachment(contractId, files[0], activeRole.getOrganizationId(), authToken);
+            return contractStorageService.addContractAttachment(contractId, files[0], authToken);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid contract attachment file.");
         }

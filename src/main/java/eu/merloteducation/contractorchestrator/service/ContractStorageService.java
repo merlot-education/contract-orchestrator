@@ -280,6 +280,15 @@ public class ContractStorageService {
         throw new IllegalArgumentException("Unknown contract or offering type.");
     }
 
+    private ContractTemplate loadContract(String contractId) {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
+        }
+        return contract;
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -359,11 +368,7 @@ public class ContractStorageService {
      * @return newly generated contract
      */
     public ContractDto regenerateContract(String contractId, String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
@@ -405,11 +410,7 @@ public class ContractStorageService {
                                               String authToken,
                                               String activeRoleOrgaId) throws JSONException {
 
-        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getDetails().getId()).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(editedContract.getDetails().getId());
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
         boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
@@ -452,11 +453,7 @@ public class ContractStorageService {
                                                        String activeRoleOrgaId,
                                                        String userId,
                                                        String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
         boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
@@ -540,25 +537,16 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractDto getContractDetails(String contractId, String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
-    public ContractDto addContractAttachment(String contractId, MultipartFile attachment, String activeRoleOrgaId,
+    public ContractDto addContractAttachment(String contractId, MultipartFile attachment,
                                              String authToken) throws IOException {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+        ContractTemplate contract = this.loadContract(contractId);
 
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
-        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
-
-        if (!isProvider || (contract.getAttachments() != null && contract.getAttachments().size() >= 10)) {
+        if (contract.getAttachments() != null && contract.getAttachments().size() >= 10) {
             throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
         }
 
@@ -566,7 +554,7 @@ public class ContractStorageService {
         System.out.println("Storing " + attachment.getOriginalFilename());
         System.out.println("Data " + Arrays.toString(attachment.getBytes()));
 
-        // add stored file to contract, TODO consider order of bucket/db save
+        // add stored file to contract
         contract.addAttachment(attachment.getOriginalFilename());
 
         contractTemplateRepository.save(contract);
@@ -574,18 +562,9 @@ public class ContractStorageService {
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
-    public ContractDto deleteContractAttachment(String contractId, String attachmentId, String activeRoleOrgaId,
+    public ContractDto deleteContractAttachment(String contractId, String attachmentId,
                                                 String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
-        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
-
-        if (!isProvider) {
-            throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
 
