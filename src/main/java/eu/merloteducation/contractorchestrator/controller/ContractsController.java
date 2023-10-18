@@ -14,10 +14,15 @@ import jakarta.validation.constraints.Max;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -132,6 +137,46 @@ public class ContractsController {
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid contract attachment file.");
         }
+    }
+
+    /**
+     * Given a contract and attachment PDF file name, delete it from the bucket and database.
+     *
+     * @param contractId id of contract template to add an attachment to
+     * @param attachmentName name of attachment to delete
+     * @param authToken  active OAuth2 token of this user
+     * @return updated contract with deleted attachment
+     */
+    @DeleteMapping(value = "/contract/{contractId}/attachment/{attachmentName}")
+    @PreAuthorize("@contractAuthorityChecker.isContractProvider(authentication, #contractId)")
+    public ContractDto deleteContractAttachment(@PathVariable(value = "contractId") String contractId,
+                                             @PathVariable(value = "attachmentName") String attachmentName,
+                                             @RequestHeader(name = "Authorization") String authToken) {
+        return contractStorageService.deleteContractAttachment(contractId, attachmentName, authToken);
+    }
+
+    /**
+     * Given a contract and attachment PDF file name, provide the attachment as download
+     *
+     * @param contractId id of contract template to add an attachment to
+     * @param attachmentName name of attachment to delete
+     * @param authToken  active OAuth2 token of this user
+     * @return attachment file
+     */
+    @GetMapping(value = "/contract/{contractId}/attachment/{attachmentName}")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    public ResponseEntity<Resource> getContractAttachment(@PathVariable(value = "contractId") String contractId,
+                                                          @PathVariable(value = "attachmentName") String attachmentName,
+                                                          @RequestHeader(name = "Authorization") String authToken) {
+        byte[] attachment = contractStorageService.getContractAttachment(contractId, attachmentName, authToken);
+        ByteArrayResource resource = new ByteArrayResource(attachment);
+        HttpHeaders headers = new HttpHeaders(); headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=" + attachmentName);
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(attachment.length)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(resource);
     }
 
 

@@ -572,10 +572,13 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in this contract.");
         }
 
+        contractTemplateRepository.save(contract);
+
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
-    public byte[] getContractAttachment(String contractId, String attachmentId) {
-        return new byte[]{};
+    public byte[] getContractAttachment(String contractId, String attachmentId,
+                                        String authToken) {
+        return new byte[]{0x01, 0x02, 0x03, 0x04};
     }
 }
