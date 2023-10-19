@@ -217,7 +217,6 @@ public class ContractStorageService {
             if (isProvider) {
                 targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
@@ -332,9 +331,6 @@ public class ContractStorageService {
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
-
-        // initialize attachment list
-        contract.setAttachments(new HashSet<>());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
