@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 @Getter
@@ -54,7 +52,7 @@ public abstract class ContractTemplate {
     private String additionalAgreements;
 
     @Size(max=10)
-    private List<String> attachments;
+    private Set<String> attachments;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
@@ -72,7 +70,7 @@ public abstract class ContractTemplate {
         this.state = ContractState.IN_DRAFT;
         this.id = "Contract:" + UUID.randomUUID();
         this.creationDate = OffsetDateTime.now();
-        this.attachments = new ArrayList<>();
+        this.attachments = new HashSet<>();
         this.additionalAgreements = "";
         this.serviceContractProvisioning = new DefaultProvisioning();
     }
@@ -90,7 +88,7 @@ public abstract class ContractTemplate {
         this.providerTncAccepted = template.isProviderTncAccepted();
         this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
-        this.attachments = new ArrayList<>(template.getAttachments());
+        this.attachments = new HashSet<>(template.getAttachments());
         this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
         this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
@@ -125,9 +123,6 @@ public abstract class ContractTemplate {
     public void addAttachment(String attachment) {
         if (this.state != ContractState.IN_DRAFT) {
             throw new IllegalStateException("Cannot add attachment to contract since it is not in draft");
-        }
-        if (this.attachments == null) {
-            this.attachments = new ArrayList<>();
         }
         this.attachments.add(attachment);
     }

@@ -18,7 +18,6 @@ import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepo
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
 import org.springframework.data.domain.Page;
@@ -335,7 +334,7 @@ public class ContractStorageService {
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
         // initialize attachment list
-        contract.setAttachments(new ArrayList<>());
+        contract.setAttachments(new HashSet<>());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
@@ -542,6 +541,15 @@ public class ContractStorageService {
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
+    /**
+     * Given a contract id and a file upload, add the file to the bucket and store the reference in the contract.
+     *
+     * @param contractId contract id
+     * @param attachment uploaded file
+     * @param authToken the OAuth2 Token from the user requesting this action
+     * @return updated contract
+     * @throws IOException exception during reading file
+     */
     public ContractDto addContractAttachment(String contractId, MultipartFile attachment,
                                              String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
@@ -562,6 +570,14 @@ public class ContractStorageService {
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
+    /**
+     * Given a contract id and an attachment reference, delete the attachment from the contract and bucket.
+     *
+     * @param contractId contract id
+     * @param attachmentId reference to the attachment
+     * @param authToken the OAuth2 Token from the user requesting this action
+     * @return updated contract
+     */
     public ContractDto deleteContractAttachment(String contractId, String attachmentId,
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
@@ -577,6 +593,14 @@ public class ContractStorageService {
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
+    /**
+     * Given a contract id and an attachment reference, provide the attachment as a download to the user.
+     *
+     * @param contractId contract id
+     * @param attachmentId reference to the attachment
+     * @param authToken the OAuth2 Token from the user requesting this action
+     * @return attachment as byte array
+     */
     public byte[] getContractAttachment(String contractId, String attachmentId,
                                         String authToken) {
         return new byte[]{0x01, 0x02, 0x03, 0x04};
