@@ -582,6 +582,8 @@ public class ContractStorageService {
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
+        // TODO delete file in bucket
+
         boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
 
         if (!attachmentDeleted) {
@@ -603,6 +605,7 @@ public class ContractStorageService {
      */
     public byte[] getContractAttachment(String contractId, String attachmentId,
                                         String authToken) {
+        // TODO load file from bucket
         return new byte[]{0x01, 0x02, 0x03, 0x04};
     }
 }
