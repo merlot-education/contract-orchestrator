@@ -696,13 +696,11 @@ class ContractStorageServiceTest {
 
         editedContract.getNegotiation().setProviderTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("agreement");
-        editedContract.getNegotiation().setAttachments(List.of("attachment1"));
 
         SaasContractDto result = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "token",
                 representedOrgaIds.iterator().next());
         assertEquals(editedContract.getNegotiation().isProviderTncAccepted(), result.getNegotiation().isProviderTncAccepted());
         assertEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
-        assertEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
     }
 
     @Test
@@ -804,7 +802,6 @@ class ContractStorageServiceTest {
 
         editedContract.getNegotiation().setProviderTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("garbage");
-        editedContract.getNegotiation().setAttachments(List.of("attachment1"));
         // TODO provisioning fields
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -813,8 +810,6 @@ class ContractStorageServiceTest {
         assertEquals(dataDeliveryContract.isProviderTncAccepted(), result.getNegotiation().isProviderTncAccepted());
         assertNotEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertEquals(dataDeliveryContract.getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
-        assertNotEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
-        assertEquals(dataDeliveryContract.getAttachments(), result.getNegotiation().getAttachments());
 
     }
 
