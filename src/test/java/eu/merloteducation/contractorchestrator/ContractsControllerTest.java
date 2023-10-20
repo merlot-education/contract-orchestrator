@@ -111,7 +111,7 @@ class ContractsControllerTest {
                 .thenReturn(saasContractDto);
         lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any(), any()))
                 .thenReturn(contractTemplatesPage);
-        lenient().when(contractStorageService.getContractAttachment(any(), any(), any()))
+        lenient().when(contractStorageService.getContractAttachment(any(), any()))
                 .thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 

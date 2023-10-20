@@ -541,12 +541,13 @@ public class ContractStorageService {
      * Given a contract id and a file upload, add the file to the bucket and store the reference in the contract.
      *
      * @param contractId contract id
-     * @param attachment uploaded file
+     * @param attachment uploaded file as byte array
+     * @param fileName name of the uploaded file
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract
      * @throws IOException exception during reading file
      */
-    public ContractDto addContractAttachment(String contractId, MultipartFile attachment,
+    public ContractDto addContractAttachment(String contractId, byte[] attachment, String fileName,
                                              String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
 
@@ -555,11 +556,11 @@ public class ContractStorageService {
         }
 
         // TODO store file in bucket
-        System.out.println("Storing " + attachment.getOriginalFilename());
-        System.out.println("Data " + Arrays.toString(attachment.getBytes()));
+        System.out.println("Storing " + fileName);
+        System.out.println("Data " + Arrays.toString(attachment));
 
         // add stored file to contract
-        contract.addAttachment(attachment.getOriginalFilename());
+        contract.addAttachment(fileName);
 
         contractTemplateRepository.save(contract);
 
@@ -596,11 +597,14 @@ public class ContractStorageService {
      *
      * @param contractId contract id
      * @param attachmentId reference to the attachment
-     * @param authToken the OAuth2 Token from the user requesting this action
      * @return attachment as byte array
      */
-    public byte[] getContractAttachment(String contractId, String attachmentId,
-                                        String authToken) {
+    public byte[] getContractAttachment(String contractId, String attachmentId) {
+        ContractTemplate contract = this.loadContract(contractId);
+        if (!contract.getAttachments().contains(attachmentId)) {
+            throw new ResponseStatusException(NOT_FOUND, "No atachment with this ID was found.");
+        }
+
         // TODO load file from bucket
         return new byte[]{0x01, 0x02, 0x03, 0x04};
     }

@@ -40,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -1315,6 +1316,75 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () ->this.contractStorageService.regenerateContract("garbage", "authToken"));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void addContractAttachmentsInDraft() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+        ContractDto result = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertNotNull(result);
+        assertNotNull(result.getNegotiation().getAttachments());
+        assertTrue(result.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    void addContractAttachmentsInDraftTooManyAttachments() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+        for (int i = 0; i < 10; i++) {
+            this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                    "myFile" + i + ".pdf", "authToken");
+        }
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                        "myFile" + 10 + ".pdf", "authToken"));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    void deleteContractAttachmentsInDraft() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+
+        ContractDto result1 = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertTrue(result1.getNegotiation().getAttachments().contains("myFile.pdf"));
+
+        ContractDto result2 = this.contractStorageService.deleteContractAttachment(templateId,
+                "myFile.pdf", "authToken");
+        assertNotNull(result2);
+        assertNotNull(result2.getNegotiation().getAttachments());
+        assertFalse(result2.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    void deleteContractAttachmentsInDraftNonExistent() {
+        String templateId = dataDeliveryContract.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.deleteContractAttachment(templateId,"garbage",
+                        "authToken"));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void getContractAttachment() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+
+        ContractDto result1 = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertTrue(result1.getNegotiation().getAttachments().contains("myFile.pdf"));
+
+        byte[] result2 = this.contractStorageService.getContractAttachment(templateId,"myFile.pdf");
+        assertNotNull(result1);
+    }
+
+    @Test
+    void getContractAttachmentNonExistent() {
+        String templateId = dataDeliveryContract.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.getContractAttachment(templateId,"garbage"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }

@@ -133,7 +133,8 @@ public class ContractsController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Too many files specified");
         }
         try(PDDocument ignored = Loader.loadPDF(files[0].getBytes())) {
-            return contractStorageService.addContractAttachment(contractId, files[0], authToken);
+            return contractStorageService.addContractAttachment(contractId, files[0].getBytes(),
+                    files[0].getOriginalFilename(), authToken);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid contract attachment file.");
         }
@@ -160,15 +161,13 @@ public class ContractsController {
      *
      * @param contractId id of contract template to add an attachment to
      * @param attachmentName name of attachment to delete
-     * @param authToken  active OAuth2 token of this user
      * @return attachment file
      */
     @GetMapping(value = "/contract/{contractId}/attachment/{attachmentName}")
     @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ResponseEntity<Resource> getContractAttachment(@PathVariable(value = "contractId") String contractId,
-                                                          @PathVariable(value = "attachmentName") String attachmentName,
-                                                          @RequestHeader(name = "Authorization") String authToken) {
-        byte[] attachment = contractStorageService.getContractAttachment(contractId, attachmentName, authToken);
+                                                          @PathVariable(value = "attachmentName") String attachmentName) {
+        byte[] attachment = contractStorageService.getContractAttachment(contractId, attachmentName);
         ByteArrayResource resource = new ByteArrayResource(attachment);
         HttpHeaders headers = new HttpHeaders(); headers.add(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=" + attachmentName);
