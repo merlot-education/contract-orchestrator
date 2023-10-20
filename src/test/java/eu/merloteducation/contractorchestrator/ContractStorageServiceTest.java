@@ -1376,7 +1376,7 @@ class ContractStorageServiceTest {
         assertTrue(result1.getNegotiation().getAttachments().contains("myFile.pdf"));
 
         byte[] result2 = this.contractStorageService.getContractAttachment(templateId,"myFile.pdf");
-        assertNotNull(result1);
+        assertNotNull(result2);
     }
 
     @Test
