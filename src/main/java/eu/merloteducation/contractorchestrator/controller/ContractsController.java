@@ -167,7 +167,13 @@ public class ContractsController {
     @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ResponseEntity<Resource> getContractAttachment(@PathVariable(value = "contractId") String contractId,
                                                           @PathVariable(value = "attachmentName") String attachmentName) {
-        byte[] attachment = contractStorageService.getContractAttachment(contractId, attachmentName);
+        byte[] attachment;
+        try {
+            attachment = contractStorageService.getContractAttachment(contractId, attachmentName);
+        } catch(IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load attachment.");
+        }
+
         ByteArrayResource resource = new ByteArrayResource(attachment);
         HttpHeaders headers = new HttpHeaders(); headers.add(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=" + attachmentName);

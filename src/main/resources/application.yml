@@ -72,6 +72,15 @@ management:
     health:
       enabled: true
 
+s3-library:
+  access-key: key
+  secret: secret
+  service-endpoint: endpoint
+  signing-region: de
+  signer-type: S3SignerType
+  bucket: merlot-storage-test
+  root-directory: contract-orchestrator
+
 cors:
   global:
     origins:

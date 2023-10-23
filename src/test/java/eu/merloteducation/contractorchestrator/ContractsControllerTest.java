@@ -31,6 +31,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -81,7 +82,7 @@ class ContractsControllerTest {
     }
 
     @BeforeEach
-    public void beforeEach() throws JSONException {
+    public void beforeEach() throws JSONException, IOException {
 
         template = new SaasContractTemplate();
         template.setProviderId("Participant:10");

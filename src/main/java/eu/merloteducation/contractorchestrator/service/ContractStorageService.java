@@ -1,5 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +17,7 @@ import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.s3library.service.StorageClient;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -23,7 +26,6 @@ import org.json.JSONException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -73,6 +75,9 @@ public class ContractStorageService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private StorageClient storageClient;
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
@@ -555,9 +560,12 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
         }
 
-        // TODO store file in bucket
-        System.out.println("Storing " + fileName);
-        System.out.println("Data " + Arrays.toString(attachment));
+        try {
+            storageClient.pushItem(contract.getId(), fileName, attachment);
+        } catch (Exception e) {
+            throw new IOException("Failed to upload file");
+        }
+
 
         // add stored file to contract
         contract.addAttachment(fileName);
@@ -579,7 +587,11 @@ public class ContractStorageService {
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
-        // TODO delete file in bucket
+        boolean bucketFileDeleted = storageClient.deleteItem(contract.getId(), attachmentId);
+
+        if (!bucketFileDeleted) {
+            throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in the storage.");
+        }
 
         boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
 
@@ -599,13 +611,12 @@ public class ContractStorageService {
      * @param attachmentId reference to the attachment
      * @return attachment as byte array
      */
-    public byte[] getContractAttachment(String contractId, String attachmentId) {
+    public byte[] getContractAttachment(String contractId, String attachmentId) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
         if (!contract.getAttachments().contains(attachmentId)) {
             throw new ResponseStatusException(NOT_FOUND, "No atachment with this ID was found.");
         }
 
-        // TODO load file from bucket
-        return new byte[]{0x01, 0x02, 0x03, 0x04};
+        return storageClient.getItem(contract.getId(), attachmentId);
     }
 }

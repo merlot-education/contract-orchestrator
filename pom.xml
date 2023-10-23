@@ -7,6 +7,7 @@
 	<version>1.8.1</version>
 	<name>contract-orchestrator</name>
 	<description>Orchestrator for Contracts in the Merlot MPO</description>
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -20,10 +21,23 @@
 	</properties>
 	<repositories>
 		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>github</id>
+			<name>GitHub MERLOT Education</name>
+			<url>https://maven.pkg.github.com/merlot-education/*</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
 			<id>danubetech-maven-public</id>
 			<url>https://repo.danubetech.com/repository/maven-public/</url>
 		</repository>
 	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -117,6 +131,11 @@
 			<artifactId>pdfbox</artifactId>
 			<version>3.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>eu.merlot-education</groupId>
+			<artifactId>s3-library</artifactId>
+			<version>1.0.2-13099f2</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -201,4 +220,5 @@
 			</properties>
 		</profile>
 	</profiles>
+
 </project>
