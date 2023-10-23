@@ -16,6 +16,7 @@ import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
+import eu.merloteducation.s3library.service.StorageClient;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -72,6 +73,9 @@ class ContractStorageServiceTest {
 
     @Mock
     private RabbitTemplate rabbitTemplate;
+
+    @Mock
+    private StorageClient storageClient;
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
@@ -384,6 +388,7 @@ class ContractStorageServiceTest {
     @BeforeAll
     public void setUp() {
         ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
+        ReflectionTestUtils.setField(contractStorageService, "storageClient", storageClient);
         ReflectionTestUtils.setField(contractStorageService, "contractMapper", contractMapper);
         ReflectionTestUtils.setField(contractStorageService, "objectMapper", objectMapper);
         ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
@@ -422,7 +427,7 @@ class ContractStorageServiceTest {
     }
 
     @BeforeEach
-    public void beforeEach() throws JsonProcessingException {
+    public void beforeEach() throws IOException {
         String userCountOption = """
                                 ,"merlot:userCountOption": [
                                      {
@@ -516,6 +521,9 @@ class ContractStorageServiceTest {
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
                 .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
+
+        lenient().when(storageClient.deleteItem(any(), any())).thenReturn(true);
+        lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 
     @Test
