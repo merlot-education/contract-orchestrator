@@ -37,4 +37,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: GITHUB_TOKEN=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 GITHUB_USER=M-Busk mvn -e -X -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=merlot-education_contract-orchestrator_AYiLA82cNJyPCeUvG50n
+        run: GITHUB_TOKEN=${{ secrets.PACKAGES_RO_TOKEN }} GITHUB_USER=mjuergens-cg mvn -e -X -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=merlot-education_contract-orchestrator_AYiLA82cNJyPCeUvG50n
