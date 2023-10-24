@@ -3,3 +3,6 @@ cors:
     origins: >
       https://marketplace.demo.merlot-education.eu
     patterns:
+
+s3-library:
+  bucket: merlot-storage-demo
