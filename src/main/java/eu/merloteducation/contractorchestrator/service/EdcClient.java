@@ -12,6 +12,7 @@ import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3Transf
 import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.service.annotation.DeleteExchange;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.PostExchange;
 
@@ -40,4 +41,10 @@ public interface EdcClient {
 
     @GetExchange("/v2/transferprocesses/{transferId}")
     IonosS3TransferProcess checkTransferStatus(@PathVariable String transferId);
+
+    @PostExchange("/v2/transferprocesses/{transferId}/deprovision")
+    void deprovisionTransfer(@PathVariable String transferId);
+
+    @DeleteExchange("/v2/contractdefinitions/{contractDefinitionId}")
+    void revokeContractDefinition(@PathVariable String contractDefinitionId);
 }

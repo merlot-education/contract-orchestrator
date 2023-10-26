@@ -24,10 +24,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -44,6 +46,9 @@ public class EdcOrchestrationService {
 
     @Autowired
     private ObjectProvider<EdcClient> edcClientProvider;
+
+    @Autowired
+    private TaskScheduler taskScheduler;
 
     private DataDeliveryContractDto loadContract(String contractId, String activeRoleOrgaId, String authToken) {
         ContractDto contract = contractStorageService.getContractDetails(contractId, authToken);
@@ -158,6 +163,12 @@ public class EdcOrchestrationService {
         logger.debug("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
         providerEdcClient.createContractDefinition(contractDefinitionCreateRequest);
 
+        // schedule deletion of the contract definition in 5 minutes
+        // note that we currently cannot delete Assets etc. once they are bound to a contract agreement
+        // which appears to be irrevocable in our current EDC version.
+        taskScheduler.schedule(new EdcContractDefinitionRevokeTask(providerEdcClient,
+                contractDefinitionCreateRequest.getId()), Instant.now().plusSeconds(300));
+
         // consumer side
         // find the offering we are interested in
         CatalogRequest catalogRequest = new CatalogRequest(providerConnector.getProtocolBaseUrl());
@@ -245,7 +256,13 @@ public class EdcOrchestrationService {
                         .build())
                 .build();
         logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
-        return consumerEdcClient.initiateTransfer(transferRequest);
+        IdResponse transferResponse = consumerEdcClient.initiateTransfer(transferRequest);
+
+        // schedule deprovisioning of transfer related data 5 minutes after the transfer initiation
+        taskScheduler.schedule(new EdcTransferDeprovisionTask(consumerEdcClient,
+                transferResponse.getId()), Instant.now().plusSeconds(300));
+
+        return transferResponse;
     }
 
     /**
@@ -267,10 +284,6 @@ public class EdcOrchestrationService {
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
 
-        // TODO deprovision on finalized transfer
-        // curl -X POST -H 'X-Api-Key: password' "http://localhost:9192/management/v2/transferprocesses/{transferProcessId}/deprovision"
-
         return consumerEdcClient.checkTransferStatus(transferId);
     }
-
 }
