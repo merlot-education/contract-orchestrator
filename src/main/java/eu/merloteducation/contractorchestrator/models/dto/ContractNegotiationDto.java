@@ -5,14 +5,14 @@ import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
 public class ContractNegotiationDto {
     private String runtimeSelection;
     private String additionalAgreements;
-    private List<String> attachments;
+    private Set<String> attachments;
 
     @JsonView(ContractViews.ConsumerView.class)
     private boolean consumerTncAccepted;

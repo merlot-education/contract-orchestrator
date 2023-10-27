@@ -1,5 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +17,7 @@ import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.s3library.service.StorageClient;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -25,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.TemporalAmount;
@@ -71,6 +75,9 @@ public class ContractStorageService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private StorageClient storageClient;
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
@@ -215,7 +222,6 @@ public class ContractStorageService {
             if (isProvider) {
                 targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
                 targetContract.setAdditionalAgreements(editedContract.getNegotiation().getAdditionalAgreements());
-                targetContract.setAttachments(editedContract.getNegotiation().getAttachments());
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
             targetContract.setProviderTncAccepted(editedContract.getNegotiation().isProviderTncAccepted());
@@ -277,6 +283,15 @@ public class ContractStorageService {
         throw new IllegalArgumentException("Unknown contract or offering type.");
     }
 
+    private ContractTemplate loadContract(String contractId) {
+        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
+
+        if (contract == null) {
+            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
+        }
+        return contract;
+    }
+
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields
@@ -322,9 +337,6 @@ public class ContractStorageService {
         contract.setConsumerId(contractCreateRequest.getConsumerId());
         contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
 
-        // initialize attachment list
-        contract.setAttachments(new ArrayList<>());
-
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Provider and consumer must not be equal.");
@@ -356,11 +368,7 @@ public class ContractStorageService {
      * @return newly generated contract
      */
     public ContractDto regenerateContract(String contractId, String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         if (!(contract.getState() == ContractState.DELETED || contract.getState() == ContractState.ARCHIVED)) {
             throw new ResponseStatusException(FORBIDDEN, CONTRACT_EDIT_FORBIDDEN);
@@ -402,11 +410,7 @@ public class ContractStorageService {
                                               String authToken,
                                               String activeRoleOrgaId) throws JSONException {
 
-        ContractTemplate contract = contractTemplateRepository.findById(editedContract.getDetails().getId()).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(editedContract.getDetails().getId());
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
         boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
@@ -449,11 +453,7 @@ public class ContractStorageService {
                                                        String activeRoleOrgaId,
                                                        String userId,
                                                        String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
         boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
@@ -537,12 +537,86 @@ public class ContractStorageService {
      * @return contract object from the database
      */
     public ContractDto getContractDetails(String contractId, String authToken) {
-        ContractTemplate contract = contractTemplateRepository.findById(contractId).orElse(null);
-
-        if (contract == null) {
-            throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
-        }
+        ContractTemplate contract = this.loadContract(contractId);
 
         return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    /**
+     * Given a contract id and a file upload, add the file to the bucket and store the reference in the contract.
+     *
+     * @param contractId contract id
+     * @param attachment uploaded file as byte array
+     * @param fileName name of the uploaded file
+     * @param authToken the OAuth2 Token from the user requesting this action
+     * @return updated contract
+     * @throws IOException exception during reading file
+     */
+    public ContractDto addContractAttachment(String contractId, byte[] attachment, String fileName,
+                                             String authToken) throws IOException {
+        ContractTemplate contract = this.loadContract(contractId);
+
+        if (contract.getAttachments() != null && contract.getAttachments().size() >= 10) {
+            throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
+        }
+
+        try {
+            storageClient.pushItem(contract.getId(), fileName, attachment);
+        } catch (Exception e) {
+            throw new IOException("Failed to upload file");
+        }
+
+
+        // add stored file to contract
+        contract.addAttachment(fileName);
+
+        contractTemplateRepository.save(contract);
+
+        return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    /**
+     * Given a contract id and an attachment reference, delete the attachment from the contract and bucket.
+     *
+     * @param contractId contract id
+     * @param attachmentId reference to the attachment
+     * @param authToken the OAuth2 Token from the user requesting this action
+     * @return updated contract
+     */
+    public ContractDto deleteContractAttachment(String contractId, String attachmentId,
+                                                String authToken) {
+        ContractTemplate contract = this.loadContract(contractId);
+
+        boolean bucketFileDeleted = storageClient.deleteItem(contract.getId(), attachmentId);
+
+        if (!bucketFileDeleted) {
+            throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in the storage.");
+        }
+
+        boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
+
+        if (!attachmentDeleted) {
+            throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in this contract.");
+        }
+
+        contractTemplateRepository.save(contract);
+
+        return castAndMapToContractDetailsDto(contract, authToken);
+    }
+
+    /**
+     * Given a contract id and an attachment reference, provide the attachment as a download to the user.
+     *
+     * @param contractId contract id
+     * @param attachmentId reference to the attachment
+     * @return attachment as byte array
+     */
+    public byte[] getContractAttachment(String contractId, String attachmentId) throws IOException {
+        ContractTemplate contract = this.loadContract(contractId);
+        if (!contract.getAttachments().contains(attachmentId)) {
+            throw new ResponseStatusException(NOT_FOUND, "No attachment with this ID was found.");
+        }
+
+        return storageClient.getItem(contract.getId(), attachmentId);
     }
 }

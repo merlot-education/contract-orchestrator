@@ -35,6 +35,9 @@ spring:
       enabled: true
       refresh:
         enabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
 
 jwt:
   auth:
@@ -69,12 +72,6 @@ management:
     health:
       enabled: true
 
-cors:
-  global:
-    origins:
-    patterns: >
-      http://localhost:[*]
-
 s3-library:
   access-key: key
   secret: secret
@@ -83,3 +80,9 @@ s3-library:
   signer-type: S3SignerType
   bucket: merlot-storage-test
   root-directory: contract-orchestrator
+
+cors:
+  global:
+    origins:
+    patterns: >
+      http://localhost:[*]

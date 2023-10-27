@@ -125,6 +125,11 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>eu.merlot-education</groupId>
             <artifactId>s3-library</artifactId>
             <version>1.0.2-13099f2</version>

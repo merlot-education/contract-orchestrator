@@ -16,6 +16,7 @@ import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
+import eu.merloteducation.s3library.service.StorageClient;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -40,6 +41,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -71,6 +73,9 @@ class ContractStorageServiceTest {
 
     @Mock
     private RabbitTemplate rabbitTemplate;
+
+    @Mock
+    private StorageClient storageClient;
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
@@ -383,6 +388,7 @@ class ContractStorageServiceTest {
     @BeforeAll
     public void setUp() {
         ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
+        ReflectionTestUtils.setField(contractStorageService, "storageClient", storageClient);
         ReflectionTestUtils.setField(contractStorageService, "contractMapper", contractMapper);
         ReflectionTestUtils.setField(contractStorageService, "objectMapper", objectMapper);
         ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
@@ -421,7 +427,7 @@ class ContractStorageServiceTest {
     }
 
     @BeforeEach
-    public void beforeEach() throws JsonProcessingException {
+    public void beforeEach() throws IOException {
         String userCountOption = """
                                 ,"merlot:userCountOption": [
                                      {
@@ -515,6 +521,9 @@ class ContractStorageServiceTest {
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
                 .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
+
+        lenient().when(storageClient.deleteItem(any(), any())).thenReturn(true);
+        lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 
     @Test
@@ -696,13 +705,11 @@ class ContractStorageServiceTest {
 
         editedContract.getNegotiation().setProviderTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("agreement");
-        editedContract.getNegotiation().setAttachments(List.of("attachment1"));
 
         SaasContractDto result = (SaasContractDto) contractStorageService.updateContractTemplate(editedContract, "token",
                 representedOrgaIds.iterator().next());
         assertEquals(editedContract.getNegotiation().isProviderTncAccepted(), result.getNegotiation().isProviderTncAccepted());
         assertEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
-        assertEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
     }
 
     @Test
@@ -804,7 +811,6 @@ class ContractStorageServiceTest {
 
         editedContract.getNegotiation().setProviderTncAccepted(true);
         editedContract.getNegotiation().setAdditionalAgreements("garbage");
-        editedContract.getNegotiation().setAttachments(List.of("attachment1"));
         // TODO provisioning fields
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -813,8 +819,6 @@ class ContractStorageServiceTest {
         assertEquals(dataDeliveryContract.isProviderTncAccepted(), result.getNegotiation().isProviderTncAccepted());
         assertNotEquals(editedContract.getNegotiation().getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
         assertEquals(dataDeliveryContract.getAdditionalAgreements(), result.getNegotiation().getAdditionalAgreements());
-        assertNotEquals(editedContract.getNegotiation().getAttachments(), result.getNegotiation().getAttachments());
-        assertEquals(dataDeliveryContract.getAttachments(), result.getNegotiation().getAttachments());
 
     }
 
@@ -1320,6 +1324,75 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () ->this.contractStorageService.regenerateContract("garbage", "authToken"));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void addContractAttachmentsInDraft() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+        ContractDto result = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertNotNull(result);
+        assertNotNull(result.getNegotiation().getAttachments());
+        assertTrue(result.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    void addContractAttachmentsInDraftTooManyAttachments() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+        for (int i = 0; i < 10; i++) {
+            this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                    "myFile" + i + ".pdf", "authToken");
+        }
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                        "myFile" + 10 + ".pdf", "authToken"));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    }
+
+    @Test
+    void deleteContractAttachmentsInDraft() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+
+        ContractDto result1 = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertTrue(result1.getNegotiation().getAttachments().contains("myFile.pdf"));
+
+        ContractDto result2 = this.contractStorageService.deleteContractAttachment(templateId,
+                "myFile.pdf", "authToken");
+        assertNotNull(result2);
+        assertNotNull(result2.getNegotiation().getAttachments());
+        assertFalse(result2.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    void deleteContractAttachmentsInDraftNonExistent() {
+        String templateId = dataDeliveryContract.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.deleteContractAttachment(templateId,"garbage",
+                        "authToken"));
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
+
+    @Test
+    void getContractAttachment() throws IOException {
+        String templateId = dataDeliveryContract.getId();
+
+        ContractDto result1 = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+                "myFile.pdf", "authToken");
+        assertTrue(result1.getNegotiation().getAttachments().contains("myFile.pdf"));
+
+        byte[] result2 = this.contractStorageService.getContractAttachment(templateId,"myFile.pdf");
+        assertNotNull(result2);
+    }
+
+    @Test
+    void getContractAttachmentNonExistent() {
+        String templateId = dataDeliveryContract.getId();
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> this.contractStorageService.getContractAttachment(templateId,"garbage"));
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
