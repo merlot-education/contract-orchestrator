@@ -614,7 +614,7 @@ public class ContractStorageService {
     public byte[] getContractAttachment(String contractId, String attachmentId) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
         if (!contract.getAttachments().contains(attachmentId)) {
-            throw new ResponseStatusException(NOT_FOUND, "No atachment with this ID was found.");
+            throw new ResponseStatusException(NOT_FOUND, "No attachment with this ID was found.");
         }
 
         return storageClient.getItem(contract.getId(), attachmentId);
