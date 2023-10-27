@@ -85,4 +85,12 @@ public class EdcClientFake implements EdcClient {
         process.setDataRequest(request);
         return process;
     }
+
+    @Override
+    public void deprovisionTransfer(String transferId) {
+    }
+
+    @Override
+    public void revokeContractDefinition(String contractDefinitionId) {
+    }
 }
