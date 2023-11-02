@@ -132,7 +132,7 @@
         <dependency>
             <groupId>eu.merlot-education</groupId>
             <artifactId>s3-library</artifactId>
-            <version>1.0.2-13099f2</version>
+            <version>1.0.2-d5a5f95</version>
         </dependency>
     </dependencies>
     <build>
