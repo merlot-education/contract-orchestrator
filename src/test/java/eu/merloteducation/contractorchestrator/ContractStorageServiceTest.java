@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
@@ -17,6 +16,7 @@ import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrato
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
 import eu.merloteducation.s3library.service.StorageClient;
+import eu.merloteducation.s3library.service.StorageClientException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -427,7 +427,7 @@ class ContractStorageServiceTest {
     }
 
     @BeforeEach
-    public void beforeEach() throws IOException {
+    public void beforeEach() throws IOException, StorageClientException {
         String userCountOption = """
                                 ,"merlot:userCountOption": [
                                      {
@@ -522,7 +522,6 @@ class ContractStorageServiceTest {
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
                 .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
 
-        lenient().when(storageClient.deleteItem(any(), any())).thenReturn(true);
         lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 
@@ -1376,7 +1375,7 @@ class ContractStorageServiceTest {
     }
 
     @Test
-    void getContractAttachment() throws IOException {
+    void getContractAttachment() throws IOException, StorageClientException {
         String templateId = dataDeliveryContract.getId();
 
         ContractDto result1 = this.contractStorageService.addContractAttachment(templateId, new byte[]{},

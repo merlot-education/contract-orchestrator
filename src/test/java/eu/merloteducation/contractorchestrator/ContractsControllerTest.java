@@ -15,6 +15,7 @@ import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepo
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
+import eu.merloteducation.s3library.service.StorageClientException;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,7 +83,7 @@ class ContractsControllerTest {
     }
 
     @BeforeEach
-    public void beforeEach() throws JSONException, IOException {
+    public void beforeEach() throws JSONException, IOException, StorageClientException {
 
         template = new SaasContractTemplate();
         template.setProviderId("Participant:10");

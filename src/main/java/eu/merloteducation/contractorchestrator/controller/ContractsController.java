@@ -9,6 +9,7 @@ import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
+import eu.merloteducation.s3library.service.StorageClientException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import org.apache.pdfbox.Loader;
@@ -170,7 +171,7 @@ public class ContractsController {
         byte[] attachment;
         try {
             attachment = contractStorageService.getContractAttachment(contractId, attachmentName);
-        } catch(IOException e) {
+        } catch (IOException | StorageClientException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load attachment.");
         }
 

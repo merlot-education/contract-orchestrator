@@ -16,6 +16,7 @@ import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.s3library.service.StorageClient;
+import eu.merloteducation.s3library.service.StorageClientException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -560,7 +561,7 @@ public class ContractStorageService {
 
         try {
             storageClient.pushItem(contract.getId(), fileName, attachment);
-        } catch (Exception e) {
+        } catch (StorageClientException e) {
             throw new IOException("Failed to upload file");
         }
 
@@ -585,9 +586,9 @@ public class ContractStorageService {
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
-        boolean bucketFileDeleted = storageClient.deleteItem(contract.getId(), attachmentId);
-
-        if (!bucketFileDeleted) {
+        try {
+            storageClient.deleteItem(contract.getId(), attachmentId);
+        } catch (StorageClientException e) {
             throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in the storage.");
         }
 
@@ -609,7 +610,8 @@ public class ContractStorageService {
      * @param attachmentId reference to the attachment
      * @return attachment as byte array
      */
-    public byte[] getContractAttachment(String contractId, String attachmentId) throws IOException {
+    public byte[] getContractAttachment(String contractId, String attachmentId)
+        throws IOException, StorageClientException {
         ContractTemplate contract = this.loadContract(contractId);
         if (!contract.getAttachments().contains(attachmentId)) {
             throw new ResponseStatusException(NOT_FOUND, "No attachment with this ID was found.");
