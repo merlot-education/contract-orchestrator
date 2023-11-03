@@ -586,9 +586,9 @@ public class ContractStorageService {
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
-        try{
+        try {
             storageClient.deleteItem(contract.getId(), attachmentId);
-        } catch (StorageClientException e){
+        } catch (StorageClientException e) {
             throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in the storage.");
         }
 

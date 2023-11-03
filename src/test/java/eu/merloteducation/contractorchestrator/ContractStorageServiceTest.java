@@ -522,7 +522,6 @@ class ContractStorageServiceTest {
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
                 .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
 
-        lenient().doNothing().when(storageClient).deleteItem(any(), any());
         lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 

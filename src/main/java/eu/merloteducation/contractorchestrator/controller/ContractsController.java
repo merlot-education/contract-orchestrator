@@ -171,7 +171,7 @@ public class ContractsController {
         byte[] attachment;
         try {
             attachment = contractStorageService.getContractAttachment(contractId, attachmentName);
-        } catch(IOException | StorageClientException e) {
+        } catch (IOException | StorageClientException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load attachment.");
         }
 
