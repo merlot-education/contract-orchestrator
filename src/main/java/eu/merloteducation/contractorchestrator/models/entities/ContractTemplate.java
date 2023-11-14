@@ -58,11 +58,11 @@ public abstract class ContractTemplate {
     @JoinColumn(name = "provisioning_id")
     private ServiceContractProvisioning serviceContractProvisioning;
 
-    private String consumerSignerUserId;
+    private String consumerSignerUserName;
 
     private String consumerSignature;
 
-    private String providerSignerUserId;
+    private String providerSignerUserName;
 
     private String providerSignature;
 
@@ -89,9 +89,9 @@ public abstract class ContractTemplate {
         this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.attachments = new HashSet<>(template.getAttachments());
-        this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
+        this.providerSignerUserName = regenerate ? null : template.getProviderSignerUserName();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
-        this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
+        this.consumerSignerUserName = regenerate ? null : template.getConsumerSignerUserName();
         this.consumerSignature = regenerate ? null : template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
@@ -100,12 +100,12 @@ public abstract class ContractTemplate {
         if (state.checkTransitionAllowed(targetState)) {
             if ((targetState == ContractState.SIGNED_CONSUMER &&
                     (StringUtil.isNullOrEmpty(runtimeSelection)
-                            || StringUtil.isNullOrEmpty(consumerSignerUserId)
+                            || StringUtil.isNullOrEmpty(consumerSignerUserName)
                             || StringUtil.isNullOrEmpty(consumerSignature)
                             || !consumerTncAccepted
                             || (!attachments.isEmpty() && !consumerAttachmentsAccepted)))
                     || (targetState == ContractState.RELEASED &&
-                            (StringUtil.isNullOrEmpty(providerSignerUserId)
+                            (StringUtil.isNullOrEmpty(providerSignerUserName)
                                     || StringUtil.isNullOrEmpty(providerSignature) ||
                                     !providerTncAccepted))) {
                 throw new IllegalStateException(

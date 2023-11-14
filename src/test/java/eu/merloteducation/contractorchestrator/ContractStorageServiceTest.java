@@ -864,7 +864,7 @@ class ContractStorageServiceTest {
                                                  String activeRoleOrgaId) {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(contractId,
-                        state, activeRoleOrgaId, "userId", "authToken"));
+                        state, activeRoleOrgaId, "userId", "User Name","authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -930,7 +930,7 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
-                ContractState.SIGNED_CONSUMER, consumer, "userId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
         assertEquals(ContractState.SIGNED_CONSUMER.name(), result.getDetails().getState());
     }
 
@@ -960,9 +960,9 @@ class ContractStorageServiceTest {
                 consumer);
 
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
-                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
         assertEquals(ContractState.SIGNED_CONSUMER.name(), editedContract.getDetails().getState());
-        assertEquals("consumerUserId", editedContract.getDetails().getConsumerSignerUser());
+        assertEquals("consumerUserId", editedContract.getDetails().getConsumerSignature());
 
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
@@ -991,9 +991,9 @@ class ContractStorageServiceTest {
                 provider);
 
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
-                ContractState.RELEASED, provider, "providerUserId", "authToken");
+                ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken");
         assertEquals(ContractState.RELEASED.name(), editedContract.getDetails().getState());
-        assertEquals("providerUserId", editedContract.getDetails().getProviderSignerUser());
+        assertEquals("providerUserId", editedContract.getDetails().getProviderSignature());
     }
 
     @Test
@@ -1004,7 +1004,7 @@ class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, "99", "consumerUserId", "authToken"));
+                        ContractState.SIGNED_CONSUMER, "99", "consumerUserId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1018,7 +1018,7 @@ class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.SIGNED_CONSUMER, provider, "providerUserId", "authToken"));
+                        ContractState.SIGNED_CONSUMER, provider, "providerUserId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1039,11 +1039,11 @@ class ContractStorageServiceTest {
         provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);
         contractStorageService.transitionContractTemplateState(templateId,
-                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(templateId,
-                        ContractState.RELEASED, consumer, "consumerUserId", "authToken"));
+                        ContractState.RELEASED, consumer, "consumerUserId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1067,7 +1067,7 @@ class ContractStorageServiceTest {
                 consumer);
 
         SaasContractDto result = (SaasContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
-                ContractState.SIGNED_CONSUMER, consumer, "userId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
 
         result.getNegotiation().setProviderTncAccepted(true);
 
@@ -1078,7 +1078,7 @@ class ContractStorageServiceTest {
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
 
         result = (SaasContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.RELEASED, provider, "userId", "authToken");
+                ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
         assertTransitionThrowsForbidden(result.getDetails().getId(), ContractState.REVOKED, provider);
     }
@@ -1105,7 +1105,7 @@ class ContractStorageServiceTest {
                         consumer);
 
         result = (CooperationContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.SIGNED_CONSUMER, consumer, "userId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
 
         result.getNegotiation().setProviderTncAccepted(true);
 
@@ -1116,7 +1116,7 @@ class ContractStorageServiceTest {
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
 
         result = (CooperationContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.RELEASED, provider, "userId", "authToken");
+                ContractState.RELEASED, provider, "userId", "User Name","authToken");
 
         assertTransitionThrowsForbidden(result.getDetails().getId(), ContractState.REVOKED, provider);
     }
@@ -1132,10 +1132,10 @@ class ContractStorageServiceTest {
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.DELETED, consumer, "userId", "authToken");
+                ContractState.DELETED, consumer, "userId", "User Name", "authToken");
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(template.getId(),
-                ContractState.PURGED, provider, "userId", "authToken");
+                ContractState.PURGED, provider, "userId", "User Name", "authToken");
 
         assertNull(contractTemplateRepository.findById(result.getDetails().getId()).orElse(null));
     }
@@ -1153,7 +1153,7 @@ class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () ->contractStorageService.transitionContractTemplateState(contractId,
-                        ContractState.PURGED, provider, "userId", "authToken"));
+                        ContractState.PURGED, provider, "userId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1169,11 +1169,11 @@ class ContractStorageServiceTest {
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
-                .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId", "authToken");
+                .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId", "User Name", "authToken");
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () ->contractStorageService.transitionContractTemplateState(contractId,
-                        ContractState.PURGED, consumer, "userId", "authToken"));
+                        ContractState.PURGED, consumer, "userId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1215,11 +1215,11 @@ class ContractStorageServiceTest {
         assertEquals(editedContract.getProvisioning().getSelectedConsumerConnectorId(), result.getProvisioning().getSelectedConsumerConnectorId());
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.SIGNED_CONSUMER, consumer, "userId", "authToken");
+                ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
 
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUser()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUserName()));
         assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignature()));
-        assertTrue(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUser()));
+        assertTrue(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUserName()));
         assertTrue(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignature()));
 
         result.getNegotiation().setProviderTncAccepted(true);
@@ -1238,12 +1238,12 @@ class ContractStorageServiceTest {
         assertEquals(result.getProvisioning().getSelectedProviderConnectorId(), result2.getProvisioning().getSelectedProviderConnectorId());
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.RELEASED, provider, "userId", "authToken");
+                ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
         assertNotNull(result.getProvisioning().getValidUntil());
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUser()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUserName()));
         assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignature()));
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUser()));
+        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUserName()));
         assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignature()));
 
     }
@@ -1253,15 +1253,16 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
-        DataDeliveryContractDto template = (DataDeliveryContractDto) this.contractStorageService.transitionContractTemplateState(dataDeliveryContract.getId(), ContractState.DELETED, consumer, "1234", "authToken");
+        DataDeliveryContractDto template = (DataDeliveryContractDto) this.contractStorageService
+                .transitionContractTemplateState(dataDeliveryContract.getId(), ContractState.DELETED, consumer, "1234", "User Name", "authToken");
         template = (DataDeliveryContractDto) this.contractStorageService.regenerateContract(dataDeliveryContract.getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), dataDeliveryContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUser());
+        assertNull(template.getDetails().getConsumerSignerUserName());
         assertNull(template.getDetails().getConsumerSignature());
         assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUser());
+        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test
@@ -1269,15 +1270,16 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = saasContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
-        SaasContractDto template = (SaasContractDto) this.contractStorageService.transitionContractTemplateState(saasContract.getId(), ContractState.DELETED, consumer, "1234", "authToken");
+        SaasContractDto template = (SaasContractDto) this.contractStorageService
+                .transitionContractTemplateState(saasContract.getId(), ContractState.DELETED, consumer, "1234", "User Name", "authToken");
         template = (SaasContractDto) this.contractStorageService.regenerateContract(saasContract.getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), saasContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUser());
+        assertNull(template.getDetails().getConsumerSignerUserName());
         assertNull(template.getDetails().getConsumerSignature());
         assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUser());
+        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test
@@ -1286,15 +1288,15 @@ class ContractStorageServiceTest {
         String consumer = coopContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         CooperationContractDto template = (CooperationContractDto) this.contractStorageService.transitionContractTemplateState(coopContract.getId(),
-                ContractState.DELETED, consumer, "1234", "authToken");
+                ContractState.DELETED, consumer, "1234", "User Name", "authToken");
         template = (CooperationContractDto) this.contractStorageService.regenerateContract(template.getDetails().getId(), "authToken");
 
         assertNotEquals(template.getDetails().getId(), coopContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUser());
+        assertNull(template.getDetails().getConsumerSignerUserName());
         assertNull(template.getDetails().getConsumerSignature());
         assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUser());
+        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test

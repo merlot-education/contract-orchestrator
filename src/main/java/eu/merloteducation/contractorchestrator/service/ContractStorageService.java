@@ -451,6 +451,7 @@ public class ContractStorageService {
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
                                                        String userId,
+                                                       String userName,
                                                        String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
@@ -467,7 +468,7 @@ public class ContractStorageService {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setConsumerSignerUserId(userId);
+            contract.setConsumerSignerUserName(userName);
             contract.setConsumerSignature(contractSignerService.generateContractSignature(contract, userId));
         }
 
@@ -475,7 +476,7 @@ public class ContractStorageService {
             if (!isProvider) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setProviderSignerUserId(userId);
+            contract.setProviderSignerUserName(userName);
             contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
             contract.getServiceContractProvisioning().setValidUntil(
                     this.computeValidityTimestamp(contract.getRuntimeSelection()));

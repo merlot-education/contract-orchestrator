@@ -111,9 +111,10 @@ public class ContractsController {
         JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
         Jwt jwt = (Jwt) authenticationToken.getCredentials();
         String userId = (String) jwt.getClaims().get("sub");
+        String userName = (String) jwt.getClaims().get("name");
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
-                activeRole.getOrganizationId(), userId, authToken);
+                activeRole.getOrganizationId(), userId, userName, authToken);
     }
 
 

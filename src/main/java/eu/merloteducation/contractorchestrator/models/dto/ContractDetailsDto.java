@@ -27,11 +27,11 @@ public class ContractDetailsDto {
 
     private List<ContractTncDto> termsAndConditions;
 
-    private String providerSignerUser;
+    private String providerSignerUserName;
 
     private String providerSignature;
 
-    private String consumerSignerUser;
+    private String consumerSignerUserName;
 
     private String consumerSignature;
 }
