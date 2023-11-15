@@ -49,10 +49,6 @@ public interface ContractMapper {
     @Mapping(target = "details.consumerLegalName",
             source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
     @Mapping(target = "details.state", source = "contract.state")
-    @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignerUserName")
-    @Mapping(target = "details.providerSignature", source = "contract.providerSignature")
-    @Mapping(target = "details.consumerSignerUserName", source = "contract.consumerSignerUserName")
-    @Mapping(target = "details.consumerSignature", source = "contract.consumerSignature")
     @Mapping(target = "details.termsAndConditions", source = "contract.termsAndConditions")
     @Mapping(target = "negotiation.runtimeSelection", source = "contract.runtimeSelection", defaultValue = "")
     @Mapping(target = "negotiation.additionalAgreements", source = "contract.additionalAgreements")

@@ -468,16 +468,18 @@ public class ContractStorageService {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setConsumerSignerUserName(userName);
-            contract.setConsumerSignature(contractSignerService.generateContractSignature(contract, userId));
+            contract.setConsumerSignature(new ContractSignature(
+                    contractSignerService.generateContractSignature(contract, userId),
+                    userName));
         }
 
         if (targetState == ContractState.RELEASED) {
             if (!isProvider) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setProviderSignerUserName(userName);
-            contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
+            contract.setProviderSignature(new ContractSignature(
+                    contractSignerService.generateContractSignature(contract, userId),
+                    userName));
             contract.getServiceContractProvisioning().setValidUntil(
                     this.computeValidityTimestamp(contract.getRuntimeSelection()));
         }

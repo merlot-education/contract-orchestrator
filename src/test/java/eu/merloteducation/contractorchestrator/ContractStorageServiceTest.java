@@ -962,7 +962,6 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
         assertEquals(ContractState.SIGNED_CONSUMER.name(), editedContract.getDetails().getState());
-        assertEquals("consumerUserId", editedContract.getDetails().getConsumerSignature());
 
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
@@ -993,7 +992,6 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
                 ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken");
         assertEquals(ContractState.RELEASED.name(), editedContract.getDetails().getState());
-        assertEquals("providerUserId", editedContract.getDetails().getProviderSignature());
     }
 
     @Test
@@ -1217,11 +1215,6 @@ class ContractStorageServiceTest {
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
 
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUserName()));
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignature()));
-        assertTrue(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUserName()));
-        assertTrue(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignature()));
-
         result.getNegotiation().setProviderTncAccepted(true);
         result.getProvisioning().setDataAddressType("IonosS3");
         result.getProvisioning().setDataAddressSourceBucketName("MyBucket2");
@@ -1241,10 +1234,6 @@ class ContractStorageServiceTest {
                 ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
         assertNotNull(result.getProvisioning().getValidUntil());
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignerUserName()));
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getConsumerSignature()));
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignerUserName()));
-        assertFalse(StringUtil.isNullOrEmpty(result.getDetails().getProviderSignature()));
 
     }
 
@@ -1259,10 +1248,6 @@ class ContractStorageServiceTest {
 
         assertNotEquals(template.getDetails().getId(), dataDeliveryContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUserName());
-        assertNull(template.getDetails().getConsumerSignature());
-        assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test
@@ -1276,10 +1261,6 @@ class ContractStorageServiceTest {
 
         assertNotEquals(template.getDetails().getId(), saasContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUserName());
-        assertNull(template.getDetails().getConsumerSignature());
-        assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test
@@ -1293,10 +1274,6 @@ class ContractStorageServiceTest {
 
         assertNotEquals(template.getDetails().getId(), coopContract.getId());
         assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
-        assertNull(template.getDetails().getConsumerSignerUserName());
-        assertNull(template.getDetails().getConsumerSignature());
-        assertNull(template.getDetails().getProviderSignature());
-        assertNull(template.getDetails().getProviderSignerUserName());
     }
 
     @Test
