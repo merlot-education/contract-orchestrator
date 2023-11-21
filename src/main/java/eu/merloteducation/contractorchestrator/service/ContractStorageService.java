@@ -531,7 +531,7 @@ public class ContractStorageService {
         byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
         String fileName = "Vertrag_" + contractDto.getDetails().getId().replace("Contract:", "") + ".pdf";
         try {
-            storageClient.pushItem(contractDto.getDetails().getId(), fileName, pdfBytes);
+            storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
         } catch (StorageClientException e) {
             throw new IOException("Failed to upload file");
         }
@@ -667,9 +667,12 @@ public class ContractStorageService {
         return storageClient.getItem(contract.getId(), attachmentId);
     }
 
-    public byte[] getContractPdf(String contractId)
+    public byte[] getContractPdf(String contractId, String fileName)
         throws IOException, StorageClientException {
-        String fileName = "Vertrag_" + contractId.replace("Contract:", "") + ".pdf";
-            return storageClient.getItem(contractId, fileName);
+            return storageClient.getItem(getPathToContractPdf(contractId), fileName);
+    }
+
+    private String getPathToContractPdf(String contractId){
+        return contractId + "/contractPdf";
     }
 }
