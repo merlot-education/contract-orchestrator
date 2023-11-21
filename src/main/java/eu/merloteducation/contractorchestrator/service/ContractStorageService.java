@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractPdfDto;
+import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
@@ -59,6 +61,9 @@ public class ContractStorageService {
 
     @Autowired
     private OrganizationOrchestratorClient organizationOrchestratorClient;
+
+    @Autowired
+    private PdfServiceClient pdfServiceClient;
 
     @Autowired
     private MessageQueueService messageQueueService;
@@ -265,19 +270,21 @@ public class ContractStorageService {
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
             return contractMapper.contractToContractDto(dataTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
             return contractMapper.contractToContractDto(saasTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
             return contractMapper.contractToContractDto(coopTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
     }
@@ -289,6 +296,10 @@ public class ContractStorageService {
             throw new ResponseStatusException(NOT_FOUND, CONTRACT_NOT_FOUND);
         }
         return contract;
+    }
+
+    private Map<String, String> getMapForPdfCreation(){
+        return null;
     }
 
     /**
@@ -452,7 +463,7 @@ public class ContractStorageService {
                                                        String activeRoleOrgaId,
                                                        String userId,
                                                        String userName,
-                                                       String authToken) {
+                                                       String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
@@ -503,7 +514,40 @@ public class ContractStorageService {
         // if all checks passed, save the new state of the contract
         contract = contractTemplateRepository.save(contract);
 
-        return castAndMapToContractDetailsDto(contract, authToken);
+        ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
+
+        if (targetState == ContractState.RELEASED) {
+            // if successfully released, create and save the contract pdf
+            createAndSaveContractPdf(contract, contractDto);
+        }
+
+        return contractDto;
+    }
+
+    private void createAndSaveContractPdf(ContractTemplate contract, ContractDto contractDto) throws IOException {
+
+        ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contract, contractDto);
+        byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
+        String fileName = "Vertragsdokument_" + contractDto.getDetails().getProviderLegalName() + "_" +
+            contractDto.getDetails().getConsumerLegalName() + ".pdf";
+        try {
+            storageClient.pushItem(contract.getId(), fileName.replace(" ", "_"), pdfBytes);
+        } catch (StorageClientException e) {
+            throw new IOException("Failed to upload file");
+        }
+    }
+
+    private ContractPdfDto castAndMapToContractPdfDto(ContractTemplate contract, ContractDto contractDto) {
+
+        if (contractDto instanceof DataDeliveryContractDto dataDto) {
+            return contractMapper.contractDtoToContractPdfDto(contract, dataDto);
+        } else if (contractDto instanceof SaasContractDto saasDto) {
+            return contractMapper.contractDtoToContractPdfDto(contract, saasDto);
+        } else if (contractDto instanceof CooperationContractDto coopDto) {
+            return contractMapper.contractDtoToContractPdfDto(contract, coopDto);
+        }
+
+        throw new IllegalArgumentException("Unknown contract or offering type.");
     }
 
     /**
@@ -515,7 +559,7 @@ public class ContractStorageService {
      * @param authToken    the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter, 
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter,
                                                            String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);

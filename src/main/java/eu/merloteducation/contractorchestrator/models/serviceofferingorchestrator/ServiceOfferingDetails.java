@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ServiceOfferingDetails {
+    public class ServiceOfferingDetails {
     private JsonNode metadata;
     private JsonNode selfDescription;
     private ProviderDetails providerDetails;

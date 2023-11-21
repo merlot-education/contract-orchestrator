@@ -107,7 +107,7 @@ public class ContractsController {
                                                   @PathVariable(value = "status") ContractState status,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken,
-                                                  Principal principal) {
+                                                  Principal principal) throws IOException {
         JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
         Jwt jwt = (Jwt) authenticationToken.getCredentials();
         String userId = (String) jwt.getClaims().get("sub");

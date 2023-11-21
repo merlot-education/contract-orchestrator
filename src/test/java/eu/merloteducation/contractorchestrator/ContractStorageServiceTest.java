@@ -17,7 +17,6 @@ import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepo
 import eu.merloteducation.contractorchestrator.service.*;
 import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
-import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.text.StringSubstitutor;
@@ -47,7 +46,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
-
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -76,6 +75,9 @@ class ContractStorageServiceTest {
 
     @Mock
     private StorageClient storageClient;
+
+    @Mock
+    private PdfServiceClient pdfServiceClient;
 
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
@@ -389,6 +391,7 @@ class ContractStorageServiceTest {
     public void setUp() {
         ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
         ReflectionTestUtils.setField(contractStorageService, "storageClient", storageClient);
+        ReflectionTestUtils.setField(contractStorageService, "pdfServiceClient", pdfServiceClient);
         ReflectionTestUtils.setField(contractStorageService, "contractMapper", contractMapper);
         ReflectionTestUtils.setField(contractStorageService, "objectMapper", objectMapper);
         ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
@@ -870,7 +873,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionDataDeliveryConsumerIncompleteToComplete() throws JSONException {
+    void transitionDataDeliveryConsumerIncompleteToComplete() throws JSONException, IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
@@ -936,7 +939,8 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionDataDeliveryProviderIncompleteToComplete() throws JSONException {
+    void transitionDataDeliveryProviderIncompleteToComplete() throws JSONException, IOException,
+        StorageClientException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
@@ -992,6 +996,9 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
                 ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken");
         assertEquals(ContractState.RELEASED.name(), editedContract.getDetails().getState());
+
+        verify(pdfServiceClient).getPdfContract(any());
+        verify(storageClient).pushItem(eq(editedContract.getDetails().getId()), anyString(), any());
     }
 
     @Test
@@ -1022,7 +1029,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionContractConsumerNotAllowed() {
+    void transitionContractConsumerNotAllowed() throws IOException {
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
 
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
@@ -1047,7 +1054,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionSaasContractRevokedNotAllowed() throws JSONException {
+    void transitionSaasContractRevokedNotAllowed() throws JSONException, IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = saasContract.getConsumerId().replace("Participant:", "");
         String provider = saasContract.getProviderId().replace("Participant:", "");
@@ -1083,7 +1090,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionCooperationContractRevokedNotAllowed() throws JSONException {
+    void transitionCooperationContractRevokedNotAllowed() throws JSONException, IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = coopContract.getConsumerId().replace("Participant:", "");
         String provider = coopContract.getProviderId().replace("Participant:", "");
@@ -1121,7 +1128,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionDataDeliveryContractPurge() {
+    void transitionDataDeliveryContractPurge() throws IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
@@ -1157,7 +1164,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void transitionDataDeliveryContractPurgeWrongRole() {
+    void transitionDataDeliveryContractPurgeWrongRole() throws IOException {
         String contractId = dataDeliveryContract.getId();
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
@@ -1178,7 +1185,7 @@ class ContractStorageServiceTest {
 
     @Test
     @Transactional
-    void updateDataDeliveryFieldsAfterTransition() throws JSONException {
+    void updateDataDeliveryFieldsAfterTransition() throws JSONException, IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
@@ -1238,7 +1245,7 @@ class ContractStorageServiceTest {
     }
 
     @Test
-    void regenerateDataDeliveryContractValid() {
+    void regenerateDataDeliveryContractValid() throws IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
@@ -1251,7 +1258,7 @@ class ContractStorageServiceTest {
     }
 
     @Test
-    void regenerateSaasContractValid() {
+    void regenerateSaasContractValid() throws IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = saasContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
@@ -1264,7 +1271,7 @@ class ContractStorageServiceTest {
     }
 
     @Test
-    void regenerateCooperationContractValid() {
+    void regenerateCooperationContractValid() throws IOException {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = coopContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);

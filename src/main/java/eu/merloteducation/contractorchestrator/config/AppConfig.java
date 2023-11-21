@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator.config;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.service.EdcClient;
 import eu.merloteducation.contractorchestrator.service.OrganizationOrchestratorClient;
+import eu.merloteducation.contractorchestrator.service.PdfServiceClient;
 import eu.merloteducation.contractorchestrator.service.ServiceOfferingOrchestratorClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,9 @@ public class AppConfig {
 
     @Value("${organizations-orchestrator.base-uri}")
     private String organizationsOrchestratorBaseUri;
+
+    @Value("${pdf-service.base-uri}")
+    private String pdfServiceBaseUri;
 
     @Bean
     public ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient() {
@@ -54,5 +58,16 @@ public class AppConfig {
                 .builder(WebClientAdapter.forClient(webClient))
                 .build();
         return httpServiceProxyFactory.createClient(EdcClient.class);
+    }
+
+    @Bean
+    public PdfServiceClient pdfServiceClient() {
+        WebClient webClient = WebClient.builder()
+            .baseUrl(pdfServiceBaseUri)
+            .build();
+        HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
+            .builder(WebClientAdapter.forClient(webClient))
+            .build();
+        return httpServiceProxyFactory.createClient(PdfServiceClient.class);
     }
 }
