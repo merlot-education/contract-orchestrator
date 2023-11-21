@@ -64,7 +64,7 @@ organizations-orchestrator:
   base-uri: http://localhost:8082/api
 
 pdf-service:
-  base-uri: https://localhost:7131/PdfProcessor/
+  base-uri: http://localhost:5154
 
 management:
   endpoints:
