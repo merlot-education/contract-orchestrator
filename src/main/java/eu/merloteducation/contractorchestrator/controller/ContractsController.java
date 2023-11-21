@@ -232,17 +232,16 @@ public class ContractsController {
     @GetMapping(value = "/contract/{contractId}/contractPdf")
     @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
     public ResponseEntity<Resource> getContractPdf(@PathVariable(value = "contractId") String contractId) {
-        String fileName = "Vertrag_" + contractId.replace("Contract:", "") + ".pdf";
         byte[] contractPdf;
         try {
-            contractPdf = contractStorageService.getContractPdf(contractId, fileName);
+            contractPdf = contractStorageService.getContractPdf(contractId);
         } catch (IOException | StorageClientException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load contract pdf.");
         }
 
         ByteArrayResource resource = new ByteArrayResource(contractPdf);
         HttpHeaders headers = new HttpHeaders(); headers.add(HttpHeaders.CONTENT_DISPOSITION,
-            "contractPdf; filename=" + fileName);
+            "contractPdf; filename=Vertrag_" + contractId.replace("Contract:", "") + ".pdf");
         return ResponseEntity.ok()
             .headers(headers)
             .contentLength(contractPdf.length)

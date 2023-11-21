@@ -998,7 +998,7 @@ class ContractStorageServiceTest {
         assertEquals(ContractState.RELEASED.name(), editedContract.getDetails().getState());
 
         verify(pdfServiceClient).getPdfContract(any());
-        verify(storageClient).pushItem(eq(editedContract.getDetails().getId()), anyString(), any());
+        verify(storageClient).pushItem(eq(editedContract.getDetails().getId() + "/contractPdf"), anyString(), any());
     }
 
     @Test

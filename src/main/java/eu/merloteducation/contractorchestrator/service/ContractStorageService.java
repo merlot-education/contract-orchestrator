@@ -529,7 +529,7 @@ public class ContractStorageService {
 
         ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
         byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
-        String fileName = "Vertrag_" + contractDto.getDetails().getId().replace("Contract:", "") + ".pdf";
+        String fileName = contractDto.getDetails().getId() + ".pdf";
         try {
             storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
         } catch (StorageClientException e) {
@@ -667,9 +667,9 @@ public class ContractStorageService {
         return storageClient.getItem(contract.getId(), attachmentId);
     }
 
-    public byte[] getContractPdf(String contractId, String fileName)
+    public byte[] getContractPdf(String contractId)
         throws IOException, StorageClientException {
-            return storageClient.getItem(getPathToContractPdf(contractId), fileName);
+        return storageClient.getItem(getPathToContractPdf(contractId), contractId + ".pdf");
     }
 
     private String getPathToContractPdf(String contractId){
