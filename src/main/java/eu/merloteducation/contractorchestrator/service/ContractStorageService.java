@@ -512,15 +512,15 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
-        // if all checks passed, save the new state of the contract
-        contract = contractTemplateRepository.save(contract);
-
+        // generate contract pdf
         ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
-
         if (targetState == ContractState.RELEASED) {
             // if successfully released, create and save the contract pdf
             saveContractPdf(contractDto);
         }
+
+        // if all checks passed, save the new state of the contract
+        contractTemplateRepository.save(contract);
 
         return contractDto;
     }
