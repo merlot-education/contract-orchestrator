@@ -299,10 +299,6 @@ public class ContractStorageService {
         return contract;
     }
 
-    private Map<String, String> getMapForPdfCreation(){
-        return null;
-    }
-
     /**
      * Creates a new contract in the database based on the fields in the contractCreateRequest.
      * This is called immediately when a user clicks on the "Buchen" button in the frontend, hence no fields

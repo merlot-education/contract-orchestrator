@@ -17,7 +17,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
