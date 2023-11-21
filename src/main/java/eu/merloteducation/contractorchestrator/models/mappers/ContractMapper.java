@@ -26,7 +26,6 @@ import java.util.Map;
 public interface ContractMapper {
 
     default String map(OffsetDateTime offsetDateTime) {
-
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
@@ -51,6 +50,12 @@ public interface ContractMapper {
     @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
     @Mapping(target = "details.consumerLegalAddress", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalAddress")
     @Mapping(target = "details.state", source = "contract.state")
+    @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignature.signerName")
+    @Mapping(target = "details.providerSignature", source = "contract.providerSignature.signature")
+    @Mapping(target = "details.providerSignatureDate", source = "contract.providerSignature.signatureDate")
+    @Mapping(target = "details.consumerSignerUserName", source = "contract.providerSignature.signerName")
+    @Mapping(target = "details.consumerSignature", source = "contract.consumerSignature.signature")
+    @Mapping(target = "details.consumerSignatureDate", source = "contract.consumerSignature.signatureDate")
     @Mapping(target = "details.termsAndConditions", source = "contract.termsAndConditions")
     @Mapping(target = "negotiation.runtimeSelection", source = "contract.runtimeSelection", defaultValue = "")
     @Mapping(target = "negotiation.additionalAgreements", source = "contract.additionalAgreements")

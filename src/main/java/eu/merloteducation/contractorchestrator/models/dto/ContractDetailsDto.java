@@ -31,4 +31,16 @@ public class ContractDetailsDto {
     private String state;
 
     private List<ContractTncDto> termsAndConditions;
+
+    private String consumerSignerUserName;
+
+    private String consumerSignature;
+
+    private String consumerSignatureDate;
+
+    private String providerSignerUserName;
+
+    private String providerSignature;
+
+    private String providerSignatureDate;
 }
