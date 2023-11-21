@@ -97,35 +97,35 @@ public interface ContractMapper {
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
     @Mapping(target = "serviceId", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"@id\").textValue())")
-    @Mapping(target = "serviceName", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"name\").path(\"@value\").textValue())")
+    @Mapping(target = "serviceName", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"gax-trust-framework:name\").path(\"@value\").textValue())")
     @Mapping(target = "serviceType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"@type\").textValue())")
     @Mapping(target = "serviceDescription", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"dct:description\").path(\"@value\").textValue())")
     @Mapping(target = "serviceExampleCosts", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"merlot:exampleCosts\").path(\"@value\").textValue())")
     @Mapping(target = "providerLegalName", source = "contractDto.details.providerLegalName")
     @Mapping(target = "providerLegalAddress", source = "contractDto.details.providerLegalAddress", qualifiedByName = "legalAddress")
-    @Mapping(target = "providerSignerUser", source = "contract.providerSignature.signerName")
-    @Mapping(target = "providerSignature", source = "contract.providerSignature.signature")
-    @Mapping(target = "providerSignatureTimestamp", expression = "java(contract.getProviderSignature().getSignatureDate().toString())")
+    @Mapping(target = "providerSignerUser", source = "contractDto.details.providerSignerUserName")
+    @Mapping(target = "providerSignature", source = "contractDto.details.providerSignature")
+    @Mapping(target = "providerSignatureTimestamp", source = "contractDto.details.providerSignatureDate")
     @Mapping(target = "consumerLegalName", source = "contractDto.details.consumerLegalName")
     @Mapping(target = "consumerLegalAddress", source = "contractDto.details.consumerLegalAddress", qualifiedByName = "legalAddress")
-    @Mapping(target = "consumerSignerUser", source = "contract.consumerSignature.signerName")
-    @Mapping(target = "consumerSignature", source = "contract.consumerSignature.signature")
-    @Mapping(target = "consumerSignatureTimestamp", expression = "java(contract.getConsumerSignature().getSignatureDate().toString())")
-    ContractPdfDto contractDtoToContractPdfDto(ContractTemplate contract, ContractDto contractDto);
+    @Mapping(target = "consumerSignerUser", source = "contractDto.details.consumerSignerUserName")
+    @Mapping(target = "consumerSignature", source = "contractDto.details.consumerSignature")
+    @Mapping(target = "consumerSignatureTimestamp", source = "contractDto.details.consumerSignatureDate")
+    ContractPdfDto contractDtoToContractPdfDto(ContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractDataTransferCount", source = "contractDto.negotiation.exchangeCountSelection")
-    @Mapping(target = "serviceDataAccessType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"dataAccessType\").path(\"value\").textValue())")
-    @Mapping(target = "serviceDataTransferType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"dataTransferType\").path(\"value\").textValue())")
-    ContractPdfDto contractDtoToContractPdfDto(ContractTemplate contract, DataDeliveryContractDto contractDto);
+    @Mapping(target = "serviceDataAccessType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"merlot:dataAccessType\").path(\"@value\").textValue())")
+    @Mapping(target = "serviceDataTransferType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"merlot:dataTransferType\").path(\"@value\").textValue())")
+    ContractPdfDto contractDtoToContractPdfDto(DataDeliveryContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractUserCount", source = "contractDto.negotiation.userCountSelection")
-    @Mapping(target = "serviceHardwareRequirements", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"hardwareRequirements\").path(\"value\").textValue())")
-    ContractPdfDto contractDtoToContractPdfDto(ContractTemplate contract, SaasContractDto contractDto);
+    @Mapping(target = "serviceHardwareRequirements", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"merlot:hardwareRequirements\").path(\"@value\").textValue())")
+    ContractPdfDto contractDtoToContractPdfDto(SaasContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
-    ContractPdfDto contractDtoToContractPdfDto(ContractTemplate contract, CooperationContractDto contractDto);
+    ContractPdfDto contractDtoToContractPdfDto(CooperationContractDto contractDto);
 
     @Named("contractTnc")
     default List<Map<String, String>> tncMapper(List<ContractTncDto> termsAndConditions) {
@@ -142,10 +142,10 @@ public interface ContractMapper {
     default Map<String, String> legalAddressMapper(JsonNode legalAddress) {
 
         Map<String, String> map = new HashMap<>();
-        map.put("countryName", legalAddress.path("countryName").path("value").textValue());
-        map.put("streetAddress", legalAddress.path("streetAddress").path("value").textValue());
-        map.put("locality", legalAddress.path("locality").path("value").textValue());
-        map.put("postalCode", legalAddress.path("postalCode").path("value").textValue());
+        map.put("countryName", legalAddress.path("vcard:country-name").path("@value").textValue());
+        map.put("streetAddress", legalAddress.path("vcard:street-address").path("@value").textValue());
+        map.put("locality", legalAddress.path("vcard:locality").path("@value").textValue());
+        map.put("postalCode", legalAddress.path("vcard:postal-code").path("@value").textValue());
 
         return map;
     }

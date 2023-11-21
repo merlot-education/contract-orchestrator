@@ -518,33 +518,32 @@ public class ContractStorageService {
 
         if (targetState == ContractState.RELEASED) {
             // if successfully released, create and save the contract pdf
-            createAndSaveContractPdf(contract, contractDto);
+            saveContractPdf(contractDto);
         }
 
         return contractDto;
     }
 
-    private void createAndSaveContractPdf(ContractTemplate contract, ContractDto contractDto) throws IOException {
+    private void saveContractPdf(ContractDto contractDto) throws IOException {
 
-        ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contract, contractDto);
+        ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
         byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
-        String fileName = "Vertragsdokument_" + contractDto.getDetails().getProviderLegalName() + "_" +
-            contractDto.getDetails().getConsumerLegalName() + ".pdf";
+        String fileName = "Vertrag_" + contractDto.getDetails().getId().replace("Contract:", "") + ".pdf";
         try {
-            storageClient.pushItem(contract.getId(), fileName.replace(" ", "_"), pdfBytes);
+            storageClient.pushItem(contractDto.getDetails().getId(), fileName, pdfBytes);
         } catch (StorageClientException e) {
             throw new IOException("Failed to upload file");
         }
     }
 
-    private ContractPdfDto castAndMapToContractPdfDto(ContractTemplate contract, ContractDto contractDto) {
+    private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
 
         if (contractDto instanceof DataDeliveryContractDto dataDto) {
-            return contractMapper.contractDtoToContractPdfDto(contract, dataDto);
+            return contractMapper.contractDtoToContractPdfDto(dataDto);
         } else if (contractDto instanceof SaasContractDto saasDto) {
-            return contractMapper.contractDtoToContractPdfDto(contract, saasDto);
+            return contractMapper.contractDtoToContractPdfDto(saasDto);
         } else if (contractDto instanceof CooperationContractDto coopDto) {
-            return contractMapper.contractDtoToContractPdfDto(contract, coopDto);
+            return contractMapper.contractDtoToContractPdfDto(coopDto);
         }
 
         throw new IllegalArgumentException("Unknown contract or offering type.");
@@ -665,5 +664,11 @@ public class ContractStorageService {
         }
 
         return storageClient.getItem(contract.getId(), attachmentId);
+    }
+
+    public byte[] getContractPdf(String contractId)
+        throws IOException, StorageClientException {
+        String fileName = "Vertrag_" + contractId.replace("Contract:", "") + ".pdf";
+            return storageClient.getItem(contractId, fileName);
     }
 }

@@ -223,4 +223,32 @@ public class ContractsController {
         return contractStorageService.getContractDetails(contractId, authToken);
     }
 
+    /**
+     * Given a contract, provide the contract pdf as download
+     *
+     * @param contractId id of contract template to add an attachment to
+     * @return contractPdf file
+     */
+    @GetMapping(value = "/contract/{contractId}/contractPdf")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    public ResponseEntity<Resource> getContractPdf(@PathVariable(value = "contractId") String contractId) {
+        byte[] contractPdf;
+        try {
+            contractPdf = contractStorageService.getContractPdf(contractId);
+        } catch (IOException | StorageClientException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to load contract pdf.");
+        }
+
+        String fileName = "Vertrag_" + contractId.replace("Contract:", "") + ".pdf";
+
+        ByteArrayResource resource = new ByteArrayResource(contractPdf);
+        HttpHeaders headers = new HttpHeaders(); headers.add(HttpHeaders.CONTENT_DISPOSITION,
+            "contractPdf; filename=" + fileName);
+        return ResponseEntity.ok()
+            .headers(headers)
+            .contentLength(contractPdf.length)
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(resource);
+    }
+
 }
