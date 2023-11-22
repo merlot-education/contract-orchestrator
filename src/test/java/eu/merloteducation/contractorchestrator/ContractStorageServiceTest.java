@@ -867,7 +867,7 @@ class ContractStorageServiceTest {
                                                  String activeRoleOrgaId) {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.transitionContractTemplateState(contractId,
-                        state, activeRoleOrgaId, "userId", "User Name","authToken"));
+                        state, activeRoleOrgaId, "userId", "User Name", "authToken"));
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
@@ -1121,7 +1121,7 @@ class ContractStorageServiceTest {
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
 
         result = (CooperationContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
-                ContractState.RELEASED, provider, "userId", "User Name","authToken");
+                ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
         assertTransitionThrowsForbidden(result.getDetails().getId(), ContractState.REVOKED, provider);
     }
