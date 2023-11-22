@@ -63,6 +63,9 @@ serviceoffering-orchestrator:
 organizations-orchestrator:
   base-uri: http://localhost:8082/api
 
+pdf-service:
+  base-uri: http://localhost:5154
+
 management:
   endpoints:
     enabled-by-default: false

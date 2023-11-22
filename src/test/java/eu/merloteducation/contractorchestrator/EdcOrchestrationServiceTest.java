@@ -87,10 +87,6 @@ class EdcOrchestrationServiceTest {
         validPushContract.getDetails().setId("validPushContract");
         validPushContract.getDetails().setConsumerId("Participant:10");
         validPushContract.getDetails().setProviderId("Participant:20");
-        validPushContract.getDetails().setConsumerSignature("1234");
-        validPushContract.getDetails().setConsumerSignerUser("1234");
-        validPushContract.getDetails().setProviderSignature("2345");
-        validPushContract.getDetails().setProviderSignerUser("2345");
         validPushContract.getDetails().setState("RELEASED");
         validPushContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPushContract.getProvisioning().setDataAddressType("IonosS3");
@@ -126,10 +122,6 @@ class EdcOrchestrationServiceTest {
         validPullContract.getDetails().setId("validPullContract");
         validPullContract.getDetails().setConsumerId("Participant:10");
         validPullContract.getDetails().setProviderId("Participant:20");
-        validPullContract.getDetails().setConsumerSignature("1234");
-        validPullContract.getDetails().setConsumerSignerUser("1234");
-        validPullContract.getDetails().setProviderSignature("2345");
-        validPullContract.getDetails().setProviderSignerUser("2345");
         validPullContract.getDetails().setState("RELEASED");
         validPullContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPullContract.getProvisioning().setDataAddressType("IonosS3");

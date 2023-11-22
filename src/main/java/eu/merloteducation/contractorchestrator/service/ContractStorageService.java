@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
 import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
+import eu.merloteducation.contractorchestrator.models.dto.ContractPdfDto;
+import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
@@ -25,6 +27,7 @@ import org.json.JSONException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -59,6 +62,9 @@ public class ContractStorageService {
 
     @Autowired
     private OrganizationOrchestratorClient organizationOrchestratorClient;
+
+    @Autowired
+    private PdfServiceClient pdfServiceClient;
 
     @Autowired
     private MessageQueueService messageQueueService;
@@ -265,19 +271,21 @@ public class ContractStorageService {
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
+        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of(AUTHORIZATION, authToken));
         OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
             return contractMapper.contractToContractDto(dataTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
             return contractMapper.contractToContractDto(saasTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
             return contractMapper.contractToContractDto(coopTemplate,
-                    consumerDetails, offeringDetails);
+                providerDetails, consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
     }
@@ -451,7 +459,8 @@ public class ContractStorageService {
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
                                                        String userId,
-                                                       String authToken) {
+                                                       String userName,
+                                                       String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
@@ -467,16 +476,18 @@ public class ContractStorageService {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setConsumerSignerUserId(userId);
-            contract.setConsumerSignature(contractSignerService.generateContractSignature(contract, userId));
+            contract.setConsumerSignature(new ContractSignature(
+                    contractSignerService.generateContractSignature(contract, userId),
+                    userName));
         }
 
         if (targetState == ContractState.RELEASED) {
             if (!isProvider) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setProviderSignerUserId(userId);
-            contract.setProviderSignature(contractSignerService.generateContractSignature(contract, userId));
+            contract.setProviderSignature(new ContractSignature(
+                    contractSignerService.generateContractSignature(contract, userId),
+                    userName));
             contract.getServiceContractProvisioning().setValidUntil(
                     this.computeValidityTimestamp(contract.getRuntimeSelection()));
         }
@@ -497,10 +508,42 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
-        // if all checks passed, save the new state of the contract
-        contract = contractTemplateRepository.save(contract);
+        // generate contract pdf
+        ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
+        if (targetState == ContractState.RELEASED) {
+            // if successfully released, create and save the contract pdf
+            saveContractPdf(contractDto);
+        }
 
-        return castAndMapToContractDetailsDto(contract, authToken);
+        // if all checks passed, save the new state of the contract
+        contractTemplateRepository.save(contract);
+
+        return contractDto;
+    }
+
+    private void saveContractPdf(ContractDto contractDto) throws IOException {
+
+        ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
+        byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
+        String fileName = contractDto.getDetails().getId() + ".pdf";
+        try {
+            storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
+        } catch (StorageClientException e) {
+            throw new IOException("Failed to upload file");
+        }
+    }
+
+    private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
+
+        if (contractDto instanceof DataDeliveryContractDto dataDto) {
+            return contractMapper.contractDtoToContractPdfDto(dataDto);
+        } else if (contractDto instanceof SaasContractDto saasDto) {
+            return contractMapper.contractDtoToContractPdfDto(saasDto);
+        } else if (contractDto instanceof CooperationContractDto coopDto) {
+            return contractMapper.contractDtoToContractPdfDto(coopDto);
+        }
+
+        throw new IllegalArgumentException("Unknown contract or offering type.");
     }
 
     /**
@@ -512,7 +555,7 @@ public class ContractStorageService {
      * @param authToken    the OAuth2 Token from the user requesting this action
      * @return Page of contracts that are related to this organization
      */
-    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter, 
+    public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter,
                                                            String authToken) {
         if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
@@ -618,5 +661,14 @@ public class ContractStorageService {
         }
 
         return storageClient.getItem(contract.getId(), attachmentId);
+    }
+
+    public byte[] getContractPdf(String contractId)
+        throws IOException, StorageClientException {
+        return storageClient.getItem(getPathToContractPdf(contractId), contractId + ".pdf");
+    }
+
+    private String getPathToContractPdf(String contractId){
+        return contractId + "/contractPdf";
     }
 }

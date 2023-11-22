@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,19 +20,27 @@ public class ContractDetailsDto {
 
     private String providerLegalName;
 
+    private JsonNode providerLegalAddress;
+
     private String consumerId;
 
     private String consumerLegalName;
+
+    private JsonNode consumerLegalAddress;
 
     private String state;
 
     private List<ContractTncDto> termsAndConditions;
 
-    private String providerSignerUser;
+    private String consumerSignerUserName;
+
+    private String consumerSignature;
+
+    private String consumerSignatureDate;
+
+    private String providerSignerUserName;
 
     private String providerSignature;
 
-    private String consumerSignerUser;
-
-    private String consumerSignature;
+    private String providerSignatureDate;
 }

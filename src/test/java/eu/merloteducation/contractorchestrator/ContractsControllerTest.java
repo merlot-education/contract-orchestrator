@@ -115,6 +115,8 @@ class ContractsControllerTest {
                 .thenReturn(contractTemplatesPage);
         lenient().when(contractStorageService.getContractAttachment(any(), any()))
                 .thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
+        lenient().when(contractStorageService.getContractPdf(any()))
+                .thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
 
     @Test
@@ -519,6 +521,54 @@ class ContractsControllerTest {
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getContractPdfAsProvider() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                .get("/contract/" + template.getId() + "/contractPdf")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(csrf())
+                .with(jwt().authorities(
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                )))
+            .andDo(print())
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void getContractPdfAsConsumer() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                .get("/contract/" + template.getId() + "/contractPdf")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(csrf())
+                .with(jwt().authorities(
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                )))
+            .andDo(print())
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void getContractPdfAsOther() throws Exception
+    {
+        mvc.perform(MockMvcRequestBuilders
+                .get("/contract/" + template.getId() + "/contractPdf")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "")
+                .accept(MediaType.APPLICATION_JSON)
+                .with(csrf())
+                .with(jwt().authorities(
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_1234")
+                )))
+            .andDo(print())
+            .andExpect(status().isForbidden());
     }
 
 }

@@ -58,13 +58,13 @@ public abstract class ContractTemplate {
     @JoinColumn(name = "provisioning_id")
     private ServiceContractProvisioning serviceContractProvisioning;
 
-    private String consumerSignerUserId;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "consumer_signature_id")
+    private ContractSignature consumerSignature;
 
-    private String consumerSignature;
-
-    private String providerSignerUserId;
-
-    private String providerSignature;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "provider_signature_id")
+    private ContractSignature providerSignature;
 
     protected ContractTemplate() {
         this.state = ContractState.IN_DRAFT;
@@ -89,9 +89,7 @@ public abstract class ContractTemplate {
         this.termsAndConditions = template.getTermsAndConditions();
         this.additionalAgreements = template.getAdditionalAgreements();
         this.attachments = new HashSet<>(template.getAttachments());
-        this.providerSignerUserId = regenerate ? null : template.getProviderSignerUserId();
         this.providerSignature = regenerate ? null : template.getProviderSignature();
-        this.consumerSignerUserId = regenerate ? null : template.getConsumerSignerUserId();
         this.consumerSignature = regenerate ? null : template.getConsumerSignature();
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
@@ -100,13 +98,11 @@ public abstract class ContractTemplate {
         if (state.checkTransitionAllowed(targetState)) {
             if ((targetState == ContractState.SIGNED_CONSUMER &&
                     (StringUtil.isNullOrEmpty(runtimeSelection)
-                            || StringUtil.isNullOrEmpty(consumerSignerUserId)
-                            || StringUtil.isNullOrEmpty(consumerSignature)
+                            || (consumerSignature == null)
                             || !consumerTncAccepted
                             || (!attachments.isEmpty() && !consumerAttachmentsAccepted)))
                     || (targetState == ContractState.RELEASED &&
-                            (StringUtil.isNullOrEmpty(providerSignerUserId)
-                                    || StringUtil.isNullOrEmpty(providerSignature) ||
+                            ((providerSignature == null) ||
                                     !providerTncAccepted))) {
                 throw new IllegalStateException(
                         String.format("Cannot transition from state %s to %s as mandatory fields are not set",

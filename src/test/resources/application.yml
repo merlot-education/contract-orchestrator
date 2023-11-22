@@ -45,6 +45,9 @@ serviceoffering-orchestrator:
 organizations-orchestrator:
   base-uri: http://localhost:8082/api
 
+pdf-service:
+  base-uri: https://localhost:7131/PdfProcessor/
+
 cors:
   global:
     origins:
