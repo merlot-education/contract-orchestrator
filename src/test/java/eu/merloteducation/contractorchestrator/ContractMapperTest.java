@@ -26,7 +26,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-public class ContractMapperTest {
+class ContractMapperTest {
     @Autowired
     ContractMapper contractMapper;
 
