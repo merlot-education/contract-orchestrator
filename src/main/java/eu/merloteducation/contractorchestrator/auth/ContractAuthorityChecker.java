@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.auth;
 
+import eu.merloteducation.authorizationlibrary.authorization.AuthorityChecker;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import org.springframework.beans.factory.annotation.Autowired;

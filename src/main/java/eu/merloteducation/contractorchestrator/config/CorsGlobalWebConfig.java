@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator.config;
 
-import eu.merloteducation.contractorchestrator.auth.ActiveRoleHeaderHandlerInterceptor;
+import eu.merloteducation.authorizationlibrary.authorization.ActiveRoleHeaderHandlerInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

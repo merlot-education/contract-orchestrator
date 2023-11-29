@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.auth.*;
+import eu.merloteducation.authorizationlibrary.authorization.*;
+import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
@@ -18,8 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -32,8 +33,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({DataTransferController.class, WebSecurityConfig.class, AuthorityChecker.class,
-        ContractAuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class})
+@WebMvcTest({DataTransferController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class})
 @AutoConfigureMockMvc()
 class DataTransferControllerTest {
 
