@@ -25,6 +25,7 @@ import java.util.Map;
 public interface ContractMapper {
 
     default String map(OffsetDateTime offsetDateTime) {
+
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
@@ -90,12 +91,12 @@ public interface ContractMapper {
         OrganizationDetails providerOrgaDetails, OrganizationDetails consumerOrgaDetails,
         ServiceOfferingDetails offeringDetails);
 
-    @Mapping(target = "contractId", source = "contractDto.details.id")
+    @Mapping(target = "contractId", expression = "java(contractDto.getDetails().getId().replace(\"Contract:\", \"\"))")
     @Mapping(target = "contractCreationDate", source = "contractDto.details.creationDate")
-    @Mapping(target = "contractRuntime", source = "contractDto.negotiation.runtimeSelection")
+    @Mapping(target = "contractRuntime", source = "contractDto.negotiation.runtimeSelection", qualifiedByName = "contractRuntime")
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
-    @Mapping(target = "serviceId", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"@id\").textValue())")
+    @Mapping(target = "serviceId", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"@id\").textValue().replace(\"ServiceOffering:\", \"\"))")
     @Mapping(target = "serviceName", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"gax-trust-framework:name\").path(\"@value\").textValue())")
     @Mapping(target = "serviceType", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"@type\").textValue())")
     @Mapping(target = "serviceDescription", expression = "java(contractDto.getOffering().getSelfDescription().path(\"verifiableCredential\").path(\"credentialSubject\").path(\"dct:description\").path(\"@value\").textValue())")
@@ -147,6 +148,31 @@ public interface ContractMapper {
         map.put("postalCode", legalAddress.path("vcard:postal-code").path("@value").textValue());
 
         return map;
+    }
+
+    @Named("contractRuntime")
+    default String contractRuntimeMapper(String runtimeEnglish) {
+
+        String unlimited = "unlimited";
+
+        Map<String, String> map = new HashMap<>();
+        map.put("hour(s)", "Stunde(n)");
+        map.put("day(s)", "Tag(e)");
+        map.put("week(s)", "Woche(n)");
+        map.put("month(s)", "Monat(e)");
+        map.put("year(s)", "Jahr(e)");
+        map.put(unlimited, "Unbegrenzt");
+
+        String[] runtimeSplit = runtimeEnglish.split(" ");
+        String runtimeCount = runtimeSplit[0];
+        String runtimeMeasurementEnglish = runtimeSplit[1];
+
+        if (Integer.parseInt(runtimeCount) == 0 || runtimeMeasurementEnglish.equals(unlimited)) {
+            return map.get(unlimited);
+        }
+
+        String runtimeMeasurementGerman = map.get(runtimeMeasurementEnglish);
+        return runtimeCount + " " + runtimeMeasurementGerman;
     }
 }
 

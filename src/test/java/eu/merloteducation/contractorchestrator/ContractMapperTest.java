@@ -62,6 +62,25 @@ class ContractMapperTest {
             expected.getContractAttachmentFilenames());
     }
 
+    @Test
+    void mapRuntimeCorrectly(){
+        String hourExample = "1 hour(s)";
+        String dayExample = "2 day(s)";
+        String weekExample = "3 week(s)";
+        String monthExample = "4 month(s)";
+        String yearExample = "5 year(s)";
+        String unlimitedExample1 = "0 hour(s)";
+        String unlimitedExample2 = "12 unlimited";
+
+        assertThat(contractMapper.contractRuntimeMapper(hourExample)).isEqualTo("1 Stunde(n)");
+        assertThat(contractMapper.contractRuntimeMapper(dayExample)).isEqualTo("2 Tag(e)");
+        assertThat(contractMapper.contractRuntimeMapper(weekExample)).isEqualTo("3 Woche(n)");
+        assertThat(contractMapper.contractRuntimeMapper(monthExample)).isEqualTo("4 Monat(e)");
+        assertThat(contractMapper.contractRuntimeMapper(yearExample)).isEqualTo("5 Jahr(e)");
+        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample1)).isEqualTo("Unbegrenzt");
+        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample2)).isEqualTo("Unbegrenzt");
+    }
+
     ContractDto getTestContractDto(ContractDto contractDto) throws JsonProcessingException {
 
         ContractDetailsDto contractDetailsDto = contractDto.getDetails();
@@ -112,7 +131,7 @@ class ContractMapperTest {
         attachments.add("abc.pdf");
         attachments.add("def.pdf");
         contractNegotiationDto.setAttachments(attachments);
-        contractNegotiationDto.setRuntimeSelection("5000 Jahre");
+        contractNegotiationDto.setRuntimeSelection("5000 year(s)");
 
         contractDto.setNegotiation(contractNegotiationDto);
 
@@ -165,7 +184,7 @@ class ContractMapperTest {
         ObjectNode addedNode1 = ((ObjectNode) locatedNode).putObject("merlot:dataAccessType");
         addedNode1.put("@value", "Download");
         ObjectNode addedNode2 = ((ObjectNode) locatedNode).putObject("merlot:dataTransferType");
-        addedNode2.put("@value", "Taube");
+        addedNode2.put("@value", "Pull");
         return contractDto;
     }
 
@@ -182,9 +201,9 @@ class ContractMapperTest {
     ContractPdfDto getTestContractPdfDto() {
 
         ContractPdfDto contractPdfDto = new ContractPdfDto();
-        contractPdfDto.setContractId("Contract:1357");
+        contractPdfDto.setContractId("1357");
         contractPdfDto.setContractCreationDate("01.02.2023");
-        contractPdfDto.setContractRuntime("5000 Jahre");
+        contractPdfDto.setContractRuntime("5000 Jahr(e)");
 
         Map<String, String> tnc1 = new HashMap<>();
         tnc1.put("tncLink", "http://example.com");
@@ -205,7 +224,7 @@ class ContractMapperTest {
         attachments.add("def.pdf");
 
         contractPdfDto.setContractAttachmentFilenames(attachments);
-        contractPdfDto.setServiceId("ServiceOffering:1234");
+        contractPdfDto.setServiceId("1234");
         contractPdfDto.setServiceName("Mein Dienst");
         contractPdfDto.setServiceType("Datenlieferung");
         contractPdfDto.setServiceDescription("Liefert Daten von A nach B");
@@ -252,7 +271,7 @@ class ContractMapperTest {
         ContractPdfDto contractPdfDto = getTestContractPdfDto();
         contractPdfDto.setContractDataTransferCount("10");
         contractPdfDto.setServiceDataAccessType("Download");
-        contractPdfDto.setServiceDataTransferType("Taube");
+        contractPdfDto.setServiceDataTransferType("Pull");
 
         return contractPdfDto;
     }
