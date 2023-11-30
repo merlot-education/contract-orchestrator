@@ -1,10 +1,10 @@
 package eu.merloteducation.contractorchestrator.config;
 
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
 import eu.merloteducation.contractorchestrator.service.EdcClient;
 import eu.merloteducation.contractorchestrator.service.OrganizationOrchestratorClient;
 import eu.merloteducation.contractorchestrator.service.PdfServiceClient;
 import eu.merloteducation.contractorchestrator.service.ServiceOfferingOrchestratorClient;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,7 +49,7 @@ public class AppConfig {
 
     @Bean
     @Scope(value = "prototype")
-    public EdcClient edcClient(OrganisationConnectorExtension connector) {
+    public EdcClient edcClient(OrganizationConnectorDto connector) {
         WebClient webClient = WebClient.builder()
                 .baseUrl(connector.getManagementBaseUrl())
                 .defaultHeader("X-API-Key", connector.getConnectorAccessToken())

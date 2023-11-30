@@ -3,20 +3,26 @@ package eu.merloteducation.contractorchestrator.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractPdfDto;
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.TermsAndConditions;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.*;
 import eu.merloteducation.contractorchestrator.models.entities.*;
-import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
-import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
+import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
+import eu.merloteducation.modelslib.api.contract.ContractDto;
+import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
+import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
+import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.AllowedUserCount;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.DataExchangeCount;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.Runtime;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.TermsAndConditions;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.ServiceOfferingCredentialSubject;
+import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
 import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
 import io.netty.util.internal.StringUtil;
@@ -27,7 +33,6 @@ import org.json.JSONException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -85,7 +90,7 @@ public class ContractStorageService {
     private StorageClient storageClient;
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
-        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
+        ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
 
         // make sure selections are valid
         if (!StringUtil.isNullOrEmpty(contract.getRuntimeSelection())
@@ -111,16 +116,17 @@ public class ContractStorageService {
         return true;
     }
 
-    private boolean isValidRuntimeSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
-        JsonNode runtimeOptions = credentialSubject.get("merlot:runtimeOption");
-        if (!runtimeOptions.isArray()) {
+    private boolean isValidRuntimeSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
+        ServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject();
+        List<Runtime> runtimeOptions = credentialSubject.getRuntimeOptions();
+        if (runtimeOptions.isEmpty()) {
             return false;
         }
 
-        for (final JsonNode option : runtimeOptions) {
-            if (selection.equals(option.get("merlot:runtimeCount").get(VALUE).asText()
-                    + " " + option.get("merlot:runtimeMeasurement").get(VALUE).asText())) {
+        for (Runtime option : runtimeOptions) {
+            if (selection.equals(option.getRuntimeCount().getValue()
+                    + " " + option.getRuntimeMeasurement().getValue())) {
                 return true;
             }
         }
@@ -128,16 +134,17 @@ public class ContractStorageService {
         return false;
     }
 
-    private boolean isValidUserCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+    private boolean isValidUserCountSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
-        JsonNode userCountOptions = credentialSubject.get("merlot:userCountOption");
-        if (!userCountOptions.isArray()) {
+        SaaSCredentialSubject credentialSubject = (SaaSCredentialSubject) offeringDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject();
+        List<AllowedUserCount> userCountOptions = credentialSubject.getUserCountOptions();
+        if (userCountOptions.isEmpty()) {
             return false;
         }
 
-        for (final JsonNode option : userCountOptions) {
-            if (selection.equals(option.get("merlot:userCountUpTo").get(VALUE).asText())) {
+        for (AllowedUserCount option : userCountOptions) {
+            if (selection.equals(Integer.toString(option.getUserCountUpTo().getValue()))) {
                 return true;
             }
         }
@@ -145,16 +152,17 @@ public class ContractStorageService {
         return false;
     }
 
-    private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDetails offeringDetails) throws JSONException {
+    private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
-        JsonNode exchangeCountOptions = credentialSubject.get("merlot:exchangeCountOption");
-        if (!exchangeCountOptions.isArray()) {
+        DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
+                .getSelfDescription().getVerifiableCredential().getCredentialSubject();
+        List<DataExchangeCount> exchangeCountOptions = credentialSubject.getExchangeCountOptions();
+        if (exchangeCountOptions.isEmpty()) {
             return false;
         }
 
-        for (final JsonNode option : exchangeCountOptions) {
-            if (selection.equals(option.get("merlot:exchangeCountUpTo").get(VALUE).asText())) {
+        for (DataExchangeCount option : exchangeCountOptions) {
+            if (selection.equals(Integer.toString(option.getExchangeCountUpTo().getValue()))) {
                 return true;
             }
         }
@@ -263,19 +271,19 @@ public class ContractStorageService {
     }
 
     private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
-        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
+        MerlotParticipantDto consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
-        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+        ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
         return contractMapper.contractToContractBasicDto(template, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
 
-        OrganizationDetails providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+        MerlotParticipantDto providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
                 Map.of(AUTHORIZATION, authToken));
-        OrganizationDetails consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
+        MerlotParticipantDto consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
-        ServiceOfferingDetails offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
+        ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
             return contractMapper.contractToContractDto(dataTemplate,
@@ -319,20 +327,21 @@ public class ContractStorageService {
         }
 
         // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
-        ServiceOfferingDetails offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
+        ServiceOfferingDto offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
                 contractCreateRequest.getOfferingId(), Map.of(AUTHORIZATION, authToken));
 
         // in case someone with access rights to the state attempts to load this check the state as well
-        if (offeringDetails.getMetadata().get("state") != null && !offeringDetails.getMetadata().get("state").asText().equals("RELEASED")) {
+        if (offeringDetails.getMetadata().getState() != null && !offeringDetails.getMetadata().getState().equals("RELEASED")) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        JsonNode credentialSubject = offeringDetails.getSelfDescription().get(VERIFIABLE_CREDENTIAL).get(CREDENTIAL_SUBJECT);
+        ServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .getVerifiableCredential().getCredentialSubject();
 
-        switch (credentialSubject.get("@type").asText()) {
+        switch (credentialSubject.getType()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
             case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
@@ -342,7 +351,7 @@ public class ContractStorageService {
         // extract data from request
         contract.setOfferingId(contractCreateRequest.getOfferingId());
         contract.setConsumerId(contractCreateRequest.getConsumerId());
-        contract.setProviderId(credentialSubject.get("gax-core:offeredBy").get("@id").asText());
+        contract.setProviderId(credentialSubject.getOfferedBy().getId());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
@@ -350,19 +359,14 @@ public class ContractStorageService {
         }
 
         // copy all terms and conditions entries from offering to contract
-        try {
-            List<ContractTnc> offeringTnC = Arrays.stream(objectMapper.treeToValue(
-                    credentialSubject.get("gax-trust-framework:termsAndConditions"), TermsAndConditions[].class))
-                    .map(ContractTnc::new).toList();
-            contract.setTermsAndConditions(offeringTnC);
-        } catch (JsonProcessingException e) {
-            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Invalid offering terms and conditions.");
-        }
+        List<ContractTnc> offeringTnC = credentialSubject.getTermsAndConditions().stream().map(ContractTnc::new)
+                .toList();
+        contract.setTermsAndConditions(offeringTnC);
 
 
         contract = contractTemplateRepository.saveAndFlush(contract);
         entityManager.refresh(contract); // refresh entity from database to get newly generated discriminator column
-        messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract));
+        messageQueueService.sendContractCreatedMessage(new ContractTemplateUpdated(contract.getId(), contract.getOfferingId()));
         return castAndMapToContractDetailsDto(contract, authToken);
     }
 
@@ -497,7 +501,7 @@ public class ContractStorageService {
                 throw new ResponseStatusException(FORBIDDEN, "Not allowed to purge contract");
             }
             contractTemplateRepository.delete(contract);
-            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract));
+            messageQueueService.sendContractPurgedMessage(new ContractTemplateUpdated(contract.getId(), contract.getOfferingId()));
             return castAndMapToContractDetailsDto(contract, authToken);
         }
 

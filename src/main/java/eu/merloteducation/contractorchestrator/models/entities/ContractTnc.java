@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.TermsAndConditions;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.TermsAndConditions;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

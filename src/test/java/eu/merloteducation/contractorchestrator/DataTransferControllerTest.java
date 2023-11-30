@@ -2,15 +2,15 @@ package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.auth.*;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
-import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
-import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
+import eu.merloteducation.modelslib.edc.common.IdResponse;
+import eu.merloteducation.modelslib.edc.negotiation.ContractNegotiation;
+import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
