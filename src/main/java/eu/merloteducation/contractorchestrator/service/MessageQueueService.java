@@ -1,11 +1,11 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.config.MessageQueueConfig;
-import eu.merloteducation.contractorchestrator.models.ConnectorDetailsRequest;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
-import eu.merloteducation.contractorchestrator.models.messagequeue.ContractTemplateUpdated;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
+import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
+import eu.merloteducation.modelslib.queue.ConnectorDetailsRequest;
+import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -59,7 +59,7 @@ public class MessageQueueService {
      * @param orgaId organization id
      * @return organization details
      */
-    public OrganizationDetails remoteRequestOrganizationDetails(String orgaId) {
+    public MerlotParticipantDto remoteRequestOrganizationDetails(String orgaId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATION_REQUEST_KEY,
@@ -76,7 +76,7 @@ public class MessageQueueService {
      * @param connectorId connector id
      * @return connector details
      */
-    public OrganisationConnectorExtension remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
+    public OrganizationConnectorDto remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATIONCONNECTOR_REQUEST_KEY,
@@ -92,7 +92,7 @@ public class MessageQueueService {
      * @param offeringId id of the offering
      * @return offering details
      */
-    public ServiceOfferingDetails remoteRequestOfferingDetails(String offeringId) {
+    public ServiceOfferingDto remoteRequestOfferingDetails(String offeringId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.OFFERING_REQUEST_KEY,
