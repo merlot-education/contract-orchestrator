@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
