@@ -134,10 +134,10 @@
             <artifactId>s3-library</artifactId>
             <version>1.0.2-d5a5f95</version>
         </dependency>
-        <dependency>
-            <groupId>eu.merloteducation.jwtlib</groupId>
-            <artifactId>jwtlib</artifactId>
-            <version>0.0.5-42e18ad</version>
+       <dependency>
+            <groupId>eu.merlot-education</groupId>
+            <artifactId>authorization-library</artifactId>
+            <version>0.0.10-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <build>
