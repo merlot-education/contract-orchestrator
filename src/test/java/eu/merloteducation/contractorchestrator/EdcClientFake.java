@@ -1,19 +1,19 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.edc.asset.AssetCreateRequest;
-import eu.merloteducation.contractorchestrator.models.edc.catalog.CatalogRequest;
-import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatCatalog;
-import eu.merloteducation.contractorchestrator.models.edc.catalog.DcatDataset;
-import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
-import eu.merloteducation.contractorchestrator.models.edc.contractdefinition.ContractDefinitionCreateRequest;
-import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
-import eu.merloteducation.contractorchestrator.models.edc.negotiation.NegotiationInitiateRequest;
-import eu.merloteducation.contractorchestrator.models.edc.policy.Policy;
-import eu.merloteducation.contractorchestrator.models.edc.policy.PolicyCreateRequest;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.DataRequest;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.TransferRequest;
 import eu.merloteducation.contractorchestrator.service.EdcClient;
+import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
+import eu.merloteducation.modelslib.edc.catalog.CatalogRequest;
+import eu.merloteducation.modelslib.edc.catalog.DcatCatalog;
+import eu.merloteducation.modelslib.edc.catalog.DcatDataset;
+import eu.merloteducation.modelslib.edc.common.IdResponse;
+import eu.merloteducation.modelslib.edc.contractdefinition.ContractDefinitionCreateRequest;
+import eu.merloteducation.modelslib.edc.negotiation.ContractNegotiation;
+import eu.merloteducation.modelslib.edc.negotiation.NegotiationInitiateRequest;
+import eu.merloteducation.modelslib.edc.policy.Policy;
+import eu.merloteducation.modelslib.edc.policy.PolicyCreateRequest;
+import eu.merloteducation.modelslib.edc.transfer.DataRequest;
+import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
+import eu.merloteducation.modelslib.edc.transfer.TransferRequest;
 
 import java.util.List;
 

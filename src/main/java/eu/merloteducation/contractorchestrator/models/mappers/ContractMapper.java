@@ -11,6 +11,7 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContra
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
 import eu.merloteducation.modelslib.gxfscatalog.datatypes.VCard;
 import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
@@ -31,13 +32,17 @@ public interface ContractMapper {
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
+    default String mapStringTypeValue(StringTypeValue value) {
+        return value != null ? value.getValue() : null;
+    }
+
     @Mapping(target = "id", source = "contract.id")
     @Mapping(target = "creationDate", source = "contract.creationDate")
     @Mapping(target = "offering", source = "offeringDetails")
     @Mapping(target = "providerId", source = "offeringDetails.providerDetails.providerId")
     @Mapping(target = "providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "consumerId", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.id")
-    @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+    @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName")
     @Mapping(target = "state", source = "contract.state")
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract, MerlotParticipantDto consumerOrgaDetails,
                                                 ServiceOfferingDto offeringDetails);
@@ -49,7 +54,7 @@ public interface ContractMapper {
     @Mapping(target = "details.providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "details.providerLegalAddress", source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalAddress")
     @Mapping(target = "details.consumerId", source = "contract.consumerId")
-    @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName.value")
+    @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName")
     @Mapping(target = "details.consumerLegalAddress", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalAddress")
     @Mapping(target = "details.state", source = "contract.state")
     @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignature.signerName")
@@ -99,10 +104,10 @@ public interface ContractMapper {
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
     @Mapping(target = "serviceId", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.id")
-    @Mapping(target = "serviceName", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.name.value")
+    @Mapping(target = "serviceName", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.name")
     @Mapping(target = "serviceType", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.type")
-    @Mapping(target = "serviceDescription", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.description.value")
-    @Mapping(target = "serviceExampleCosts", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.exampleCosts.value")
+    @Mapping(target = "serviceDescription", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.description")
+    @Mapping(target = "serviceExampleCosts", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.exampleCosts")
     @Mapping(target = "providerLegalName", source = "contractDto.details.providerLegalName")
     @Mapping(target = "providerLegalAddress", source = "contractDto.details.providerLegalAddress", qualifiedByName = "legalAddress")
     @Mapping(target = "providerSignerUser", source = "contractDto.details.providerSignerUserName")
@@ -117,13 +122,13 @@ public interface ContractMapper {
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractDataTransferCount", source = "contractDto.negotiation.exchangeCountSelection")
-    @Mapping(target = "serviceDataAccessType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataAccessType().getValue())")
-    @Mapping(target = "serviceDataTransferType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataTransferType().getValue())")
+    @Mapping(target = "serviceDataAccessType", expression = "java(mapStringTypeValue(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataAccessType()))")
+    @Mapping(target = "serviceDataTransferType", expression = "java(mapStringTypeValue(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataTransferType()))")
     ContractPdfDto contractDtoToContractPdfDto(DataDeliveryContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractUserCount", source = "contractDto.negotiation.userCountSelection")
-    @Mapping(target = "serviceHardwareRequirements", expression = "java(((SaaSCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getHardwareRequirements().getValue())")
+    @Mapping(target = "serviceHardwareRequirements", expression = "java(mapStringTypeValue(((SaaSCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getHardwareRequirements()))")
     ContractPdfDto contractDtoToContractPdfDto(SaasContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")

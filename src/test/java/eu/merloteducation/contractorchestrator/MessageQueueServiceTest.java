@@ -1,7 +1,12 @@
 package eu.merloteducation.contractorchestrator;
 
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.*;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
+import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.TermsAndConditions;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescription;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescriptionVerifiableCredential;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.participants.MerlotOrganizationCredentialSubject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +37,7 @@ class MessageQueueServiceTest {
     @MockBean
     RabbitTemplate rabbitTemplate;
 
-    private OrganizationDetails orga10;
+    private MerlotParticipantDto orga10;
 
     @BeforeAll
     void beforeAll() {
@@ -43,11 +48,11 @@ class MessageQueueServiceTest {
     void beforeEach() {
         when(rabbitTemplate.convertSendAndReceiveAsType(anyString(), anyString(), any(Object.class),any()))
                 .thenReturn(null);
-        orga10 = new OrganizationDetails();
-        orga10.setSelfDescription(new OrganizationSelfDescription());
-        orga10.getSelfDescription().setVerifiableCredential(new OrganizationVerifiableCredential());
-        orga10.getSelfDescription().getVerifiableCredential().setCredentialSubject(new OrganizationCredentialSubject());
-        OrganizationCredentialSubject credentialSubject =orga10.getSelfDescription().getVerifiableCredential()
+        orga10 = new MerlotParticipantDto();
+        orga10.setSelfDescription(new SelfDescription<>());
+        orga10.getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        orga10.getSelfDescription().getVerifiableCredential().setCredentialSubject(new MerlotOrganizationCredentialSubject());
+        MerlotOrganizationCredentialSubject credentialSubject = orga10.getSelfDescription().getVerifiableCredential()
                 .getCredentialSubject();
         credentialSubject.setId("Participant:10");
         credentialSubject.setLegalName(new StringTypeValue("Orga 10"));
@@ -60,7 +65,7 @@ class MessageQueueServiceTest {
 
     @Test
     void remoteGetOrgaDetailsExistent() {
-        OrganizationDetails details = messageQueueService.remoteRequestOrganizationDetails("10");
+        MerlotParticipantDto details = messageQueueService.remoteRequestOrganizationDetails("10");
         assertNotNull(details);
         assertEquals(orga10.getSelfDescription().getVerifiableCredential().getCredentialSubject().getId(),
                 details.getSelfDescription().getVerifiableCredential().getCredentialSubject().getId());
@@ -74,7 +79,7 @@ class MessageQueueServiceTest {
 
     @Test
     void remoteGetOrgaDetailsNonExistent() {
-        OrganizationDetails details = messageQueueService.remoteRequestOrganizationDetails("garbage");
+        MerlotParticipantDto details = messageQueueService.remoteRequestOrganizationDetails("garbage");
         assertNull(details);
     }
 }

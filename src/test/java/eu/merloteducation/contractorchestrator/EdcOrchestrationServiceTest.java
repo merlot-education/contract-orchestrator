@@ -1,25 +1,24 @@
 package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractNegotiationDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractProvisioningDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganisationConnectorExtension;
-import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
-import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
-import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.service.*;
-import io.netty.util.internal.StringUtil;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractNegotiationDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
+import eu.merloteducation.modelslib.edc.common.IdResponse;
+import eu.merloteducation.modelslib.edc.negotiation.ContractNegotiation;
+import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescription;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescriptionVerifiableCredential;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -30,11 +29,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -95,19 +91,14 @@ class EdcOrchestrationServiceTest {
         validPushContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
         validPushContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
         validPushContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
-        validPushContract.setOffering(new ServiceOfferingDetails());
-        validPushContract.getOffering().setSelfDescription(mapper.readTree("""
-                {
-                    "verifiableCredential": {
-                        "credentialSubject": {
-                            "merlot:dataTransferType": {
-                                    "@type": "xsd:string",
-                                    "@value": "Push"
-                            }
-                        }
-                    }
-                }
-                """));
+        validPushContract.setOffering(new ServiceOfferingDto());
+        validPushContract.getOffering().setSelfDescription(new SelfDescription<>());
+        validPushContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        validPushContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
+        DataDeliveryCredentialSubject credentialSubject =
+                (DataDeliveryCredentialSubject) validPushContract.getOffering().getSelfDescription()
+                        .getVerifiableCredential().getCredentialSubject();
+        credentialSubject.setDataTransferType(new StringTypeValue("Push"));
 
 
         validPullContract = new DataDeliveryContractDto();
@@ -130,19 +121,14 @@ class EdcOrchestrationServiceTest {
         validPullContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
         validPullContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
         validPullContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
-        validPullContract.setOffering(new ServiceOfferingDetails());
-        validPullContract.getOffering().setSelfDescription(mapper.readTree("""
-                {
-                    "verifiableCredential": {
-                        "credentialSubject": {
-                            "merlot:dataTransferType": {
-                                    "@type": "xsd:string",
-                                    "@value": "Pull"
-                            }
-                        }
-                    }
-                }
-                """));
+        validPullContract.setOffering(new ServiceOfferingDto());
+        validPullContract.getOffering().setSelfDescription(new SelfDescription<>());
+        validPullContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        validPullContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
+        credentialSubject =
+                (DataDeliveryCredentialSubject) validPullContract.getOffering().getSelfDescription()
+                        .getVerifiableCredential().getCredentialSubject();
+        credentialSubject.setDataTransferType(new StringTypeValue("Pull"));
 
         wrongTypeContract = new SaasContractDto();
         wrongTypeContract.setDetails(new SaasContractDetailsDto());
@@ -167,7 +153,7 @@ class EdcOrchestrationServiceTest {
         doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getDetails().getId()), any());
         doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getDetails().getId()), any());
 
-        OrganisationConnectorExtension edc1 = new OrganisationConnectorExtension();
+        OrganizationConnectorDto edc1 = new OrganizationConnectorDto();
         edc1.setId("1234");
         edc1.setConnectorId("edc1");
         edc1.setConnectorEndpoint("http://example.com");
@@ -178,7 +164,7 @@ class EdcOrchestrationServiceTest {
         bucketList.add("targetbucket");
         edc1.setBucketNames(bucketList);
 
-        OrganisationConnectorExtension edc2 = new OrganisationConnectorExtension();
+        OrganizationConnectorDto edc2 = new OrganizationConnectorDto();
         edc1.setId("1234");
         edc1.setConnectorId("edc2");
         edc1.setConnectorEndpoint("http://example.com");
