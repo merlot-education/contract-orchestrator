@@ -38,4 +38,4 @@ jobs:
           GITHUB_USER: ${{ secrets.GITHUB_USER }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} mvn -e -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=merlot-education_contract-orchestrator_AYiLA82cNJyPCeUvG50n
+        run: GITHUB_USER=${{ secrets.GITHUB_USER }} mvn -e -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=merlot-education_contract-orchestrator_AYiLA82cNJyPCeUvG50n
