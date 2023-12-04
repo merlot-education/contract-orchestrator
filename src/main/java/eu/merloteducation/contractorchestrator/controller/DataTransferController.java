@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator.controller;
 
-import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
+import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import eu.merloteducation.modelslib.edc.EdcIdResponse;
 import eu.merloteducation.modelslib.edc.EdcNegotiationStatus;

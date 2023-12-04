@@ -1,7 +1,7 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import eu.merloteducation.contractorchestrator.auth.OrganizationRoleGrantedAuthority;
+import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
@@ -72,7 +72,8 @@ public class ContractsController {
     @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id)")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                               @RequestHeader(name = "Authorization") String authToken,
-                                              @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
+                                              @RequestHeader(name = "Active-Role") 
+                                              OrganizationRoleGrantedAuthority activeRole) {
         return contractStorageService.updateContractTemplate(editedContract, authToken, activeRole.getOrganizationId());
     }
 

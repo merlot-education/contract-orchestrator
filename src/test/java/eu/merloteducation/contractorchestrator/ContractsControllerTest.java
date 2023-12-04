@@ -2,7 +2,9 @@ package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import eu.merloteducation.contractorchestrator.auth.*;
+import eu.merloteducation.authorizationlibrary.authorization.*;
+import eu.merloteducation.authorizationlibrary.config.InterceptorConfig;
+import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpMethod;
@@ -45,8 +48,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({ContractsController.class, WebSecurityConfig.class, AuthorityChecker.class,
-        ContractAuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class})
+@WebMvcTest({ContractsController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class})
 @AutoConfigureMockMvc()
 class ContractsControllerTest {
 
@@ -61,9 +64,6 @@ class ContractsControllerTest {
 
     @MockBean
     private EdcOrchestrationService edcOrchestrationService;
-
-    @Autowired
-    private JwtAuthConverter jwtAuthConverter;
 
     @MockBean
     private JwtAuthConverterProperties jwtAuthConverterProperties;
