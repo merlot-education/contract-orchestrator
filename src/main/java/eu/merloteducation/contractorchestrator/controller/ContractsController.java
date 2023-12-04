@@ -73,7 +73,7 @@ public class ContractsController {
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                               @RequestHeader(name = "Authorization") String authToken,
                                               @RequestHeader(name = "Active-Role") 
-                                              activeRole) {
+                                              OrganizationRoleGrantedAuthority activeRole) {
         return contractStorageService.updateContractTemplate(editedContract, authToken, activeRole.getOrganizationId());
     }
 
