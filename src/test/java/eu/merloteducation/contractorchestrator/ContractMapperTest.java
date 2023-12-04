@@ -1,21 +1,27 @@
 package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import eu.merloteducation.contractorchestrator.models.dto.*;
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractNegotiationDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractNegotiationDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractNegotiationDto;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
+import eu.merloteducation.modelslib.api.contract.*;
+import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
+import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractNegotiationDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractNegotiationDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractNegotiationDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
+import eu.merloteducation.modelslib.gxfscatalog.datatypes.VCard;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescription;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescriptionVerifiableCredential;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.CooperationCredentialSubject;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
+import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.ServiceOfferingCredentialSubject;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -57,9 +63,29 @@ class ContractMapperTest {
 
         ContractPdfDto actual = contractMapper.contractDtoToContractPdfDto(getTestCoopContractDto());
         ContractPdfDto expected = getTestContractPdfDto();
+        expected.setServiceType("Coop");
         assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
             expected.getContractAttachmentFilenames());
+    }
+
+    @Test
+    void mapRuntimeCorrectly(){
+        String hourExample = "1 hour(s)";
+        String dayExample = "2 day(s)";
+        String weekExample = "3 week(s)";
+        String monthExample = "4 month(s)";
+        String yearExample = "5 year(s)";
+        String unlimitedExample1 = "0 hour(s)";
+        String unlimitedExample2 = "12 unlimited";
+
+        assertThat(contractMapper.contractRuntimeMapper(hourExample)).isEqualTo("1 Stunde(n)");
+        assertThat(contractMapper.contractRuntimeMapper(dayExample)).isEqualTo("2 Tag(e)");
+        assertThat(contractMapper.contractRuntimeMapper(weekExample)).isEqualTo("3 Woche(n)");
+        assertThat(contractMapper.contractRuntimeMapper(monthExample)).isEqualTo("4 Monat(e)");
+        assertThat(contractMapper.contractRuntimeMapper(yearExample)).isEqualTo("5 Jahr(e)");
+        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample1)).isEqualTo("Unbegrenzt");
+        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample2)).isEqualTo("Unbegrenzt");
     }
 
     ContractDto getTestContractDto(ContractDto contractDto) throws JsonProcessingException {
@@ -92,18 +118,18 @@ class ContractMapperTest {
         contractDetailsDto.setConsumerSignature("87654321");
         contractDetailsDto.setConsumerSignatureDate("01.02.2023 09:45");
 
-        String jsonString1 = "{\"vcard:country-name\": {\"@value\":\"DE\"}, \"vcard:street-address\": "
-            + "{\"@value\":\"Abcstraße 10\"}, \"vcard:locality\": {\"@value\":\"Abcstadt\"}, \"vcard:postal-code\": "
-            + "{\"@value\":\"12345\"}}";
-
-        JsonNode providerLegalAddress = mapper.readTree(jsonString1);
+        VCard providerLegalAddress = new VCard();
+        providerLegalAddress.setCountryName(new StringTypeValue("DE"));
+        providerLegalAddress.setStreetAddress(new StringTypeValue("Abcstraße 10"));
+        providerLegalAddress.setLocality(new StringTypeValue("Abcstadt"));
+        providerLegalAddress.setPostalCode(new StringTypeValue("12345"));
         contractDetailsDto.setProviderLegalAddress(providerLegalAddress);
 
-        String jsonString2 = "{\"vcard:country-name\": {\"@value\":\"DE\"}, \"vcard:street-address\": "
-            + "{\"@value\":\"Defstraße 10\"}, \"vcard:locality\": {\"@value\":\"Defstadt\"}, "
-            + "\"vcard:postal-code\": {\"@value\":\"54321\"}}";
-
-        JsonNode consumerLegalAddress = mapper.readTree(jsonString2);
+        VCard consumerLegalAddress = new VCard();
+        consumerLegalAddress.setCountryName(new StringTypeValue("DE"));
+        consumerLegalAddress.setStreetAddress(new StringTypeValue("Defstraße 10"));
+        consumerLegalAddress.setLocality(new StringTypeValue("Defstadt"));
+        consumerLegalAddress.setPostalCode(new StringTypeValue("54321"));
         contractDetailsDto.setConsumerLegalAddress(consumerLegalAddress);
 
         contractDto.setDetails(contractDetailsDto);
@@ -112,18 +138,14 @@ class ContractMapperTest {
         attachments.add("abc.pdf");
         attachments.add("def.pdf");
         contractNegotiationDto.setAttachments(attachments);
-        contractNegotiationDto.setRuntimeSelection("5000 Jahre");
+        contractNegotiationDto.setRuntimeSelection("5000 year(s)");
 
         contractDto.setNegotiation(contractNegotiationDto);
 
-        ServiceOfferingDetails serviceOfferingDetails = new ServiceOfferingDetails();
+        ServiceOfferingDto serviceOfferingDetails = new ServiceOfferingDto();
 
-        String jsonString3 = "{\"verifiableCredential\": {\"credentialSubject\": {\"@id\":\"ServiceOffering:1234\","
-            + "\"gax-trust-framework:name\": {\"@value\":\"Mein Dienst\"}, \"dct:description\": "
-            + "{\"@value\":\"Liefert Daten von A nach B\"}, \"merlot:exampleCosts\": {\"@value\":\"5 €\"},"
-            + "\"@type\":\"Datenlieferung\"}}}";
-
-        JsonNode selfDescription = mapper.readTree(jsonString3);
+        SelfDescription<ServiceOfferingCredentialSubject> selfDescription = new SelfDescription<>();
+        selfDescription.setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
         serviceOfferingDetails.setSelfDescription(selfDescription);
         contractDto.setOffering(serviceOfferingDetails);
 
@@ -139,15 +161,20 @@ class ContractMapperTest {
         contractDto = (SaasContractDto) getTestContractDto(contractDto);
         contractDto.getNegotiation().setUserCountSelection("10");
 
-        JsonNode selfDescription = contractDto.getOffering().getSelfDescription();
-        JsonNode locatedNode = selfDescription.path("verifiableCredential").path("credentialSubject");
-        ObjectNode addedNode = ((ObjectNode) locatedNode).putObject("merlot:hardwareRequirements");
-        addedNode.put("@value", "10 RAM");
+        contractDto.getOffering().getSelfDescription().getVerifiableCredential()
+                .setCredentialSubject(new SaaSCredentialSubject());
 
-        ServiceOfferingDetails serviceOfferingDetails = new ServiceOfferingDetails();
-        serviceOfferingDetails.setSelfDescription(selfDescription);
+        SaaSCredentialSubject credentialSubject =
+                (SaaSCredentialSubject) contractDto.getOffering().getSelfDescription()
+                        .getVerifiableCredential().getCredentialSubject();
 
-        contractDto.setOffering(serviceOfferingDetails);
+        credentialSubject.setId("ServiceOffering:1234");
+        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
+        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
+        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setType("SaaS");
+        credentialSubject.setHardwareRequirements(new StringTypeValue("10 RAM"));
+
         return contractDto;
     }
 
@@ -160,12 +187,20 @@ class ContractMapperTest {
         contractDto = (DataDeliveryContractDto) getTestContractDto(contractDto);
         contractDto.getNegotiation().setExchangeCountSelection("10");
 
-        JsonNode selfDescription = contractDto.getOffering().getSelfDescription();
-        JsonNode locatedNode = selfDescription.path("verifiableCredential").path("credentialSubject");
-        ObjectNode addedNode1 = ((ObjectNode) locatedNode).putObject("merlot:dataAccessType");
-        addedNode1.put("@value", "Download");
-        ObjectNode addedNode2 = ((ObjectNode) locatedNode).putObject("merlot:dataTransferType");
-        addedNode2.put("@value", "Taube");
+        contractDto.getOffering().getSelfDescription().getVerifiableCredential()
+                .setCredentialSubject(new DataDeliveryCredentialSubject());
+
+        DataDeliveryCredentialSubject credentialSubject =
+                (DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription()
+                        .getVerifiableCredential().getCredentialSubject();
+
+        credentialSubject.setId("ServiceOffering:1234");
+        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
+        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
+        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setType("Datenlieferung");
+        credentialSubject.setDataAccessType(new StringTypeValue("Download"));
+        credentialSubject.setDataTransferType(new StringTypeValue("Pull"));
         return contractDto;
     }
 
@@ -176,15 +211,29 @@ class ContractMapperTest {
         contractDto.setNegotiation(new CooperationContractNegotiationDto());
 
         contractDto = (CooperationContractDto) getTestContractDto(contractDto);
+
+        contractDto.getOffering().getSelfDescription().getVerifiableCredential()
+                .setCredentialSubject(new CooperationCredentialSubject());
+
+        CooperationCredentialSubject credentialSubject =
+                (CooperationCredentialSubject) contractDto.getOffering().getSelfDescription()
+                        .getVerifiableCredential().getCredentialSubject();
+
+        credentialSubject.setId("ServiceOffering:1234");
+        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
+        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
+        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setType("Coop");
+
         return contractDto;
     }
 
     ContractPdfDto getTestContractPdfDto() {
 
         ContractPdfDto contractPdfDto = new ContractPdfDto();
-        contractPdfDto.setContractId("Contract:1357");
+        contractPdfDto.setContractId("1357");
         contractPdfDto.setContractCreationDate("01.02.2023");
-        contractPdfDto.setContractRuntime("5000 Jahre");
+        contractPdfDto.setContractRuntime("5000 Jahr(e)");
 
         Map<String, String> tnc1 = new HashMap<>();
         tnc1.put("tncLink", "http://example.com");
@@ -205,17 +254,16 @@ class ContractMapperTest {
         attachments.add("def.pdf");
 
         contractPdfDto.setContractAttachmentFilenames(attachments);
-        contractPdfDto.setServiceId("ServiceOffering:1234");
+        contractPdfDto.setServiceId("1234");
         contractPdfDto.setServiceName("Mein Dienst");
-        contractPdfDto.setServiceType("Datenlieferung");
         contractPdfDto.setServiceDescription("Liefert Daten von A nach B");
         contractPdfDto.setServiceExampleCosts("5 €");
 
-        Map<String, String> providerAddress = new HashMap<>();
-        providerAddress.put("countryName", "DE");
-        providerAddress.put("streetAddress", "Abcstraße 10");
-        providerAddress.put("locality", "Abcstadt");
-        providerAddress.put("postalCode", "12345");
+        ContractPdfAddressDto providerAddress = new ContractPdfAddressDto();
+        providerAddress.setCountryName("DE");
+        providerAddress.setStreetAddress("Abcstraße 10");
+        providerAddress.setLocality("Abcstadt");
+        providerAddress.setPostalCode("12345");
 
         contractPdfDto.setProviderLegalAddress(providerAddress);
         contractPdfDto.setProviderSignature("12345678");
@@ -223,11 +271,11 @@ class ContractMapperTest {
         contractPdfDto.setProviderSignerUser("Hans Wurst");
         contractPdfDto.setProviderSignatureTimestamp("01.02.2023 10:05");
 
-        Map<String, String> consumerAddress = new HashMap<>();
-        consumerAddress.put("countryName", "DE");
-        consumerAddress.put("streetAddress", "Defstraße 10");
-        consumerAddress.put("locality", "Defstadt");
-        consumerAddress.put("postalCode", "54321");
+        ContractPdfAddressDto consumerAddress = new ContractPdfAddressDto();
+        consumerAddress.setCountryName("DE");
+        consumerAddress.setStreetAddress("Defstraße 10");
+        consumerAddress.setLocality("Defstadt");
+        consumerAddress.setPostalCode("54321");
 
         contractPdfDto.setConsumerLegalAddress(consumerAddress);
         contractPdfDto.setConsumerSignature("87654321");
@@ -241,6 +289,7 @@ class ContractMapperTest {
     ContractPdfDto getTestContractPdfDtoSaas() {
 
         ContractPdfDto contractPdfDto = getTestContractPdfDto();
+        contractPdfDto.setServiceType("SaaS");
         contractPdfDto.setContractUserCount("10");
         contractPdfDto.setServiceHardwareRequirements("10 RAM");
 
@@ -250,9 +299,10 @@ class ContractMapperTest {
     ContractPdfDto getTestContractPdfDtoDataDelivery() {
 
         ContractPdfDto contractPdfDto = getTestContractPdfDto();
+        contractPdfDto.setServiceType("Datenlieferung");
         contractPdfDto.setContractDataTransferCount("10");
         contractPdfDto.setServiceDataAccessType("Download");
-        contractPdfDto.setServiceDataTransferType("Taube");
+        contractPdfDto.setServiceDataTransferType("Pull");
 
         return contractPdfDto;
     }

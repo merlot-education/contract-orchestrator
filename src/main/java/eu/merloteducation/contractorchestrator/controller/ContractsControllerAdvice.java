@@ -1,8 +1,7 @@
 package eu.merloteducation.contractorchestrator.controller;
 
-import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
-import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.views.ContractViews;
+import eu.merloteducation.modelslib.api.contract.ContractDto;
+import eu.merloteducation.modelslib.api.contract.views.ContractViews;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;

@@ -1,8 +1,5 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import com.fasterxml.jackson.annotation.JsonView;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.Entity;
 import lombok.Getter;

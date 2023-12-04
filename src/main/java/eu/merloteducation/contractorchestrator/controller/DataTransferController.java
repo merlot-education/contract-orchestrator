@@ -1,10 +1,10 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
-import eu.merloteducation.contractorchestrator.models.EdcIdResponse;
-import eu.merloteducation.contractorchestrator.models.EdcNegotiationStatus;
-import eu.merloteducation.contractorchestrator.models.EdcTransferStatus;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
+import eu.merloteducation.modelslib.edc.EdcIdResponse;
+import eu.merloteducation.modelslib.edc.EdcNegotiationStatus;
+import eu.merloteducation.modelslib.edc.EdcTransferStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

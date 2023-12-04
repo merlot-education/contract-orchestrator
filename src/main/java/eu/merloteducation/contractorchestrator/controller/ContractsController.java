@@ -2,13 +2,13 @@ package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
-import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
-import eu.merloteducation.contractorchestrator.models.views.ContractViews;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
 import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
+import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
+import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
+import eu.merloteducation.modelslib.api.contract.ContractDto;
+import eu.merloteducation.modelslib.api.contract.views.ContractViews;
 import eu.merloteducation.s3library.service.StorageClientException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -72,7 +72,8 @@ public class ContractsController {
     @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id)")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                               @RequestHeader(name = "Authorization") String authToken,
-                                              @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole) {
+                                              @RequestHeader(name = "Active-Role") 
+                                              activeRole) {
         return contractStorageService.updateContractTemplate(editedContract, authToken, activeRole.getOrganizationId());
     }
 

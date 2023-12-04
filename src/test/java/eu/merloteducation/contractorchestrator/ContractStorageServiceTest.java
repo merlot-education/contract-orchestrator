@@ -2,19 +2,19 @@ package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.merloteducation.contractorchestrator.models.ContractCreateRequest;
-import eu.merloteducation.contractorchestrator.models.dto.ContractBasicDto;
-import eu.merloteducation.contractorchestrator.models.dto.ContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.cooperation.CooperationContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDetailsDto;
-import eu.merloteducation.contractorchestrator.models.dto.saas.SaasContractDto;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
-import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.OrganizationDetails;
-import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
+import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
+import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
+import eu.merloteducation.modelslib.api.contract.ContractDto;
+import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
+import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
+import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
 import jakarta.persistence.EntityManager;
@@ -464,41 +464,41 @@ class ContractStorageServiceTest {
                 """;
         ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        ServiceOfferingDetails offering4321 = objectMapper.readValue(
+        ServiceOfferingDto offering4321 = objectMapper.readValue(
                 createServiceOfferingOrchestratorResponse(
                         "ServiceOffering:4321",
                         "4321",
                         "OfferingName",
                         "Participant:40",
                         "merlot:MerlotServiceOfferingSaaS",
-                        userCountOption), ServiceOfferingDetails.class);
+                        userCountOption), ServiceOfferingDto.class);
 
-        ServiceOfferingDetails saasOffering = objectMapper.readValue(
+        ServiceOfferingDto saasOffering = objectMapper.readValue(
                 createServiceOfferingOrchestratorResponse(
                         saasContract.getOfferingId(),
                         "1234",
                         "MyOffering",
                         saasContract.getProviderId(),
                         "merlot:MerlotServiceOfferingSaaS",
-                        userCountOption), ServiceOfferingDetails.class);
+                        userCountOption), ServiceOfferingDto.class);
 
-        ServiceOfferingDetails dataDeliveryOffering = objectMapper.readValue(
+        ServiceOfferingDto dataDeliveryOffering = objectMapper.readValue(
                 createServiceOfferingOrchestratorResponse(
                         dataDeliveryContract.getOfferingId(),
                         "2345",
                         "MyOffering",
                         dataDeliveryContract.getProviderId(),
                         "merlot:MerlotServiceOfferingDataDelivery",
-                        exchangeCountOption), ServiceOfferingDetails.class);
+                        exchangeCountOption), ServiceOfferingDto.class);
 
-        ServiceOfferingDetails coopOffering = objectMapper.readValue(
+        ServiceOfferingDto coopOffering = objectMapper.readValue(
                 createServiceOfferingOrchestratorResponse(
                         coopContract.getOfferingId(),
                         "3456",
                         "MyOffering",
                         coopContract.getProviderId(),
                         "merlot:MerlotServiceOfferingCooperation",
-                        ""), ServiceOfferingDetails.class);
+                        ""), ServiceOfferingDto.class);
 
 
         lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq("ServiceOffering:4321"), any()))
@@ -523,7 +523,7 @@ class ContractStorageServiceTest {
 
         String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
-                .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, OrganizationDetails.class));
+                .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, MerlotParticipantDto.class));
 
         lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
     }
