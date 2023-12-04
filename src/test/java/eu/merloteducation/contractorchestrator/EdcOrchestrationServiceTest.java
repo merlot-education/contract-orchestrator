@@ -1,7 +1,6 @@
 package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.contractorchestrator.models.dto.datadelivery.DataDeliveryContractDto;
@@ -13,13 +12,8 @@ import eu.merloteducation.contractorchestrator.models.organisationsorchestrator.
 import eu.merloteducation.contractorchestrator.models.edc.common.IdResponse;
 import eu.merloteducation.contractorchestrator.models.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.contractorchestrator.models.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryProvisioning;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.models.serviceofferingorchestrator.ServiceOfferingDetails;
 import eu.merloteducation.contractorchestrator.service.*;
-import io.netty.util.internal.StringUtil;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -30,11 +24,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
