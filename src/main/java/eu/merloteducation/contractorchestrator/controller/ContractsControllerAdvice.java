@@ -1,15 +1,18 @@
 package eu.merloteducation.contractorchestrator.controller;
 
+import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.views.ContractViews;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.AbstractMappingJacksonResponseBodyAdvice;
 
 import java.util.Objects;
@@ -20,21 +23,34 @@ public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBod
     protected void beforeBodyWriteInternal(MappingJacksonValue bodyContainer, @NotNull MediaType contentType,
                                            @NotNull MethodParameter returnType, @NotNull ServerHttpRequest req,
                                            @NotNull ServerHttpResponse res) {
-        ServletServerHttpRequest request = (ServletServerHttpRequest)req;
+        ServletServerHttpRequest request = (ServletServerHttpRequest) req;
 
-        if (bodyContainer.getValue() instanceof ContractDto contractDto) {
-            bodyContainer.setSerializationView(ContractViews.DetailedView.class);
-            if (request.getHeaders().containsKey("Active-Role")) {
-                String activeRoleOrgaId = Objects.requireNonNull(request.getHeaders().getFirst("Active-Role"))
-                        .replaceFirst("(OrgLegRep|OrgRep)_", "");
-                if (contractDto.getDetails().getProviderId().replace("Participant:", "")
-                        .equals(activeRoleOrgaId)) {
-                    bodyContainer.setSerializationView(ContractViews.ProviderView.class);
-                } else if (contractDto.getDetails().getConsumerId().replace("Participant:", "")
-                        .equals(activeRoleOrgaId)) {
-                    bodyContainer.setSerializationView(ContractViews.ConsumerView.class);
-                }
-            }
+        if (!(bodyContainer.getValue() instanceof ContractDto contractDto)) {
+            return;
+        }
+
+        bodyContainer.setSerializationView(ContractViews.DetailedView.class);
+
+        if (!request.getHeaders().containsKey("Active-Role")) {
+            return;
+        }
+
+        String activeRoleString = request.getHeaders().getFirst("Active-Role");
+        if (activeRoleString == null) {
+            return;
+        }
+
+        OrganizationRoleGrantedAuthority activeOrgaRole = new OrganizationRoleGrantedAuthority(activeRoleString);
+        if (!activeOrgaRole.isRepresentative()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+
+        if (contractDto.getDetails().getProviderId().replace("Participant:", "")
+                .equals(activeOrgaRole.getOrganizationId())) {
+            bodyContainer.setSerializationView(ContractViews.ProviderView.class);
+        } else if (contractDto.getDetails().getConsumerId().replace("Participant:", "")
+                .equals(activeOrgaRole.getOrganizationId())) {
+            bodyContainer.setSerializationView(ContractViews.ConsumerView.class);
         }
     }
 }
