@@ -69,7 +69,8 @@ public class ContractsController {
      * @return updated contract template
      */
     @PutMapping("")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #editedContract.details.id) " +
+            "&& #activeRole.isRepresentative()")
     public ContractDto updateContractTemplate(@Valid @RequestBody ContractDto editedContract,
                                               @RequestHeader(name = "Authorization") String authToken,
                                               @RequestHeader(name = "Active-Role") 
@@ -103,7 +104,8 @@ public class ContractsController {
      * @return updated contract template
      */
     @PatchMapping("/contract/status/{contractId}/{status}")
-    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId)")
+    @PreAuthorize("@contractAuthorityChecker.canAccessContract(authentication, #contractId) " +
+            "&& #activeRole.isRepresentative()")
     public ContractDto transitionContractTemplate(@PathVariable(value = "contractId") String contractId,
                                                   @PathVariable(value = "status") ContractState status,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
