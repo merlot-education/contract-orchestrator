@@ -28,7 +28,6 @@ import eu.merloteducation.s3library.service.StorageClientException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
 import org.springframework.data.domain.Page;
