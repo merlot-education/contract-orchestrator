@@ -527,22 +527,22 @@ public class ContractStorageService {
 
         if (targetState == ContractState.RELEASED) {
             // if successfully released, generate and save the contract pdf
-            try {
-                saveContractPdf(contractDto);
-            } catch (StorageClientException e) {
-                throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while releasing the contract.");
-            }
+            saveContractPdf(contractDto);
         }
 
         return contractDto;
     }
 
-    private void saveContractPdf(ContractDto contractDto) throws StorageClientException {
+    private void saveContractPdf(ContractDto contractDto) {
 
         ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
         byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
         String fileName = contractDto.getDetails().getId() + ".pdf";
-        storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
+        try {
+            storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
+        } catch (StorageClientException e) {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while processing the contract.");
+        }
     }
 
     private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
