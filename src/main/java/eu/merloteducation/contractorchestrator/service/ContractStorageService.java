@@ -321,9 +321,13 @@ public class ContractStorageService {
             throws JSONException {
 
         // check that fields are in a valid format
-        String regex = "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^\\d+$)";
-        if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
-                !contractCreateRequest.getConsumerId().matches(ORGA_PREFIX + regex)) {
+        String regexUuid = "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^\\d+$)";
+        String[] offeringId = contractCreateRequest.getOfferingId().split(":");
+        String[] consumerId = contractCreateRequest.getConsumerId().split(":");
+
+        if (offeringId.length != 2 || consumerId.length != 2 ||
+            !offeringId[0].equals("ServiceOffering") || !offeringId[1].matches(regexUuid) ||
+            !consumerId[0].equals("Participant") || !consumerId[1].matches(regexUuid)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
