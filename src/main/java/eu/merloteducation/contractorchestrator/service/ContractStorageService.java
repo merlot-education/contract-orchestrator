@@ -28,6 +28,7 @@ import eu.merloteducation.s3library.service.StorageClientException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
 import org.springframework.data.domain.Page;
@@ -321,8 +322,9 @@ public class ContractStorageService {
             throws JSONException {
 
         // check that fields are in a valid format
+        String regex = "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^\\d+$)";
         if (!contractCreateRequest.getOfferingId().startsWith("ServiceOffering:") ||
-                !contractCreateRequest.getConsumerId().matches(ORGA_PREFIX + "\\d+")) {
+                !contractCreateRequest.getConsumerId().matches(ORGA_PREFIX + regex)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
@@ -378,6 +380,7 @@ public class ContractStorageService {
      * @param authToken          the OAuth2 Token from the user requesting this action
      * @return newly generated contract
      */
+    @Transactional
     public ContractDto regenerateContract(String contractId, String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
@@ -417,6 +420,7 @@ public class ContractStorageService {
      * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
+    @Transactional
     public ContractDto updateContractTemplate(ContractDto editedContract,
                                               String authToken,
                                               String activeRoleOrgaId) throws JSONException {
@@ -459,6 +463,7 @@ public class ContractStorageService {
      * @param authToken        the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
+    @Transactional(rollbackOn = {ResponseStatusException.class})
     public ContractDto transitionContractTemplateState(String contractId,
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
@@ -512,29 +517,29 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, e.getMessage());
         }
 
-        // generate contract pdf
-        ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
-        if (targetState == ContractState.RELEASED) {
-            // if successfully released, create and save the contract pdf
-            saveContractPdf(contractDto);
-        }
-
         // if all checks passed, save the new state of the contract
         contractTemplateRepository.save(contract);
+
+        ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
+
+        if (targetState == ContractState.RELEASED) {
+            // if successfully released, generate and save the contract pdf
+            try {
+                saveContractPdf(contractDto);
+            } catch (StorageClientException e) {
+                throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while releasing the contract.");
+            }
+        }
 
         return contractDto;
     }
 
-    private void saveContractPdf(ContractDto contractDto) throws IOException {
+    private void saveContractPdf(ContractDto contractDto) throws StorageClientException {
 
         ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
         byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
         String fileName = contractDto.getDetails().getId() + ".pdf";
-        try {
-            storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
-        } catch (StorageClientException e) {
-            throw new IOException("Failed to upload file");
-        }
+        storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
     }
 
     private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
@@ -598,6 +603,7 @@ public class ContractStorageService {
      * @return updated contract
      * @throws IOException exception during reading file
      */
+    @Transactional(rollbackOn = {ResponseStatusException.class})
     public ContractDto addContractAttachment(String contractId, byte[] attachment, String fileName,
                                              String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
@@ -606,17 +612,15 @@ public class ContractStorageService {
             throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
         }
 
+        // add file to contract
+        contract.addAttachment(fileName);
+        contractTemplateRepository.save(contract);
+
         try {
             storageClient.pushItem(contract.getId(), fileName, attachment);
         } catch (StorageClientException e) {
-            throw new IOException("Failed to upload file");
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while saving the contract attachment.");
         }
-
-
-        // add stored file to contract
-        contract.addAttachment(fileName);
-
-        contractTemplateRepository.save(contract);
 
         return castAndMapToContractDetailsDto(contract, authToken);
     }
@@ -629,23 +633,23 @@ public class ContractStorageService {
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract
      */
+    @Transactional(rollbackOn = {ResponseStatusException.class})
     public ContractDto deleteContractAttachment(String contractId, String attachmentId,
                                                 String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
-        try {
-            storageClient.deleteItem(contract.getId(), attachmentId);
-        } catch (StorageClientException e) {
-            throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in the storage.");
-        }
-
         boolean attachmentDeleted = contract.getAttachments().remove(attachmentId);
-
         if (!attachmentDeleted) {
             throw new ResponseStatusException(NOT_FOUND, "Specified attachment was not found in this contract.");
         }
 
         contractTemplateRepository.save(contract);
+
+        try {
+            storageClient.deleteItem(contract.getId(), attachmentId);
+        } catch (StorageClientException e) {
+            throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while deleting the contract attachment.");
+        }
 
         return castAndMapToContractDetailsDto(contract, authToken);
     }
