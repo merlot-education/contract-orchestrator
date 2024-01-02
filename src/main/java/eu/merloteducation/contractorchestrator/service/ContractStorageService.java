@@ -536,11 +536,11 @@ public class ContractStorageService {
     private void saveContractPdf(ContractDto contractDto) {
 
         ContractPdfDto contractPdfDto = castAndMapToContractPdfDto(contractDto);
-        byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
-        String fileName = contractDto.getDetails().getId() + ".pdf";
         try {
+            byte[] pdfBytes = pdfServiceClient.getPdfContract(contractPdfDto);
+            String fileName = contractDto.getDetails().getId() + ".pdf";
             storageClient.pushItem(getPathToContractPdf(contractDto.getDetails().getId()), fileName, pdfBytes);
-        } catch (StorageClientException e) {
+        } catch (Exception e) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Encountered error while processing the contract.");
         }
     }

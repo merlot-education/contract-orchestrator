@@ -45,8 +45,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -636,7 +635,7 @@ class ContractStorageServiceTest {
     @Test
     void createContractTemplateInvalidOfferingId() {
         ContractCreateRequest request = new ContractCreateRequest();
-        request.setConsumerId("Participant:10");
+        request.setConsumerId("Participant:08f85991-63fa-46aa-b909-a324d89ae704");
         request.setOfferingId("garbage");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "authToken"));
@@ -984,7 +983,7 @@ class ContractStorageServiceTest {
                 provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2..json");
+        editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2.json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
@@ -996,6 +995,73 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
                 ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken");
         assertEquals(ContractState.RELEASED.name(), editedContract.getDetails().getState());
+
+        verify(pdfServiceClient).getPdfContract(any());
+        verify(storageClient).pushItem(eq(editedContract.getDetails().getId() + "/contractPdf"), eq(editedContract.getDetails().getId() + ".pdf"), any());
+    }
+
+    @Test
+    @Transactional
+    void transitionDataDeliveryProviderIncompleteToCompleteFail() throws JSONException, IOException,
+        StorageClientException {
+
+        doThrow(StorageClientException.class).when(storageClient).pushItem(any(), any(), any(byte[].class));
+
+        String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
+        String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
+
+        DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
+            "authToken");
+
+        editedContract.getNegotiation().setExchangeCountSelection("0");
+        editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
+        editedContract.getNegotiation().setConsumerTncAccepted(true);
+        editedContract.getNegotiation().setConsumerAttachmentsAccepted(true);
+        editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+        editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
+        editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            consumer);
+
+        editedContract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
+            ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
+        assertEquals(ContractState.SIGNED_CONSUMER.name(), editedContract.getDetails().getState());
+
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+
+        editedContract.getNegotiation().setProviderTncAccepted(true);
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            provider);
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+
+        editedContract.getProvisioning().setDataAddressType("IonosS3");
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            provider);
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+
+        editedContract.getProvisioning().setDataAddressSourceBucketName("MyBucket2");
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            provider);
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+
+        editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2.json");
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            provider);
+        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+
+        editedContract.getProvisioning().setSelectedProviderConnectorId("edc2");
+        editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
+            provider);
+
+        DataDeliveryContractDto contractDto = editedContract;
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> contractStorageService.transitionContractTemplateState(contractDto.getDetails().getId(),
+            ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken"));
+        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
 
         verify(pdfServiceClient).getPdfContract(any());
         verify(storageClient).pushItem(eq(editedContract.getDetails().getId() + "/contractPdf"), eq(editedContract.getDetails().getId() + ".pdf"), any());
@@ -1323,6 +1389,17 @@ class ContractStorageServiceTest {
     }
 
     @Test
+    void addContractAttachmentsInDraftFail() throws StorageClientException {
+        doThrow(StorageClientException.class).when(storageClient).pushItem(any(), any(), any(byte[].class));
+
+        String templateId = dataDeliveryContract.getId();
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+            () -> this.contractStorageService.addContractAttachment(templateId, new byte[]{}, "myFile.pdf", "authToken"));
+        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+
+    @Test
     void addContractAttachmentsInDraftTooManyAttachments() throws IOException {
         String templateId = dataDeliveryContract.getId();
         for (int i = 0; i < 10; i++) {
@@ -1348,6 +1425,21 @@ class ContractStorageServiceTest {
         assertNotNull(result2);
         assertNotNull(result2.getNegotiation().getAttachments());
         assertFalse(result2.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    void deleteContractAttachmentsInDraftFail() throws StorageClientException, IOException {
+        doThrow(StorageClientException.class).when(storageClient).deleteItem(any(), any());
+
+        String templateId = dataDeliveryContract.getId();
+
+        ContractDto result = this.contractStorageService.addContractAttachment(templateId, new byte[]{},
+            "myFile.pdf", "authToken");
+        assertTrue(result.getNegotiation().getAttachments().contains("myFile.pdf"));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+            () -> this.contractStorageService.deleteContractAttachment(templateId, "myFile.pdf", "authToken"));
+        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @Test
