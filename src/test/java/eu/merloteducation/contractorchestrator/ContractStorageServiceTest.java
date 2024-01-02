@@ -1057,11 +1057,11 @@ class ContractStorageServiceTest {
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
             provider);
 
-        DataDeliveryContractDto contractDto = editedContract;
+        String id = editedContract.getDetails().getId();
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> contractStorageService.transitionContractTemplateState(contractDto.getDetails().getId(),
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> contractStorageService.transitionContractTemplateState(id,
             ContractState.RELEASED, provider, "providerUserId", "User Name", "authToken"));
-        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
 
         verify(pdfServiceClient).getPdfContract(any());
         verify(storageClient).pushItem(eq(editedContract.getDetails().getId() + "/contractPdf"), eq(editedContract.getDetails().getId() + ".pdf"), any());
@@ -1395,7 +1395,7 @@ class ContractStorageServiceTest {
         String templateId = dataDeliveryContract.getId();
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
             () -> this.contractStorageService.addContractAttachment(templateId, new byte[]{}, "myFile.pdf", "authToken"));
-        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
 
@@ -1439,7 +1439,7 @@ class ContractStorageServiceTest {
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
             () -> this.contractStorageService.deleteContractAttachment(templateId, "myFile.pdf", "authToken"));
-        assertEquals(ex.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatusCode());
     }
 
     @Test
