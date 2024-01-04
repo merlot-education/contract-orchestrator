@@ -383,7 +383,6 @@ public class ContractStorageService {
      * @param authToken          the OAuth2 Token from the user requesting this action
      * @return newly generated contract
      */
-    @Transactional
     public ContractDto regenerateContract(String contractId, String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
@@ -423,7 +422,6 @@ public class ContractStorageService {
      * @param activeRoleOrgaId the currently selected role of the user
      * @return updated contract template from database
      */
-    @Transactional
     public ContractDto updateContractTemplate(ContractDto editedContract,
                                               String authToken,
                                               String activeRoleOrgaId) throws JSONException {
@@ -526,7 +524,7 @@ public class ContractStorageService {
         ContractDto contractDto = castAndMapToContractDetailsDto(contract, authToken);
 
         if (targetState == ContractState.RELEASED) {
-            // if successfully released, generate and save the contract pdf
+            // if successfully released, create and save the contract pdf
             saveContractPdf(contractDto);
         }
 
