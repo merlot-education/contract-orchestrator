@@ -509,7 +509,7 @@ public class ContractStorageService {
         try {
             contract.transitionState(targetState);
         } catch (IllegalStateException e) {
-            throw new ResponseStatusException(FORBIDDEN, e.getMessage());
+            throw new ResponseStatusException(BAD_REQUEST, e.getMessage());
         }
 
         // generate contract pdf
@@ -603,7 +603,7 @@ public class ContractStorageService {
         ContractTemplate contract = this.loadContract(contractId);
 
         if (contract.getAttachments() != null && contract.getAttachments().size() >= 10) {
-            throw new ResponseStatusException(FORBIDDEN, "Cannot add attachments to contract.");
+            throw new ResponseStatusException(BAD_REQUEST, "Cannot add attachments to contract.");
         }
 
         try {
