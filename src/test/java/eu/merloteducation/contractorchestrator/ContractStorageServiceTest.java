@@ -871,6 +871,14 @@ class ContractStorageServiceTest {
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
+    private void assertTransitionThrowsBadRequest(String contractId, ContractState state,
+                                                 String activeRoleOrgaId) {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> contractStorageService.transitionContractTemplateState(contractId,
+                        state, activeRoleOrgaId, "userId", "User Name", "authToken"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
     @Test
     @Transactional
     void transitionDataDeliveryConsumerIncompleteToComplete() throws JSONException, IOException {
@@ -886,48 +894,48 @@ class ContractStorageServiceTest {
                 "authToken");
 
 
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
         editedContract.getNegotiation().setConsumerTncAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setConsumerAttachmentsAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -967,27 +975,27 @@ class ContractStorageServiceTest {
                 ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
         assertEquals(ContractState.SIGNED_CONSUMER.name(), editedContract.getDetails().getState());
 
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getNegotiation().setProviderTncAccepted(true);
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressType("IonosS3");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressSourceBucketName("MyBucket2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2..json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
-        assertTransitionThrowsForbidden(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
+        assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
         editedContract.getProvisioning().setSelectedProviderConnectorId("edc2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -1085,7 +1093,7 @@ class ContractStorageServiceTest {
         result = (SaasContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
                 ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
-        assertTransitionThrowsForbidden(result.getDetails().getId(), ContractState.REVOKED, provider);
+        assertTransitionThrowsBadRequest(result.getDetails().getId(), ContractState.REVOKED, provider);
     }
 
     @Test
@@ -1123,7 +1131,7 @@ class ContractStorageServiceTest {
         result = (CooperationContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
                 ContractState.RELEASED, provider, "userId", "User Name", "authToken");
 
-        assertTransitionThrowsForbidden(result.getDetails().getId(), ContractState.REVOKED, provider);
+        assertTransitionThrowsBadRequest(result.getDetails().getId(), ContractState.REVOKED, provider);
     }
 
     @Test
@@ -1332,7 +1340,7 @@ class ContractStorageServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> this.contractStorageService.addContractAttachment(templateId, new byte[]{},
                         "myFile" + 10 + ".pdf", "authToken"));
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     }
 
     @Test
