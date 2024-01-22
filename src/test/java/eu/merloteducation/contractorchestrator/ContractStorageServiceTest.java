@@ -20,6 +20,7 @@ import eu.merloteducation.s3library.service.StorageClientException;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.text.StringSubstitutor;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -45,8 +51,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -96,6 +101,10 @@ class ContractStorageServiceTest {
     private SaasContractTemplate saasContract;
     private DataDeliveryContractTemplate dataDeliveryContract;
     private CooperationContractTemplate coopContract;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+    private TransactionTemplate transactionTemplate;
 
     private String createServiceOfferingOrchestratorResponse(String id, String hash, String name, String offeredBy,
                                                              String offeringType, String typeSpecificFields) {
@@ -636,7 +645,7 @@ class ContractStorageServiceTest {
     @Test
     void createContractTemplateInvalidOfferingId() {
         ContractCreateRequest request = new ContractCreateRequest();
-        request.setConsumerId("Participant:10");
+        request.setConsumerId("Participant:08f85991-63fa-46aa-b909-a324d89ae704");
         request.setOfferingId("garbage");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "authToken"));
@@ -992,7 +1001,7 @@ class ContractStorageServiceTest {
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2..json");
+        editedContract.getProvisioning().setDataAddressSourceFileName("MyFile2.json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
@@ -1007,6 +1016,89 @@ class ContractStorageServiceTest {
 
         verify(pdfServiceClient).getPdfContract(any());
         verify(storageClient).pushItem(eq(editedContract.getDetails().getId() + "/contractPdf"), eq(editedContract.getDetails().getId() + ".pdf"), any());
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.NOT_SUPPORTED) // handle transactions manually
+    void transitionDataDeliveryProviderIncompleteToCompleteFailAtRelease() throws StorageClientException {
+        transactionTemplate = new TransactionTemplate(transactionManager);
+
+        doThrow(StorageClientException.class).when(storageClient).pushItem(any(), any(), any(byte[].class));
+
+        String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
+        String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+
+        transactionTemplate.execute(status -> {
+            contractTemplateRepository.save(template);
+            return "foo";
+        });
+
+        DataDeliveryContractDto editedContract = transactionTemplate.execute(status -> {
+            try {
+                DataDeliveryContractDto contract = (DataDeliveryContractDto) contractStorageService
+                    .getContractDetails(template.getId(), "authToken");
+
+                contract.getNegotiation().setExchangeCountSelection("0");
+                contract.getNegotiation().setRuntimeSelection("0 unlimited");
+                contract.getNegotiation().setConsumerTncAccepted(true);
+                contract.getNegotiation().setConsumerAttachmentsAccepted(true);
+                contract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+                contract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
+                contract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+
+                contract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(contract, "authToken",
+                    consumer);
+
+                contract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(contract.getDetails().getId(),
+                    ContractState.SIGNED_CONSUMER, consumer, "consumerUserId", "User Name", "authToken");
+
+                return contract;
+            } catch (JSONException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        assertNotNull(editedContract);
+
+        Exception thrownEx = null;
+        try {
+            transactionTemplate.execute(status -> {
+                try {
+                    DataDeliveryContractDto contract = editedContract;
+                    contract.getNegotiation().setProviderTncAccepted(true);
+                    contract.getProvisioning().setDataAddressType("IonosS3");
+                    contract.getProvisioning().setDataAddressSourceBucketName("MyBucket2");
+                    contract.getProvisioning().setDataAddressSourceFileName("MyFile2.json");
+                    contract.getProvisioning().setSelectedProviderConnectorId("edc2");
+                    contract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(contract,
+                        "authToken", provider);
+
+                    contract = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(
+                        contract.getDetails().getId(), ContractState.RELEASED, provider,
+                        "providerUserId", "User Name", "authToken");
+
+                    return "foo";
+                } catch (JSONException | IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (Exception ex) {
+            thrownEx = ex;
+        }
+
+        assertNotNull(thrownEx);
+        assertEquals(thrownEx.getClass(), ResponseStatusException.class);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ((ResponseStatusException) thrownEx).getStatusCode());
+        assertEquals("Encountered error while processing the contract.", ((ResponseStatusException) thrownEx).getReason());
+
+        ContractTemplate contractTemplate = contractTemplateRepository.findById(template.getId()).orElse(null);
+        assertNotNull(contractTemplate);
+        // the last successful state transition was to the SIGNED_CONSUMER state
+        // the contract should still be in that state as transitioning to the RELEASED state failed
+        assertEquals(ContractState.SIGNED_CONSUMER, contractTemplate.getState());
     }
 
     @Test
@@ -1143,6 +1235,8 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
         representedOrgaIds.add(provider);
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(template.getId(),
                 ContractState.DELETED, consumer, "userId", "User Name", "authToken");
@@ -1179,7 +1273,6 @@ class ContractStorageServiceTest {
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         representedOrgaIds.add(provider);
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
                 .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId", "User Name", "authToken");
@@ -1200,9 +1293,8 @@ class ContractStorageServiceTest {
         representedOrgaIds.add(consumer);
         representedOrgaIds.add(provider);
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
-        template.setServiceContractProvisioning(new DataDeliveryProvisioning());
-        DataDeliveryProvisioning provisioning =
-                (DataDeliveryProvisioning) template.getServiceContractProvisioning();
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
 
         DataDeliveryContractDto editedContract = (DataDeliveryContractDto) contractStorageService.getContractDetails(dataDeliveryContract.getId(),
                 "authToken");
@@ -1257,12 +1349,17 @@ class ContractStorageServiceTest {
         Set<String> representedOrgaIds = new HashSet<>();
         String consumer = dataDeliveryContract.getConsumerId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
-        DataDeliveryContractDto template = (DataDeliveryContractDto) this.contractStorageService
-                .transitionContractTemplateState(dataDeliveryContract.getId(), ContractState.DELETED, consumer, "1234", "User Name", "authToken");
-        template = (DataDeliveryContractDto) this.contractStorageService.regenerateContract(dataDeliveryContract.getId(), "authToken");
 
-        assertNotEquals(template.getDetails().getId(), dataDeliveryContract.getId());
-        assertEquals(ContractState.IN_DRAFT.name(), template.getDetails().getState());
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+        contractTemplateRepository.save(template);
+
+        DataDeliveryContractDto contract = (DataDeliveryContractDto) this.contractStorageService
+                .transitionContractTemplateState(dataDeliveryContract.getId(), ContractState.DELETED, consumer, "1234", "User Name", "authToken");
+        contract = (DataDeliveryContractDto) this.contractStorageService.regenerateContract(dataDeliveryContract.getId(), "authToken");
+
+        assertNotEquals(contract.getDetails().getId(), dataDeliveryContract.getId());
+        assertEquals(ContractState.IN_DRAFT.name(), contract.getDetails().getState());
     }
 
     @Test
@@ -1331,6 +1428,50 @@ class ContractStorageServiceTest {
     }
 
     @Test
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.NOT_SUPPORTED) // handle transactions manually
+    void addContractAttachmentsInDraftFail() throws StorageClientException {
+        transactionTemplate = new TransactionTemplate(transactionManager);
+
+        doThrow(StorageClientException.class).when(storageClient).pushItem(any(), any(), any(byte[].class));
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+
+        transactionTemplate.execute(status -> {
+            contractTemplateRepository.save(template);
+            return "foo";
+        });
+
+        ContractTemplate check1 = transactionTemplate.execute(status -> {
+            return contractTemplateRepository.findById(template.getId()).orElse(null);
+        });
+        assertNotNull(check1);
+        assertFalse(check1.getAttachments().contains("myFile.pdf"));
+
+        Exception thrownEx = null;
+        try {
+            transactionTemplate.execute(status -> {
+                contractStorageService.addContractAttachment(template.getId(), new byte[]{}, "myFile.pdf", "authToken");
+                return "foo";
+            });
+        } catch (Exception e) {
+            thrownEx = e;
+        }
+
+        assertNotNull(thrownEx);
+        assertEquals(thrownEx.getClass(), ResponseStatusException.class);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ((ResponseStatusException) thrownEx).getStatusCode());
+        assertEquals("Encountered error while saving the contract attachment.", ((ResponseStatusException) thrownEx).getReason());
+
+        ContractTemplate check2 = transactionTemplate.execute(status -> {
+            return contractTemplateRepository.findById(template.getId()).orElse(null);
+        });
+        assertNotNull(check2);
+        assertFalse(check2.getAttachments().contains("myFile.pdf"));
+    }
+
+
+    @Test
     void addContractAttachmentsInDraftTooManyAttachments() throws IOException {
         String templateId = dataDeliveryContract.getId();
         for (int i = 0; i < 10; i++) {
@@ -1356,6 +1497,52 @@ class ContractStorageServiceTest {
         assertNotNull(result2);
         assertNotNull(result2.getNegotiation().getAttachments());
         assertFalse(result2.getNegotiation().getAttachments().contains("myFile.pdf"));
+    }
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional(propagation = Propagation.NOT_SUPPORTED) // handle transactions manually
+    void deleteContractAttachmentsInDraftFail() throws StorageClientException {
+        transactionTemplate = new TransactionTemplate(transactionManager);
+
+        doThrow(StorageClientException.class).when(storageClient).deleteItem(any(), any());
+
+        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
+        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
+
+        transactionTemplate.execute(status -> {
+            contractTemplateRepository.save(template);
+            return "foo";
+        });
+
+        ContractTemplate check1 = transactionTemplate.execute(status -> {
+            contractStorageService.addContractAttachment(template.getId(), new byte[]{},
+                "myOtherFile.pdf", "authToken");
+
+                return contractTemplateRepository.findById(template.getId()).orElse(null);
+            });
+        assertNotNull(check1);
+        assertTrue(check1.getAttachments().contains("myOtherFile.pdf"));
+
+        Exception thrownEx = null;
+        try {
+            transactionTemplate.execute(status -> {
+                contractStorageService.deleteContractAttachment(template.getId(), "myOtherFile.pdf", "authToken");
+                return "foo";
+            });
+        } catch (Exception ex) {
+            thrownEx = ex;
+        }
+
+        assertNotNull(thrownEx);
+        assertEquals(thrownEx.getClass(), ResponseStatusException.class);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ((ResponseStatusException) thrownEx).getStatusCode());
+        assertEquals("Encountered error while deleting the contract attachment.", ((ResponseStatusException) thrownEx).getReason());
+
+        ContractTemplate check2 = transactionTemplate.execute(status -> {
+            return contractTemplateRepository.findById(template.getId()).orElse(null);
+        });
+        assertNotNull(check2);
+        assertTrue(check2.getAttachments().contains("myOtherFile.pdf"));
     }
 
     @Test
