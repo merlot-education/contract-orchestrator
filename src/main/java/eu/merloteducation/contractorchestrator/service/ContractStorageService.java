@@ -602,11 +602,10 @@ public class ContractStorageService {
      * @param fileName name of the uploaded file
      * @param authToken the OAuth2 Token from the user requesting this action
      * @return updated contract
-     * @throws IOException exception during reading file
      */
     @Transactional(rollbackOn = {ResponseStatusException.class})
     public ContractDto addContractAttachment(String contractId, byte[] attachment, String fileName,
-                                             String authToken) throws IOException {
+                                             String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
         if (contract.getAttachments() != null && contract.getAttachments().size() >= 10) {

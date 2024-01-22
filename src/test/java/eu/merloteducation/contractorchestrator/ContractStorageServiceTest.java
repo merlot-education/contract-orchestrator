@@ -1265,9 +1265,6 @@ class ContractStorageServiceTest {
         String provider = dataDeliveryContract.getProviderId().replace("Participant:", "");
         representedOrgaIds.add(consumer);
         representedOrgaIds.add(provider);
-        DataDeliveryContractTemplate template = new DataDeliveryContractTemplate(dataDeliveryContract, false);
-        template.setServiceContractProvisioning(new DataDeliveryProvisioning()); // reset provisioning
-        contractTemplateRepository.save(template);
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
                 .transitionContractTemplateState(contractId, ContractState.DELETED, consumer, "userId", "User Name", "authToken");
@@ -1446,11 +1443,7 @@ class ContractStorageServiceTest {
         Exception thrownEx = null;
         try {
             transactionTemplate.execute(status -> {
-                try {
-                    contractStorageService.addContractAttachment(template.getId(), new byte[]{}, "myFile.pdf", "authToken");
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                };
+                contractStorageService.addContractAttachment(template.getId(), new byte[]{}, "myFile.pdf", "authToken");
                 return "foo";
             });
         } catch (Exception e) {
@@ -1514,12 +1507,8 @@ class ContractStorageServiceTest {
         });
 
         ContractTemplate check1 = transactionTemplate.execute(status -> {
-                try {
-                    contractStorageService.addContractAttachment(template.getId(), new byte[]{},
-                        "myOtherFile.pdf", "authToken");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            contractStorageService.addContractAttachment(template.getId(), new byte[]{},
+                "myOtherFile.pdf", "authToken");
 
                 return contractTemplateRepository.findById(template.getId()).orElse(null);
             });
