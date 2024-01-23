@@ -3,6 +3,14 @@ package eu.merloteducation.contractorchestrator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.CooperationCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
@@ -14,14 +22,6 @@ import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractNegotiationDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.VCard;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescription;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.CooperationCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.ServiceOfferingCredentialSubject;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -144,8 +144,8 @@ class ContractMapperTest {
 
         ServiceOfferingDto serviceOfferingDetails = new ServiceOfferingDto();
 
-        SelfDescription<ServiceOfferingCredentialSubject> selfDescription = new SelfDescription<>();
-        selfDescription.setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        SelfDescription selfDescription = new SelfDescription();
+        selfDescription.setVerifiableCredential(new SelfDescriptionVerifiableCredential());
         serviceOfferingDetails.setSelfDescription(selfDescription);
         contractDto.setOffering(serviceOfferingDetails);
 

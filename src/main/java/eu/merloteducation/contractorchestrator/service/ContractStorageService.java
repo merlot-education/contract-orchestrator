@@ -1,11 +1,15 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.Runtime;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
@@ -15,13 +19,6 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContra
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.AllowedUserCount;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.DataExchangeCount;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.Runtime;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.TermsAndConditions;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.ServiceOfferingCredentialSubject;
 import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
 import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
@@ -117,7 +114,8 @@ public class ContractStorageService {
     }
 
     private boolean isValidRuntimeSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
-        ServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+        MerlotServiceOfferingCredentialSubject credentialSubject = (MerlotServiceOfferingCredentialSubject)
+                offeringDetails.getSelfDescription()
                 .getVerifiableCredential().getCredentialSubject();
         List<Runtime> runtimeOptions = credentialSubject.getRuntimeOptions();
         if (runtimeOptions.isEmpty()) {
@@ -343,8 +341,8 @@ public class ContractStorageService {
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        ServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject();
+        MerlotServiceOfferingCredentialSubject credentialSubject = (MerlotServiceOfferingCredentialSubject)
+                offeringDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject();
 
         switch (credentialSubject.getType()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();

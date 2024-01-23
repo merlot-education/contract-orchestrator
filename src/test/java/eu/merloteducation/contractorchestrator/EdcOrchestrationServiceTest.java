@@ -4,6 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.service.*;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractNegotiationDto;
@@ -15,10 +19,6 @@ import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.common.IdResponse;
 import eu.merloteducation.modelslib.edc.negotiation.ContractNegotiation;
 import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescription;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -92,8 +92,8 @@ class EdcOrchestrationServiceTest {
         validPushContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
         validPushContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
         validPushContract.setOffering(new ServiceOfferingDto());
-        validPushContract.getOffering().setSelfDescription(new SelfDescription<>());
-        validPushContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        validPushContract.getOffering().setSelfDescription(new SelfDescription());
+        validPushContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
         validPushContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
         DataDeliveryCredentialSubject credentialSubject =
                 (DataDeliveryCredentialSubject) validPushContract.getOffering().getSelfDescription()
@@ -122,8 +122,8 @@ class EdcOrchestrationServiceTest {
         validPullContract.getProvisioning().setDataAddressTargetFileName("targetfile.json");
         validPullContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
         validPullContract.setOffering(new ServiceOfferingDto());
-        validPullContract.getOffering().setSelfDescription(new SelfDescription<>());
-        validPullContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential<>());
+        validPullContract.getOffering().setSelfDescription(new SelfDescription());
+        validPullContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
         validPullContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
         credentialSubject =
                 (DataDeliveryCredentialSubject) validPullContract.getOffering().getSelfDescription()
