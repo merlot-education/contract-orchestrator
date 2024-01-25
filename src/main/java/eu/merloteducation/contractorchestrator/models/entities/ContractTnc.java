@@ -15,7 +15,7 @@ public class ContractTnc {
     private String hash;
 
     public ContractTnc(TermsAndConditions termsAndConditions) {
-        this.content = termsAndConditions.getContent().getValue();
-        this.hash = termsAndConditions.getHash().getValue();
+        this.content = termsAndConditions.getContent();
+        this.hash = termsAndConditions.getHash();
     }
 }

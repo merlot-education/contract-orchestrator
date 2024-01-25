@@ -4,7 +4,6 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
@@ -34,15 +33,11 @@ public interface ContractMapper {
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
-    default String mapStringTypeValue(StringTypeValue value) {
-        return value != null ? value.getValue() : null;
-    }
-
     @Named("mapParticipantLegalName")
     default String mapParticipantLegalName(MerlotParticipantDto consumerOrgaDetails) {
         return ((MerlotOrganizationCredentialSubject)
                 consumerOrgaDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject())
-                .getLegalName().getValue();
+                .getLegalName();
     }
 
     @Named("mapParticipantLegalAddress")
@@ -54,26 +49,26 @@ public interface ContractMapper {
 
     @Named("mapOfferingName")
     default String mapOfferingName(ServiceOfferingDto offeringDto) {
-        StringTypeValue name = ((MerlotServiceOfferingCredentialSubject)
+        String name = ((MerlotServiceOfferingCredentialSubject)
                 offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
                 .getName();
-        return name == null ? "" : name.getValue();
+        return name == null ? "" : name;
     }
 
     @Named("mapOfferingDescription")
     default String mapOfferingDescription(ServiceOfferingDto offeringDto) {
-        StringTypeValue description = ((MerlotServiceOfferingCredentialSubject)
+        String description = ((MerlotServiceOfferingCredentialSubject)
                 offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
                 .getDescription();
-        return description == null ? "" : description.getValue();
+        return description == null ? "" : description;
     }
 
     @Named("mapOfferingExampleCosts")
     default String mapOfferingExampleCosts(ServiceOfferingDto offeringDto) {
-        StringTypeValue exampleCosts = ((MerlotServiceOfferingCredentialSubject)
+        String exampleCosts = ((MerlotServiceOfferingCredentialSubject)
                 offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
                 .getExampleCosts();
-        return exampleCosts == null ? "" : exampleCosts.getValue();
+        return exampleCosts == null ? "" : exampleCosts;
     }
 
     @Mapping(target = "id", source = "contract.id")
@@ -162,13 +157,13 @@ public interface ContractMapper {
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractDataTransferCount", source = "contractDto.negotiation.exchangeCountSelection")
-    @Mapping(target = "serviceDataAccessType", expression = "java(mapStringTypeValue(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataAccessType()))")
-    @Mapping(target = "serviceDataTransferType", expression = "java(mapStringTypeValue(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataTransferType()))")
+    @Mapping(target = "serviceDataAccessType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataAccessType())")
+    @Mapping(target = "serviceDataTransferType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataTransferType())")
     ContractPdfDto contractDtoToContractPdfDto(DataDeliveryContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractUserCount", source = "contractDto.negotiation.userCountSelection")
-    @Mapping(target = "serviceHardwareRequirements", expression = "java(mapStringTypeValue(((SaaSCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getHardwareRequirements()))")
+    @Mapping(target = "serviceHardwareRequirements", expression = "java(((SaaSCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getHardwareRequirements())")
     ContractPdfDto contractDtoToContractPdfDto(SaasContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
@@ -188,10 +183,10 @@ public interface ContractMapper {
     @Named("legalAddress")
     default ContractPdfAddressDto legalAddressMapper(VCard legalAddress) {
         ContractPdfAddressDto contractPdfAddressDto = new ContractPdfAddressDto();
-        contractPdfAddressDto.setCountryName(legalAddress.getCountryName().getValue());
-        contractPdfAddressDto.setStreetAddress(legalAddress.getStreetAddress().getValue());
-        contractPdfAddressDto.setLocality(legalAddress.getLocality().getValue());
-        contractPdfAddressDto.setPostalCode(legalAddress.getPostalCode().getValue());
+        contractPdfAddressDto.setCountryName(legalAddress.getCountryName());
+        contractPdfAddressDto.setStreetAddress(legalAddress.getStreetAddress());
+        contractPdfAddressDto.setLocality(legalAddress.getLocality());
+        contractPdfAddressDto.setPostalCode(legalAddress.getPostalCode());
 
         return contractPdfAddressDto;
     }
