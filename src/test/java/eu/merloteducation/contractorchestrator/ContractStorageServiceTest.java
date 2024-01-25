@@ -210,7 +210,7 @@ class ContractStorageServiceTest {
                                     {
                                         "@type": null,
                                         "merlot:runtimeCount": {
-                                            "@type": "xsd:number",
+                                            "@type": "xsd:integer",
                                             "@value": 0
                                         },
                                         "merlot:runtimeMeasurement": {
@@ -221,7 +221,7 @@ class ContractStorageServiceTest {
                                     {
                                         "@type": null,
                                         "merlot:runtimeCount": {
-                                            "@type": "xsd:number",
+                                            "@type": "xsd:integer",
                                             "@value": 4
                                         },
                                         "merlot:runtimeMeasurement": {
@@ -445,7 +445,7 @@ class ContractStorageServiceTest {
                                      {
                                          "@type": "merlot:AllowedUserCount",
                                          "merlot:userCountUpTo": {
-                                             "@type": "xsd:number",
+                                             "@type": "xsd:integer",
                                              "@value": 0
                                          }
                                      }
@@ -465,7 +465,7 @@ class ContractStorageServiceTest {
                                     {
                                         "@type": null,
                                         "merlot:exchangeCountUpTo": {
-                                            "@type": "xsd:number",
+                                            "@type": "xsd:integer",
                                             "@value": 0
                                         }
                                     }
