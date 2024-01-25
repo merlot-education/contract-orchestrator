@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
@@ -22,7 +23,6 @@ import eu.merloteducation.modelslib.edc.policy.Policy;
 import eu.merloteducation.modelslib.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.modelslib.edc.transfer.TransferRequest;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;

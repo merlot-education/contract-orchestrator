@@ -4,16 +4,18 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.StringTypeValue;
-import eu.merloteducation.modelslib.gxfscatalog.datatypes.VCard;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.modelslib.gxfscatalog.selfdescriptions.serviceofferings.SaaSCredentialSubject;
 import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,13 +38,51 @@ public interface ContractMapper {
         return value != null ? value.getValue() : null;
     }
 
+    @Named("mapParticipantLegalName")
+    default String mapParticipantLegalName(MerlotParticipantDto consumerOrgaDetails) {
+        return ((MerlotOrganizationCredentialSubject)
+                consumerOrgaDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+                .getLegalName().getValue();
+    }
+
+    @Named("mapParticipantLegalAddress")
+    default VCard mapParticipantLegalAddress(MerlotParticipantDto consumerOrgaDetails) {
+        return ((MerlotOrganizationCredentialSubject)
+                consumerOrgaDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+                .getLegalAddress();
+    }
+
+    @Named("mapOfferingName")
+    default String mapOfferingName(ServiceOfferingDto offeringDto) {
+        StringTypeValue name = ((MerlotServiceOfferingCredentialSubject)
+                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+                .getName();
+        return name == null ? "" : name.getValue();
+    }
+
+    @Named("mapOfferingDescription")
+    default String mapOfferingDescription(ServiceOfferingDto offeringDto) {
+        StringTypeValue description = ((MerlotServiceOfferingCredentialSubject)
+                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+                .getDescription();
+        return description == null ? "" : description.getValue();
+    }
+
+    @Named("mapOfferingExampleCosts")
+    default String mapOfferingExampleCosts(ServiceOfferingDto offeringDto) {
+        StringTypeValue exampleCosts = ((MerlotServiceOfferingCredentialSubject)
+                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+                .getExampleCosts();
+        return exampleCosts == null ? "" : exampleCosts.getValue();
+    }
+
     @Mapping(target = "id", source = "contract.id")
     @Mapping(target = "creationDate", source = "contract.creationDate")
     @Mapping(target = "offering", source = "offeringDetails")
     @Mapping(target = "providerId", source = "offeringDetails.providerDetails.providerId")
     @Mapping(target = "providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "consumerId", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.id")
-    @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName")
+    @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalName")
     @Mapping(target = "state", source = "contract.state")
     ContractBasicDto contractToContractBasicDto(ContractTemplate contract, MerlotParticipantDto consumerOrgaDetails,
                                                 ServiceOfferingDto offeringDetails);
@@ -52,10 +92,10 @@ public interface ContractMapper {
     @Mapping(target = "details.creationDate", source = "contract.creationDate")
     @Mapping(target = "details.providerId", source = "contract.providerId")
     @Mapping(target = "details.providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
-    @Mapping(target = "details.providerLegalAddress", source = "providerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalAddress")
+    @Mapping(target = "details.providerLegalAddress", source = "providerOrgaDetails", qualifiedByName = "mapParticipantLegalAddress")
     @Mapping(target = "details.consumerId", source = "contract.consumerId")
-    @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalName")
-    @Mapping(target = "details.consumerLegalAddress", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.legalAddress")
+    @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalName")
+    @Mapping(target = "details.consumerLegalAddress", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalAddress")
     @Mapping(target = "details.state", source = "contract.state")
     @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignature.signerName")
     @Mapping(target = "details.providerSignature", source = "contract.providerSignature.signature")
@@ -104,10 +144,10 @@ public interface ContractMapper {
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
     @Mapping(target = "serviceId", expression = "java(contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject().getId().replace(\"ServiceOffering:\", \"\"))")
-    @Mapping(target = "serviceName", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.name")
     @Mapping(target = "serviceType", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.type")
-    @Mapping(target = "serviceDescription", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.description")
-    @Mapping(target = "serviceExampleCosts", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.exampleCosts")
+    @Mapping(target = "serviceName", source = "contractDto.offering", qualifiedByName = "mapOfferingName")
+    @Mapping(target = "serviceDescription", source = "contractDto.offering", qualifiedByName = "mapOfferingDescription")
+    @Mapping(target = "serviceExampleCosts", source = "contractDto.offering", qualifiedByName = "mapOfferingExampleCosts")
     @Mapping(target = "providerLegalName", source = "contractDto.details.providerLegalName")
     @Mapping(target = "providerLegalAddress", source = "contractDto.details.providerLegalAddress", qualifiedByName = "legalAddress")
     @Mapping(target = "providerSignerUser", source = "contractDto.details.providerSignerUserName")

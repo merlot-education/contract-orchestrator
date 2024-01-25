@@ -27,7 +27,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -102,7 +101,8 @@ class ContractsControllerTest {
         List<ContractBasicDto> contractDtos = new ArrayList<>();
         contractDtos.add(contractBasicDto);
 
-        Page<ContractBasicDto> contractTemplatesPage = new PageImpl<>(contractDtos);
+        // TODO create custom PageImpl for serialization https://github.com/spring-projects/spring-data-commons/issues/2919
+        //Page<ContractBasicDto> contractTemplatesPage = new PageImpl<>(contractDtos);
 
         lenient().when(contractStorageService.addContractTemplate(any(), any()))
                 .thenReturn(saasContractDto);
@@ -111,7 +111,7 @@ class ContractsControllerTest {
         lenient().when(contractStorageService.updateContractTemplate(any(), any(), any()))
                 .thenReturn(saasContractDto);
         lenient().when(contractStorageService.getOrganizationContracts(any(), any(), any(), any()))
-                .thenReturn(contractTemplatesPage);
+                .thenReturn(null);
         lenient().when(contractStorageService.getContractAttachment(any(), any()))
                 .thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
         lenient().when(contractStorageService.getContractPdf(any()))
