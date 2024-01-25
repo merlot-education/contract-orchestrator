@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.CooperationCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDetailsDto;
@@ -119,17 +117,17 @@ class ContractMapperTest {
         contractDetailsDto.setConsumerSignatureDate("01.02.2023 09:45");
 
         VCard providerLegalAddress = new VCard();
-        providerLegalAddress.setCountryName(new StringTypeValue("DE"));
-        providerLegalAddress.setStreetAddress(new StringTypeValue("Abcstraße 10"));
-        providerLegalAddress.setLocality(new StringTypeValue("Abcstadt"));
-        providerLegalAddress.setPostalCode(new StringTypeValue("12345"));
+        providerLegalAddress.setCountryName("DE");
+        providerLegalAddress.setStreetAddress("Abcstraße 10");
+        providerLegalAddress.setLocality("Abcstadt");
+        providerLegalAddress.setPostalCode("12345");
         contractDetailsDto.setProviderLegalAddress(providerLegalAddress);
 
         VCard consumerLegalAddress = new VCard();
-        consumerLegalAddress.setCountryName(new StringTypeValue("DE"));
-        consumerLegalAddress.setStreetAddress(new StringTypeValue("Defstraße 10"));
-        consumerLegalAddress.setLocality(new StringTypeValue("Defstadt"));
-        consumerLegalAddress.setPostalCode(new StringTypeValue("54321"));
+        consumerLegalAddress.setCountryName("DE");
+        consumerLegalAddress.setStreetAddress("Defstraße 10");
+        consumerLegalAddress.setLocality("Defstadt");
+        consumerLegalAddress.setPostalCode("54321");
         contractDetailsDto.setConsumerLegalAddress(consumerLegalAddress);
 
         contractDto.setDetails(contractDetailsDto);
@@ -169,11 +167,11 @@ class ContractMapperTest {
                         .getVerifiableCredential().getCredentialSubject();
 
         credentialSubject.setId("ServiceOffering:1234");
-        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
-        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
-        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setName("Mein Dienst");
+        credentialSubject.setDescription("Liefert Daten von A nach B");
+        credentialSubject.setExampleCosts("5 €");
         credentialSubject.setType("SaaS");
-        credentialSubject.setHardwareRequirements(new StringTypeValue("10 RAM"));
+        credentialSubject.setHardwareRequirements("10 RAM");
 
         return contractDto;
     }
@@ -195,12 +193,12 @@ class ContractMapperTest {
                         .getVerifiableCredential().getCredentialSubject();
 
         credentialSubject.setId("ServiceOffering:1234");
-        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
-        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
-        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setName("Mein Dienst");
+        credentialSubject.setDescription("Liefert Daten von A nach B");
+        credentialSubject.setExampleCosts("5 €");
         credentialSubject.setType("Datenlieferung");
-        credentialSubject.setDataAccessType(new StringTypeValue("Download"));
-        credentialSubject.setDataTransferType(new StringTypeValue("Pull"));
+        credentialSubject.setDataAccessType("Download");
+        credentialSubject.setDataTransferType("Pull");
         return contractDto;
     }
 
@@ -220,9 +218,9 @@ class ContractMapperTest {
                         .getVerifiableCredential().getCredentialSubject();
 
         credentialSubject.setId("ServiceOffering:1234");
-        credentialSubject.setName(new StringTypeValue("Mein Dienst"));
-        credentialSubject.setDescription(new StringTypeValue("Liefert Daten von A nach B"));
-        credentialSubject.setExampleCosts(new StringTypeValue("5 €"));
+        credentialSubject.setName("Mein Dienst");
+        credentialSubject.setDescription("Liefert Daten von A nach B");
+        credentialSubject.setExampleCosts("5 €");
         credentialSubject.setType("Coop");
 
         return contractDto;

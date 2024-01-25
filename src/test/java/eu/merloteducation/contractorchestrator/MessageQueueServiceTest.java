@@ -3,7 +3,6 @@ package eu.merloteducation.contractorchestrator;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.TermsAndConditions;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
@@ -56,10 +55,10 @@ class MessageQueueServiceTest {
                 orga10.getSelfDescription().getVerifiableCredential()
                 .getCredentialSubject();
         credentialSubject.setId("Participant:10");
-        credentialSubject.setLegalName(new StringTypeValue("Orga 10"));
+        credentialSubject.setLegalName("Orga 10");
         credentialSubject.setTermsAndConditions(new TermsAndConditions());
-        credentialSubject.getTermsAndConditions().setContent(new StringTypeValue("http://example.com"));
-        credentialSubject.getTermsAndConditions().setHash(new StringTypeValue("hash1234"));
+        credentialSubject.getTermsAndConditions().setContent("http://example.com");
+        credentialSubject.getTermsAndConditions().setHash("hash1234");
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());
     }
@@ -76,12 +75,12 @@ class MessageQueueServiceTest {
                         .getCredentialSubject();
         assertEquals(orga10CredentialSubject.getId(),
                 detailsCredentialSubject.getId());
-        assertEquals(orga10CredentialSubject.getLegalName().getValue(),
-                detailsCredentialSubject.getLegalName().getValue());
-        assertEquals(orga10CredentialSubject.getTermsAndConditions().getContent().getValue(),
-                detailsCredentialSubject.getTermsAndConditions().getContent().getValue());
-        assertEquals(orga10CredentialSubject.getTermsAndConditions().getHash().getValue(),
-                detailsCredentialSubject.getTermsAndConditions().getHash().getValue());
+        assertEquals(orga10CredentialSubject.getLegalName(),
+                detailsCredentialSubject.getLegalName());
+        assertEquals(orga10CredentialSubject.getTermsAndConditions().getContent(),
+                detailsCredentialSubject.getTermsAndConditions().getContent());
+        assertEquals(orga10CredentialSubject.getTermsAndConditions().getHash(),
+                detailsCredentialSubject.getTermsAndConditions().getHash());
     }
 
     @Test

@@ -123,8 +123,8 @@ public class ContractStorageService {
         }
 
         for (Runtime option : runtimeOptions) {
-            if (selection.equals(option.getRuntimeCount().getValue()
-                    + " " + option.getRuntimeMeasurement().getValue())) {
+            if (selection.equals(option.getRuntimeCount()
+                    + " " + option.getRuntimeMeasurement())) {
                 return true;
             }
         }
@@ -142,7 +142,7 @@ public class ContractStorageService {
         }
 
         for (AllowedUserCount option : userCountOptions) {
-            if (selection.equals(Integer.toString(option.getUserCountUpTo().getValue()))) {
+            if (selection.equals(Integer.toString(option.getUserCountUpTo()))) {
                 return true;
             }
         }
@@ -160,7 +160,7 @@ public class ContractStorageService {
         }
 
         for (DataExchangeCount option : exchangeCountOptions) {
-            if (selection.equals(Integer.toString(option.getExchangeCountUpTo().getValue()))) {
+            if (selection.equals(Integer.toString(option.getExchangeCountUpTo()))) {
                 return true;
             }
         }

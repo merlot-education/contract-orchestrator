@@ -1,12 +1,10 @@
 package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.service.*;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.StringTypeValue;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
@@ -98,7 +96,7 @@ class EdcOrchestrationServiceTest {
         DataDeliveryCredentialSubject credentialSubject =
                 (DataDeliveryCredentialSubject) validPushContract.getOffering().getSelfDescription()
                         .getVerifiableCredential().getCredentialSubject();
-        credentialSubject.setDataTransferType(new StringTypeValue("Push"));
+        credentialSubject.setDataTransferType("Push");
 
 
         validPullContract = new DataDeliveryContractDto();
@@ -128,7 +126,7 @@ class EdcOrchestrationServiceTest {
         credentialSubject =
                 (DataDeliveryCredentialSubject) validPullContract.getOffering().getSelfDescription()
                         .getVerifiableCredential().getCredentialSubject();
-        credentialSubject.setDataTransferType(new StringTypeValue("Pull"));
+        credentialSubject.setDataTransferType("Pull");
 
         wrongTypeContract = new SaasContractDto();
         wrongTypeContract.setDetails(new SaasContractDetailsDto());

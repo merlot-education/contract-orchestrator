@@ -72,7 +72,7 @@ public class EdcOrchestrationService {
         ServiceOfferingDto offeringDetails = contractDto.getOffering();
         DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
                 .getSelfDescription().getVerifiableCredential().getCredentialSubject();
-        String dataTransferType = credentialSubject.getDataTransferType().getValue();
+        String dataTransferType = credentialSubject.getDataTransferType();
 
         if (!((dataTransferType.equals("Push") && isProvider) ||
                 (dataTransferType.equals("Pull") && isConsumer)
