@@ -39,8 +39,6 @@ import java.util.*;
 @Service
 public class EdcOrchestrationService {
 
-    private static final String ORGA_PREFIX = "Participant:";
-
     private final Logger logger = LoggerFactory.getLogger(EdcOrchestrationService.class);
     @Autowired
     private MessageQueueService messageQueueService;
@@ -67,8 +65,8 @@ public class EdcOrchestrationService {
     }
 
     private void checkTransferAuthorization(DataDeliveryContractDto contractDto, String activeRoleOrgaId) {
-        boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId());
+        boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId());
         ServiceOfferingDto offeringDetails = contractDto.getOffering();
         DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
                 .getSelfDescription().getVerifiableCredential().getCredentialSubject();
@@ -84,7 +82,7 @@ public class EdcOrchestrationService {
     private OrganizationConnectorDto getOrgaConnector(String orgaId, String connectorId) {
         return messageQueueService
                 .remoteRequestOrganizationConnectorByConnectorId(
-                        orgaId.replace(ORGA_PREFIX, ""), connectorId);
+                        orgaId, connectorId);
     }
 
     /**

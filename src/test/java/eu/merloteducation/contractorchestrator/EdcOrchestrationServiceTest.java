@@ -59,6 +59,10 @@ class EdcOrchestrationServiceTest {
     private SaasContractDto wrongTypeContract;
     private DataDeliveryContractDto wrongStateContract;
 
+    private String getParticipantId(int num) {
+        return "did:web:orga-" + num + ".test.eu";
+    }
+
     @BeforeAll
     public void setUp() throws JsonProcessingException {
         ReflectionTestUtils.setField(edcOrchestrationService, "messageQueueService", messageQueueService);
@@ -79,8 +83,8 @@ class EdcOrchestrationServiceTest {
         validPushContract.getNegotiation().setProviderTncAccepted(true);
         validPushContract.getNegotiation().setExchangeCountSelection("0");
         validPushContract.getDetails().setId("validPushContract");
-        validPushContract.getDetails().setConsumerId("Participant:10");
-        validPushContract.getDetails().setProviderId("Participant:20");
+        validPushContract.getDetails().setConsumerId(getParticipantId(10));
+        validPushContract.getDetails().setProviderId(getParticipantId(20));
         validPushContract.getDetails().setState("RELEASED");
         validPushContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPushContract.getProvisioning().setDataAddressType("IonosS3");
@@ -109,8 +113,8 @@ class EdcOrchestrationServiceTest {
         validPullContract.getNegotiation().setProviderTncAccepted(true);
         validPullContract.getNegotiation().setExchangeCountSelection("0");
         validPullContract.getDetails().setId("validPullContract");
-        validPullContract.getDetails().setConsumerId("Participant:10");
-        validPullContract.getDetails().setProviderId("Participant:20");
+        validPullContract.getDetails().setConsumerId(getParticipantId(10));
+        validPullContract.getDetails().setProviderId(getParticipantId(20));
         validPullContract.getDetails().setState("RELEASED");
         validPullContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPullContract.getProvisioning().setDataAddressType("IonosS3");
@@ -132,8 +136,8 @@ class EdcOrchestrationServiceTest {
         wrongTypeContract.setDetails(new SaasContractDetailsDto());
         wrongTypeContract.getDetails().setId("wrongTypeContract");
         wrongTypeContract.getDetails().setState("RELEASED");
-        wrongTypeContract.getDetails().setConsumerId("Participant:10");
-        wrongTypeContract.getDetails().setProviderId("Participant:20");
+        wrongTypeContract.getDetails().setConsumerId(getParticipantId(10));
+        wrongTypeContract.getDetails().setProviderId(getParticipantId(20));
 
         wrongStateContract = new DataDeliveryContractDto();
         wrongStateContract.setProvisioning(new DataDeliveryContractProvisioningDto());
@@ -141,8 +145,8 @@ class EdcOrchestrationServiceTest {
         wrongStateContract.setDetails(new DataDeliveryContractDetailsDto());
         wrongStateContract.getDetails().setId("wrongStateContract");
         wrongStateContract.getDetails().setState("IN_DRAFT");
-        wrongStateContract.getDetails().setConsumerId("Participant:10");
-        wrongStateContract.getDetails().setProviderId("Participant:20");
+        wrongStateContract.getDetails().setConsumerId(getParticipantId(10));
+        wrongStateContract.getDetails().setProviderId(getParticipantId(20));
 
         //when(contractStorageService.getContractDetails(eq("Contract:validPush"), any())).thenReturn(validPushContract);
 
@@ -155,7 +159,7 @@ class EdcOrchestrationServiceTest {
         edc1.setId("1234");
         edc1.setConnectorId("edc1");
         edc1.setConnectorEndpoint("http://example.com");
-        edc1.setOrgaId("Participant:20");
+        edc1.setOrgaId(getParticipantId(20));
         edc1.setConnectorAccessToken("1234");
         List<String> bucketList = new ArrayList<>();
         bucketList.add("sourcebucket");
@@ -166,20 +170,20 @@ class EdcOrchestrationServiceTest {
         edc1.setId("1234");
         edc1.setConnectorId("edc2");
         edc1.setConnectorEndpoint("http://example.com");
-        edc1.setOrgaId("Participant:10");
+        edc1.setOrgaId(getParticipantId(10));
         edc1.setConnectorAccessToken("1234");
         edc1.setBucketNames(bucketList);
 
         doReturn(edc1).when(messageQueueService)
-                .remoteRequestOrganizationConnectorByConnectorId("20", "edc1");
+                .remoteRequestOrganizationConnectorByConnectorId(getParticipantId(20), "edc1");
         doReturn(edc2).when(messageQueueService)
-                .remoteRequestOrganizationConnectorByConnectorId("10", "edc2");
+                .remoteRequestOrganizationConnectorByConnectorId(getParticipantId(10), "edc2");
     }
 
     @Test
     void testInitiateNegotiationValidPushProvider() {
         IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPushContract.getDetails().getId(),
-                validPushContract.getDetails().getProviderId().replace("Participant:", ""), "authToken");
+                validPushContract.getDetails().getProviderId(), "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -189,7 +193,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testCheckNegotiationValidPushProvider() {
         ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPushContract.getDetails().getId(),
-                validPushContract.getDetails().getProviderId().replace("Participant:", ""), "authToken");
+                validPushContract.getDetails().getProviderId(), "authToken");
 
         assertNotNull(negotiation);
         assertEquals("edc:ContractNegotiationDto", negotiation.getType());
@@ -199,7 +203,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testInitiateTransferValidPushProvider() {
         IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer("myId", validPushContract.getDetails().getId(),
-                validPushContract.getDetails().getProviderId().replace("Participant:", ""), "authToken");
+                validPushContract.getDetails().getProviderId(), "authToken");
 
         assertNotNull(transferId);
         assertEquals("edc:IdResponseDto", transferId.getType());
@@ -211,7 +215,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testGetTransferStatusValidPushProvider() {
         IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPushContract.getDetails().getId(),
-                validPushContract.getDetails().getProviderId().replace("Participant:", ""), "authToken");
+                validPushContract.getDetails().getProviderId(), "authToken");
 
         assertNotNull(transferProcess);
         assertEquals(EdcClientFake.FAKE_ID, transferProcess.getId());
@@ -223,7 +227,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testValidPushWrongRole() {
 
-        String consumer = validPushContract.getDetails().getConsumerId().replace("Participant:", "");
+        String consumer = validPushContract.getDetails().getConsumerId();
         String contractId = validPushContract.getDetails().getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -252,7 +256,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testInitiateNegotiationValidPullConsumer() {
         IdResponse negotiationId = this.edcOrchestrationService.initiateConnectorNegotiation(validPullContract.getDetails().getId(),
-                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), "authToken");
+                validPullContract.getDetails().getConsumerId(), "authToken");
 
         assertNotNull(negotiationId);
         assertEquals("edc:IdResponseDto", negotiationId.getType());
@@ -263,7 +267,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testCheckNegotiationValidPullConsumer() {
         ContractNegotiation negotiation = this.edcOrchestrationService.getNegotationStatus("myId", validPullContract.getDetails().getId(),
-                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), "authToken");
+                validPullContract.getDetails().getConsumerId(), "authToken");
 
         assertNotNull(negotiation);
 
@@ -274,7 +278,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testInitiateTransferValidPullConsumer() {
         IdResponse transferId = this.edcOrchestrationService.initiateConnectorTransfer(EdcClientFake.FAKE_ID, validPullContract.getDetails().getId(),
-                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), "authToken");
+                validPullContract.getDetails().getConsumerId(), "authToken");
 
         assertNotNull(transferId);
         assertNotNull(transferId);
@@ -286,7 +290,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testGetTransferStatusValidPullConsumer() {
         IonosS3TransferProcess transferProcess = this.edcOrchestrationService.getTransferStatus("myId", validPullContract.getDetails().getId(),
-                validPullContract.getDetails().getConsumerId().replace("Participant:", ""), "authToken");
+                validPullContract.getDetails().getConsumerId(), "authToken");
 
         assertNotNull(transferProcess);
         assertEquals(EdcClientFake.FAKE_ID, transferProcess.getId());
@@ -298,7 +302,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testValidPullWrongRole() {
 
-        String provider = validPullContract.getDetails().getProviderId().replace("Participant:", "");
+        String provider = validPullContract.getDetails().getProviderId();
         String contractId = validPullContract.getDetails().getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -327,7 +331,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testWrongContractType() {
 
-        String consumer = wrongTypeContract.getDetails().getConsumerId().replace("Participant:", "");
+        String consumer = wrongTypeContract.getDetails().getConsumerId();
         String contractId = wrongTypeContract.getDetails().getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
@@ -355,7 +359,7 @@ class EdcOrchestrationServiceTest {
     @Test
     void testWrongContractState() {
 
-        String consumer = wrongStateContract.getDetails().getConsumerId().replace("Participant:", "");
+        String consumer = wrongStateContract.getDetails().getConsumerId();
         String contractId = wrongStateContract.getDetails().getId();
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,

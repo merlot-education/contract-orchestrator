@@ -45,11 +45,9 @@ public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBod
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
 
-        if (contractDto.getDetails().getProviderId().replace("Participant:", "")
-                .equals(activeOrgaRole.getOrganizationId())) {
+        if (contractDto.getDetails().getProviderId().equals(activeOrgaRole.getOrganizationId())) {
             bodyContainer.setSerializationView(ContractViews.ProviderView.class);
-        } else if (contractDto.getDetails().getConsumerId().replace("Participant:", "")
-                .equals(activeOrgaRole.getOrganizationId())) {
+        } else if (contractDto.getDetails().getConsumerId().equals(activeOrgaRole.getOrganizationId())) {
             bodyContainer.setSerializationView(ContractViews.ConsumerView.class);
         }
     }
