@@ -568,8 +568,6 @@ public class ContractStorageService {
                                                            String authToken) {
         String regex = "did:web:[-A-Za-z0-9]*." + merlotDomain;
         if (!orgaId.matches(regex)) {
-            System.out.println(regex);
-            System.out.println(orgaId);
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
         Page<ContractTemplate> contractTemplates;
