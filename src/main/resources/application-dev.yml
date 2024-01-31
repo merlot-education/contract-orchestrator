@@ -6,5 +6,3 @@ cors:
 
 s3-library:
   bucket: merlot-storage-dev
-
-merlot-domain: "marketplace.dev.merlot-education.eu"

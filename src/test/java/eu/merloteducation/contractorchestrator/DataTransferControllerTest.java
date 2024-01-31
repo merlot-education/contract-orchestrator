@@ -73,8 +73,8 @@ class DataTransferControllerTest {
         transferProcess.setState("COMPLETED");
 
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
-        template.setProviderId("did:web:orga-10.test.eu");
-        template.setConsumerId("did:web:orga-20.test.eu");
+        template.setProviderId("did:web:test.eu#orga-10");
+        template.setConsumerId("did:web:test.eu#orga-20");
 
         lenient().when(contractTemplateRepository.findById(any())).thenReturn(Optional.of(template));
 
@@ -257,7 +257,7 @@ class DataTransferControllerTest {
     }
 
     private String getParticipantId(int num) {
-        return "did:web:orga-" + num + ".test.eu";
+        return "did:web:"+ "test.eu" + "#orga-" + num;
     }
 
 }

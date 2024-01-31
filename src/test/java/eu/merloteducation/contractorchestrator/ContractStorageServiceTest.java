@@ -103,9 +103,7 @@ class ContractStorageServiceTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
     private TransactionTemplate transactionTemplate;
-
-    @Value("${merlot-domain}")
-    private String merlotDomain;
+    private String merlotDomain = "test.eu";
 
     private String createServiceOfferingOrchestratorResponse(String id, String hash, String name, String offeredBy,
                                                              String offeringType, String typeSpecificFields) {
@@ -277,7 +275,7 @@ class ContractStorageServiceTest {
                         ],
                         "verifiableCredential": {
                             "credentialSubject": {
-                                "@id": "did:web:orga-${id}.${merlotDomain}",
+                                "@id": "did:web:${merlotDomain}#orga-${id}",
                                 "@type": "merlot:MerlotOrganization",
                                 "@context": {
                                     "merlot": "http://w3id.org/gaia-x/merlot#",
@@ -368,7 +366,7 @@ class ContractStorageServiceTest {
                                 "type": "JsonWebSignature2020",
                                 "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
                             },
-                            "issuer": "did:web:orga-${id}.${merlotDomain}",
+                            "issuer": "did:web:${merlotDomain}#orga-${id}",
                             "@type": [
                                 "VerifiableCredential"
                             ],
@@ -390,7 +388,7 @@ class ContractStorageServiceTest {
     }
 
     private String getParticipantId(int num) {
-        return "did:web:orga-" + num + "." + merlotDomain;
+        return "did:web:"+ merlotDomain + "#orga-" + num;
     }
 
     @BeforeAll
@@ -405,7 +403,6 @@ class ContractStorageServiceTest {
         ReflectionTestUtils.setField(contractStorageService, "contractTemplateRepository", contractTemplateRepository);
         ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
         ReflectionTestUtils.setField(contractStorageService, "contractSignerService", contractSignerService);
-        ReflectionTestUtils.setField(contractStorageService, "merlotDomain", merlotDomain);
 
         ContractTnc tnc = new ContractTnc();
         tnc.setContent("http://example.com");

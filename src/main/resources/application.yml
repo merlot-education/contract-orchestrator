@@ -89,5 +89,3 @@ cors:
     origins:
     patterns: >
       http://localhost:[*]
-
-merlot-domain: "marketplace.dev.merlot-education.eu"

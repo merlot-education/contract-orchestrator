@@ -60,7 +60,7 @@ class EdcOrchestrationServiceTest {
     private DataDeliveryContractDto wrongStateContract;
 
     private String getParticipantId(int num) {
-        return "did:web:orga-" + num + ".test.eu";
+        return "did:web:"+ "test.eu" + "#orga-" + num;
     }
 
     @BeforeAll

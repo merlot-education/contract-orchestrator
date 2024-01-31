@@ -62,5 +62,3 @@ s3-library:
   signer-type: S3SignerType
   bucket: merlot-storage-test
   root-directory: contract-orchestrator
-
-merlot-domain: "marketplace.dev.merlot-education.eu"
