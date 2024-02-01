@@ -247,7 +247,7 @@ public class EdcOrchestrationService {
                 .connectorId(providerConnector.getConnectorId())
                 .connectorAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
-                .assetId(negotiation.getContractAgreementId().split(":")[1])
+                .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(IonosS3DataAddress.builder()
                         .name(contractDto.getProvisioning().getDataAddressTargetBucketName())
                         .bucketName(contractDto.getProvisioning().getDataAddressTargetBucketName())
