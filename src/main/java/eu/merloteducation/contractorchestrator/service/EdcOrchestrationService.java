@@ -6,7 +6,6 @@ import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
-import eu.merloteducation.modelslib.edc.asset.Asset;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
 import eu.merloteducation.modelslib.edc.asset.AssetProperties;
 import eu.merloteducation.modelslib.edc.asset.IonosS3DataAddress;
@@ -120,14 +119,12 @@ public class EdcOrchestrationService {
         // provider side
         // create asset
         AssetCreateRequest assetCreateRequest = AssetCreateRequest.builder()
-                .asset(Asset.builder()
-                        .id(assetId)
-                        .properties(AssetProperties.builder()
-                                .name(assetName)
-                                .description(assetDescription)
-                                .version("")
-                                .contenttype("")
-                                .build())
+                .id(assetId)
+                .properties(AssetProperties.builder()
+                        .name(assetName)
+                        .description(assetDescription)
+                        .version("")
+                        .contenttype("")
                         .build())
                 .dataAddress(IonosS3DataAddress.builder()
                         .name(contractDto.getProvisioning().getDataAddressSourceBucketName())
