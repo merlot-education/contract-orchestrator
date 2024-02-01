@@ -188,7 +188,7 @@ public class EdcOrchestrationService {
                 .connectorId(catalog.getParticipantId())
                 .providerId(catalog.getParticipantId())
                 .consumerId(consumerConnector.getConnectorId())
-                .connectorAddress(providerConnector.getProtocolBaseUrl())
+                .counterPartyAddress(providerConnector.getProtocolBaseUrl())
                 .offer(ContractOffer.builder()
                         .offerId(dataset.getHasPolicy().get(0).getId())
                         .assetId(dataset.getAssetId())
@@ -245,7 +245,7 @@ public class EdcOrchestrationService {
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
         TransferRequest transferRequest = TransferRequest.builder()
                 .connectorId(providerConnector.getConnectorId())
-                .connectorAddress(negotiation.getCounterPartyAddress())
+                .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
                 .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(IonosS3DataAddress.builder()
