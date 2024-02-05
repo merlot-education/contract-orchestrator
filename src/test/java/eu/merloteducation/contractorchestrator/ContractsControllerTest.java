@@ -84,14 +84,14 @@ class ContractsControllerTest {
     public void beforeEach() throws JSONException, IOException, StorageClientException {
 
         template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        template.setProviderId(getParticipantId(10));
+        template.setConsumerId(getParticipantId(20));
 
         List<ContractDto> contractTemplates = new ArrayList<>();
         SaasContractDto saasContractDto = new SaasContractDto();
         saasContractDto.setDetails(new SaasContractDetailsDto());
-        saasContractDto.getDetails().setProviderId("Participant:10");
-        saasContractDto.getDetails().setConsumerId("Participant:20");
+        saasContractDto.getDetails().setProviderId(getParticipantId(10));
+        saasContractDto.getDetails().setConsumerId(getParticipantId(20));
         contractTemplates.add(saasContractDto);
 
         lenient().when(contractTemplateRepository.findById(template.getId())).thenReturn(Optional.of(template));
@@ -123,7 +123,7 @@ class ContractsControllerTest {
     {
         ContractCreateRequest request = new ContractCreateRequest();
         request.setOfferingId("ServiceOffering:1234");
-        request.setConsumerId("Participant:99");
+        request.setConsumerId(getParticipantId(99));
 
         mvc.perform(MockMvcRequestBuilders
                         .post("/")
@@ -133,7 +133,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -144,7 +144,7 @@ class ContractsControllerTest {
     {
         ContractCreateRequest request = new ContractCreateRequest();
         request.setOfferingId("ServiceOffering:1234");
-        request.setConsumerId("Participant:10");
+        request.setConsumerId(getParticipantId(10));
 
         mvc.perform(MockMvcRequestBuilders
                         .post("/")
@@ -154,7 +154,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -172,7 +172,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -184,11 +184,11 @@ class ContractsControllerTest {
                         .post("/contract/regenerate/" + template.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -200,11 +200,11 @@ class ContractsControllerTest {
                         .post("/contract/regenerate/" + template.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_99")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(99))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_99")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(99))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -215,20 +215,20 @@ class ContractsControllerTest {
     {
         SaasContractDto contractDto = new SaasContractDto();
         contractDto.setDetails(new SaasContractDetailsDto());
-        contractDto.getDetails().setProviderId("Participant:10");
-        contractDto.getDetails().setConsumerId("Participant:20");
+        contractDto.getDetails().setProviderId(getParticipantId(10));
+        contractDto.getDetails().setConsumerId(getParticipantId(20));
         contractDto.getDetails().setId(template.getId());
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .content(objectAsJsonString(contractDto))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -245,7 +245,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -256,19 +256,19 @@ class ContractsControllerTest {
     {
         SaasContractDto contractDto = new SaasContractDto();
         contractDto.setDetails(new SaasContractDetailsDto());
-        contractDto.getDetails().setProviderId("Participant:10");
-        contractDto.getDetails().setConsumerId("Participant:20");
+        contractDto.getDetails().setProviderId(getParticipantId(10));
+        contractDto.getDetails().setConsumerId(getParticipantId(20));
 
         mvc.perform(MockMvcRequestBuilders
                         .put("/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .content(objectAsJsonString(contractDto))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -278,19 +278,19 @@ class ContractsControllerTest {
     void patchTransitionContractForbidden() throws Exception
     {
         ContractTemplate template = new SaasContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        template.setProviderId(getParticipantId(10));
+        template.setConsumerId(getParticipantId(20));
 
         mvc.perform(MockMvcRequestBuilders
                         .patch("/contract/status/" + template.getId() + "/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .content(objectAsJsonString(template))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andExpect(status().isForbidden());
     }
@@ -302,11 +302,11 @@ class ContractsControllerTest {
                         .patch("/contract/status/" + template.getId() + "/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -316,13 +316,13 @@ class ContractsControllerTest {
     void getOrganizationContractsUnauthorized() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
-                        .get("/organization/Participant:99")
+                        .get("/organization/" + getParticipantId(99))
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -332,13 +332,13 @@ class ContractsControllerTest {
     void getOrganizationContractsAuthorized() throws Exception
     {
         mvc.perform(MockMvcRequestBuilders
-                        .get("/organization/Participant:10")
+                        .get("/organization/" + getParticipantId(10))
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -354,7 +354,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(20))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -370,7 +370,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -386,7 +386,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -402,7 +402,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(20))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -418,7 +418,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_1234")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(1234))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -442,7 +442,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -460,7 +460,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isBadRequest());
@@ -484,7 +484,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(20))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -500,7 +500,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -516,7 +516,7 @@ class ContractsControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(20))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -532,7 +532,7 @@ class ContractsControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .with(csrf())
                 .with(jwt().authorities(
-                    new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                 )))
             .andDo(print())
             .andExpect(status().isOk());
@@ -548,7 +548,7 @@ class ContractsControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .with(csrf())
                 .with(jwt().authorities(
-                    new OrganizationRoleGrantedAuthority("OrgLegRep_20")
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(20))
                 )))
             .andDo(print())
             .andExpect(status().isOk());
@@ -564,10 +564,13 @@ class ContractsControllerTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .with(csrf())
                 .with(jwt().authorities(
-                    new OrganizationRoleGrantedAuthority("OrgLegRep_1234")
+                    new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(1234))
                 )))
             .andDo(print())
             .andExpect(status().isForbidden());
     }
 
+    private String getParticipantId(int num) {
+        return "did:web:orga-" + num + ".test.eu";
+    }
 }

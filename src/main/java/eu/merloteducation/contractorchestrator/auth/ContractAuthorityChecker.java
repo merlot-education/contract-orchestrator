@@ -12,8 +12,6 @@ import java.util.Set;
 @Component("contractAuthorityChecker")
 public class ContractAuthorityChecker {
 
-    private static final String PARTICIPANT = "Participant:";
-
     @Autowired
     private ContractTemplateRepository contractTemplateRepository;
 
@@ -27,7 +25,7 @@ public class ContractAuthorityChecker {
     private boolean isContractProvider(Authentication authentication, ContractTemplate template) {
         Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
         if (template != null) {
-            String providerId = template.getProviderId().replace(PARTICIPANT, "");
+            String providerId = template.getProviderId();
             return representedOrgaIds.contains(providerId);
         }
         return false;
@@ -36,7 +34,7 @@ public class ContractAuthorityChecker {
     private boolean isContractConsumer(Authentication authentication, ContractTemplate template) {
         Set<String> representedOrgaIds = authorityChecker.getRepresentedOrgaIds(authentication);
         if (template != null) {
-            String consumerId = template.getConsumerId().replace(PARTICIPANT, "");
+            String consumerId = template.getConsumerId();
             return representedOrgaIds.contains(consumerId);
         }
         return false;

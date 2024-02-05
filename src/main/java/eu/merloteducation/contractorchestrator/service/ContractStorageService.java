@@ -27,6 +27,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,9 +49,6 @@ public class ContractStorageService {
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
     private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
-
-    private static final String ORGA_PREFIX = "Participant:";
-
     private static final String CREDENTIAL_SUBJECT = "credentialSubject";
     private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
     private static final String AUTHORIZATION = "Authorization";
@@ -322,19 +320,19 @@ public class ContractStorageService {
             throws JSONException {
 
         // check that fields are in a valid format
-        String regexUuid = "(^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^\\d+$)";
-        String[] offeringId = contractCreateRequest.getOfferingId().split(":");
-        String[] consumerId = contractCreateRequest.getConsumerId().split(":");
+        String regexServiceOfferingId = "(^ServiceOffering:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^ServiceOffering:\\d+$)";
 
-        if (offeringId.length != 2 || consumerId.length != 2 ||
-            !offeringId[0].equals("ServiceOffering") || !offeringId[1].matches(regexUuid) ||
-            !consumerId[0].equals("Participant") || !consumerId[1].matches(regexUuid)) {
+        String regexOrganizationId = "did:web:[-.#A-Za-z0-9]*";
+        String offeringId = contractCreateRequest.getOfferingId();
+        String consumerId = contractCreateRequest.getConsumerId();
+
+        if (!offeringId.matches(regexServiceOfferingId) || !consumerId.matches(regexOrganizationId)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
 
         // for creating a contract we will not use the message bus to be certain that the offer is available upon contract creation
         ServiceOfferingDto offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
-                contractCreateRequest.getOfferingId(), Map.of(AUTHORIZATION, authToken));
+            offeringId, Map.of(AUTHORIZATION, authToken));
 
         // in case someone with access rights to the state attempts to load this check the state as well
         if (offeringDetails.getMetadata().getState() != null && !offeringDetails.getMetadata().getState().equals("RELEASED")) {
@@ -355,8 +353,8 @@ public class ContractStorageService {
         }
 
         // extract data from request
-        contract.setOfferingId(contractCreateRequest.getOfferingId());
-        contract.setConsumerId(contractCreateRequest.getConsumerId());
+        contract.setOfferingId(offeringId);
+        contract.setConsumerId(consumerId);
         contract.setProviderId(credentialSubject.getOfferedBy().getId());
 
         // check if consumer and provider are equal, and if so abort
@@ -429,8 +427,8 @@ public class ContractStorageService {
 
         ContractTemplate contract = this.loadContract(editedContract.getDetails().getId());
 
-        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId());
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId());
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -474,8 +472,8 @@ public class ContractStorageService {
                                                        String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
 
-        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId());
+        boolean isProvider = activeRoleOrgaId.equals(contract.getProviderId());
 
         // user must be either consumer or provider of contract
         if (!(isConsumer || isProvider)) {
@@ -568,7 +566,8 @@ public class ContractStorageService {
      */
     public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter,
                                                            String authToken) {
-        if (!orgaId.matches(ORGA_PREFIX + "\\d+")) {
+        String regex = "did:web:[-.#A-Za-z0-9]*";
+        if (!orgaId.matches(regex)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
         Page<ContractTemplate> contractTemplates;

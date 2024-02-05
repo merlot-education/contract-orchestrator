@@ -73,8 +73,8 @@ class DataTransferControllerTest {
         transferProcess.setState("COMPLETED");
 
         DataDeliveryContractTemplate template = new DataDeliveryContractTemplate();
-        template.setProviderId("Participant:10");
-        template.setConsumerId("Participant:20");
+        template.setProviderId("did:web:test.eu#orga-10");
+        template.setConsumerId("did:web:test.eu#orga-20");
 
         lenient().when(contractTemplateRepository.findById(any())).thenReturn(Optional.of(template));
 
@@ -134,11 +134,11 @@ class DataTransferControllerTest {
                         .post("/transfers/contract/123/negotiation/start")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -150,11 +150,11 @@ class DataTransferControllerTest {
                         .get("/transfers/contract/123/negotiation/456/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -166,11 +166,11 @@ class DataTransferControllerTest {
                         .post("/transfers/contract/123/negotiation/456/transfer/start")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -182,11 +182,11 @@ class DataTransferControllerTest {
                         .get("/transfers/contract/123/transfer/456/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_10")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -198,11 +198,11 @@ class DataTransferControllerTest {
                         .post("/transfers/contract/123/negotiation/start")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -214,11 +214,11 @@ class DataTransferControllerTest {
                         .get("/transfers/contract/123/negotiation/456/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -230,11 +230,11 @@ class DataTransferControllerTest {
                         .post("/transfers/contract/123/negotiation/456/transfer/start")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -246,14 +246,18 @@ class DataTransferControllerTest {
                         .get("/transfers/contract/123/transfer/456/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "")
-                        .header("Active-Role", "OrgLegRep_20")
+                        .header("Active-Role", "OrgLegRep_" + getParticipantId(20))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_10")
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
+    }
+
+    private String getParticipantId(int num) {
+        return "did:web:"+ "test.eu" + "#orga-" + num;
     }
 
 }

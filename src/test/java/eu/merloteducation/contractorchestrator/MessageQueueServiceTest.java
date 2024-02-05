@@ -54,7 +54,7 @@ class MessageQueueServiceTest {
         MerlotOrganizationCredentialSubject credentialSubject = (MerlotOrganizationCredentialSubject)
                 orga10.getSelfDescription().getVerifiableCredential()
                 .getCredentialSubject();
-        credentialSubject.setId("Participant:10");
+        credentialSubject.setId("did:web:test.eu#orga-10");
         credentialSubject.setLegalName("Orga 10");
         credentialSubject.setTermsAndConditions(new TermsAndConditions());
         credentialSubject.getTermsAndConditions().setContent("http://example.com");

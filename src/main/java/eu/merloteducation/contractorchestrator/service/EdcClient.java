@@ -18,7 +18,7 @@ import org.springframework.web.service.annotation.PostExchange;
 
 
 public interface EdcClient {
-    @PostExchange("/v2/assets")
+    @PostExchange("/v3/assets")
     IdResponse createAsset(@RequestBody AssetCreateRequest assetCreateRequest);
 
     @PostExchange("/v2/policydefinitions")

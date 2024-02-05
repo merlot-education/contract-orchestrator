@@ -6,7 +6,6 @@ import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
-import eu.merloteducation.modelslib.edc.asset.Asset;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
 import eu.merloteducation.modelslib.edc.asset.AssetProperties;
 import eu.merloteducation.modelslib.edc.asset.IonosS3DataAddress;
@@ -39,8 +38,6 @@ import java.util.*;
 @Service
 public class EdcOrchestrationService {
 
-    private static final String ORGA_PREFIX = "Participant:";
-
     private final Logger logger = LoggerFactory.getLogger(EdcOrchestrationService.class);
     @Autowired
     private MessageQueueService messageQueueService;
@@ -67,8 +64,8 @@ public class EdcOrchestrationService {
     }
 
     private void checkTransferAuthorization(DataDeliveryContractDto contractDto, String activeRoleOrgaId) {
-        boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId().replace(ORGA_PREFIX, ""));
-        boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId().replace(ORGA_PREFIX, ""));
+        boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId());
+        boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId());
         ServiceOfferingDto offeringDetails = contractDto.getOffering();
         DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
                 .getSelfDescription().getVerifiableCredential().getCredentialSubject();
@@ -84,7 +81,7 @@ public class EdcOrchestrationService {
     private OrganizationConnectorDto getOrgaConnector(String orgaId, String connectorId) {
         return messageQueueService
                 .remoteRequestOrganizationConnectorByConnectorId(
-                        orgaId.replace(ORGA_PREFIX, ""), connectorId);
+                        orgaId, connectorId);
     }
 
     /**
@@ -120,14 +117,12 @@ public class EdcOrchestrationService {
         // provider side
         // create asset
         AssetCreateRequest assetCreateRequest = AssetCreateRequest.builder()
-                .asset(Asset.builder()
-                        .id(assetId)
-                        .properties(AssetProperties.builder()
-                                .name(assetName)
-                                .description(assetDescription)
-                                .version("")
-                                .contenttype("")
-                                .build())
+                .id(assetId)
+                .properties(AssetProperties.builder()
+                        .name(assetName)
+                        .description(assetDescription)
+                        .version("")
+                        .contenttype("")
                         .build())
                 .dataAddress(IonosS3DataAddress.builder()
                         .name(contractDto.getProvisioning().getDataAddressSourceBucketName())
@@ -191,7 +186,7 @@ public class EdcOrchestrationService {
                 .connectorId(catalog.getParticipantId())
                 .providerId(catalog.getParticipantId())
                 .consumerId(consumerConnector.getConnectorId())
-                .connectorAddress(providerConnector.getProtocolBaseUrl())
+                .counterPartyAddress(providerConnector.getProtocolBaseUrl())
                 .offer(ContractOffer.builder()
                         .offerId(dataset.getHasPolicy().get(0).getId())
                         .assetId(dataset.getAssetId())
@@ -248,9 +243,9 @@ public class EdcOrchestrationService {
         // agreement id is always formatted as contract_definition_id:assetId:random_uuid
         TransferRequest transferRequest = TransferRequest.builder()
                 .connectorId(providerConnector.getConnectorId())
-                .connectorAddress(negotiation.getCounterPartyAddress())
+                .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
-                .assetId(negotiation.getContractAgreementId().split(":")[1])
+                .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(IonosS3DataAddress.builder()
                         .name(contractDto.getProvisioning().getDataAddressTargetBucketName())
                         .bucketName(contractDto.getProvisioning().getDataAddressTargetBucketName())
