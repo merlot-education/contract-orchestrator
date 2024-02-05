@@ -132,6 +132,8 @@ public class MessageQueueService {
             logger.info("Deleting in-draft contracts associated with organization with ID {}", orgaId);
 
             contractsToDelete.forEach(contract -> { contract.transitionState(ContractState.DELETED); contractTemplateRepository.save(contract);});
+        } else {
+            logger.info("No in-draft contracts associated with organization with ID {} found to delete", orgaId);
         }
 
         List<ContractTemplate> contractsToRevoke = contractTemplateRepository.findAllByOrgaIdAndState(orgaId,
@@ -141,6 +143,8 @@ public class MessageQueueService {
             logger.info("Revoking consumer-signed contracts associated with organization with ID {}", orgaId);
 
             contractsToRevoke.forEach(contract -> { contract.transitionState(ContractState.REVOKED); contractTemplateRepository.save(contract);});
+        } else {
+            logger.info("No consumer-signed contracts associated with organization with ID {} found to revoke", orgaId);
         }
     }
 }
