@@ -1,5 +1,7 @@
 package eu.merloteducation.contractorchestrator;
 
+import eu.merloteducation.contractorchestrator.models.entities.*;
+import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
@@ -18,6 +20,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -32,6 +37,9 @@ class MessageQueueServiceTest {
 
     @Autowired
     MessageQueueService messageQueueService;
+
+    @Autowired
+    ContractTemplateRepository contractTemplateRepository;
 
     @MockBean
     RabbitTemplate rabbitTemplate;
@@ -87,5 +95,42 @@ class MessageQueueServiceTest {
     void remoteGetOrgaDetailsNonExistent() {
         MerlotParticipantDto details = messageQueueService.remoteRequestOrganizationDetails("garbage");
         assertNull(details);
+    }
+
+    @Transactional
+    @Test
+    void organizationRevokedHandleAssociatedContracts() {
+        String orgaId = "orgaId";
+        SaasContractTemplate templateSaas = new SaasContractTemplate();
+        templateSaas.setProviderId(orgaId);
+        templateSaas = contractTemplateRepository.save(templateSaas);
+
+        DataDeliveryContractTemplate templateData = new DataDeliveryContractTemplate();
+        templateData.setConsumerId(orgaId);
+        templateData.setRuntimeSelection("anything");
+        templateData.setConsumerSignature(new ContractSignature("signature", "signer"));
+        templateData.setConsumerTncAccepted(true);
+        templateData.setAttachments(new HashSet<>());
+        templateData.setConsumerTncAccepted(true);
+        templateData.setExchangeCountSelection("anything");
+        DataDeliveryProvisioning dataDeliveryProvisioning = new DataDeliveryProvisioning();
+        dataDeliveryProvisioning.setDataAddressTargetBucketName("foo");
+        dataDeliveryProvisioning.setDataAddressTargetFileName("bar");
+        dataDeliveryProvisioning.setSelectedConsumerConnectorId("something");
+        templateData.setServiceContractProvisioning(dataDeliveryProvisioning);
+        templateData.transitionState(ContractState.SIGNED_CONSUMER);
+        templateData = contractTemplateRepository.save(templateData);
+
+        messageQueueService.organizationRevokedListener(orgaId);
+
+        ContractTemplate templateSaasAfterOrganizationRevoked =
+            contractTemplateRepository.findById(templateSaas.getId()).orElse(null);
+        assertNotNull(templateSaasAfterOrganizationRevoked);
+        assertEquals(ContractState.DELETED, templateSaasAfterOrganizationRevoked.getState());
+
+        ContractTemplate templateDataAfterOrganizationRevoked =
+            contractTemplateRepository.findById(templateData.getId()).orElse(null);
+        assertNotNull(templateDataAfterOrganizationRevoked);
+        assertEquals(ContractState.REVOKED, templateDataAfterOrganizationRevoked.getState());
     }
 }

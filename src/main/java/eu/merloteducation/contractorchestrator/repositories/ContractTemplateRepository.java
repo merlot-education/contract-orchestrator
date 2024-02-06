@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
+
 public interface ContractTemplateRepository extends JpaRepository<ContractTemplate, String> {
 
     @Query("select c from ContractTemplate c where c.providerId = :orgaId or c.consumerId = :orgaId")
@@ -14,4 +16,7 @@ public interface ContractTemplateRepository extends JpaRepository<ContractTempla
 
     @Query("select c from ContractTemplate c where (c.providerId = :orgaId or c.consumerId = :orgaId) and c.state = :state")
     Page<ContractTemplate> findAllByOrgaIdAndState(String orgaId, ContractState state, Pageable pageable);
+
+    @Query("select c from ContractTemplate c where (c.providerId = :orgaId or c.consumerId = :orgaId) and c.state = :state")
+    List<ContractTemplate> findAllByOrgaIdAndState(String orgaId, ContractState state);
 }

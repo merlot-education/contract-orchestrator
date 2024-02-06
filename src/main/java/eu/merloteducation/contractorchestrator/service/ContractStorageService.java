@@ -267,10 +267,13 @@ public class ContractStorageService {
     }
 
     private ContractBasicDto mapToContractBasicDto(ContractTemplate template, String authToken) {
+        MerlotParticipantDto providerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getProviderId(),
+                Map.of(AUTHORIZATION, authToken));
         MerlotParticipantDto consumerDetails = organizationOrchestratorClient.getOrganizationDetails(template.getConsumerId(),
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
-        return contractMapper.contractToContractBasicDto(template, consumerDetails, offeringDetails);
+
+        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {

@@ -1,6 +1,9 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.config.MessageQueueConfig;
+import eu.merloteducation.contractorchestrator.models.entities.ContractState;
+import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
+import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -8,16 +11,22 @@ import eu.merloteducation.modelslib.queue.ConnectorDetailsRequest;
 import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class MessageQueueService {
 
     @Autowired
     RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private ContractTemplateRepository contractTemplateRepository;
 
     private final Logger logger = LoggerFactory.getLogger(MessageQueueService.class);
 
@@ -100,5 +109,39 @@ public class MessageQueueService {
                 new ParameterizedTypeReference<>() {
                 }
         );
+    }
+
+    /**
+     * Listen for the event that an organization's membership has been revoked on the message bus.
+     * In that case, delete in-draft contracts and revoke consumer-signed contracts associated
+     * with that organization.
+     *
+     * @param orgaId id of the organization whose membership has been revoked
+     */
+    @RabbitListener(queues = MessageQueueConfig.ORGANIZATION_REVOKED_QUEUE)
+    public void organizationRevokedListener(String orgaId) {
+        logger.info("Organization revoked message: organization ID {}", orgaId);
+
+        List<ContractTemplate> contractsToDelete = contractTemplateRepository.findAllByOrgaIdAndState(orgaId,
+            ContractState.IN_DRAFT);
+
+        if (!contractsToDelete.isEmpty()) {
+            logger.info("Deleting in-draft contracts associated with organization with ID {}", orgaId);
+
+            contractsToDelete.forEach(contract -> { contract.transitionState(ContractState.DELETED); contractTemplateRepository.save(contract);});
+        } else {
+            logger.info("No in-draft contracts associated with organization with ID {} found to delete", orgaId);
+        }
+
+        List<ContractTemplate> contractsToRevoke = contractTemplateRepository.findAllByOrgaIdAndState(orgaId,
+            ContractState.SIGNED_CONSUMER);
+
+        if (!contractsToRevoke.isEmpty()) {
+            logger.info("Revoking consumer-signed contracts associated with organization with ID {}", orgaId);
+
+            contractsToRevoke.forEach(contract -> { contract.transitionState(ContractState.REVOKED); contractTemplateRepository.save(contract);});
+        } else {
+            logger.info("No consumer-signed contracts associated with organization with ID {} found to revoke", orgaId);
+        }
     }
 }

@@ -14,13 +14,26 @@ public class MessageQueueConfig {
     public static final String ORCHESTRATOR_EXCHANGE = "orchestrator.exchange";
     public static final String CONTRACT_CREATED_KEY = "created.contract";
     public static final String CONTRACT_PURGED_KEY = "purged.contract";
+    public static final String ORGANIZATION_REVOKED_KEY = "revoked.organization";
     public static final String ORGANIZATION_REQUEST_KEY = "request.organization";
     public static final String OFFERING_REQUEST_KEY = "request.offering";
     public static final String ORGANIZATIONCONNECTOR_REQUEST_KEY = "request.organizationconnector";
+    public static final String ORGANIZATION_REVOKED_QUEUE = "contract.revoke.organization.queue";
     @Bean
     DirectExchange orchestratorExchange() {
         return new DirectExchange(ORCHESTRATOR_EXCHANGE);
     }
+
+    @Bean
+    Binding organizationRevokedBinding(Queue organizationRevokedQueue, DirectExchange orchestratorExchange) {
+        return BindingBuilder.bind(organizationRevokedQueue).to(orchestratorExchange).with(ORGANIZATION_REVOKED_KEY);
+    }
+
+    @Bean
+    public Queue organizationRevokedQueue() {
+        return new Queue(ORGANIZATION_REVOKED_QUEUE, false);
+    }
+
     @Bean
     public MessageConverter converter(){
         return new Jackson2JsonMessageConverter();

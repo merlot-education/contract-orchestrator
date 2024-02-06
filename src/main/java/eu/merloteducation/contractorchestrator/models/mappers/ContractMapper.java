@@ -76,11 +76,13 @@ public interface ContractMapper {
     @Mapping(target = "offering", source = "offeringDetails")
     @Mapping(target = "providerId", source = "offeringDetails.providerDetails.providerId")
     @Mapping(target = "providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
+    @Mapping(target = "providerActive", source = "providerOrgaDetails.metadata.active")
     @Mapping(target = "consumerId", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.id")
     @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalName")
+    @Mapping(target = "consumerActive", source = "consumerOrgaDetails.metadata.active")
     @Mapping(target = "state", source = "contract.state")
-    ContractBasicDto contractToContractBasicDto(ContractTemplate contract, MerlotParticipantDto consumerOrgaDetails,
-                                                ServiceOfferingDto offeringDetails);
+    ContractBasicDto contractToContractBasicDto(ContractTemplate contract, MerlotParticipantDto providerOrgaDetails,
+                                                MerlotParticipantDto consumerOrgaDetails,ServiceOfferingDto offeringDetails);
 
     @Mapping(target = "type", source = "contract.type")
     @Mapping(target = "details.id", source = "contract.id")
@@ -88,9 +90,11 @@ public interface ContractMapper {
     @Mapping(target = "details.providerId", source = "contract.providerId")
     @Mapping(target = "details.providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "details.providerLegalAddress", source = "providerOrgaDetails", qualifiedByName = "mapParticipantLegalAddress")
+    @Mapping(target = "details.providerActive", source = "providerOrgaDetails.metadata.active")
     @Mapping(target = "details.consumerId", source = "contract.consumerId")
     @Mapping(target = "details.consumerLegalName", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalName")
     @Mapping(target = "details.consumerLegalAddress", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalAddress")
+    @Mapping(target = "details.consumerActive", source = "consumerOrgaDetails.metadata.active")
     @Mapping(target = "details.state", source = "contract.state")
     @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignature.signerName")
     @Mapping(target = "details.providerSignature", source = "contract.providerSignature.signature")
