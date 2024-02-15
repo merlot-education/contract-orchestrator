@@ -2,6 +2,7 @@ package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.authorizationlibrary.authorization.*;
 import eu.merloteducation.authorizationlibrary.config.InterceptorConfig;
+import eu.merloteducation.authorizationlibrary.config.MerlotSecurityConfig;
 import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
 import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
@@ -35,7 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({DataTransferController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
-@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class})
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class,
+        MerlotSecurityConfig.class})
 @AutoConfigureMockMvc()
 class DataTransferControllerTest {
 
@@ -44,6 +46,9 @@ class DataTransferControllerTest {
 
     @MockBean
     private JwtAuthConverterProperties jwtAuthConverterProperties;
+
+    @MockBean
+    private UserInfoOpaqueTokenIntrospector userInfoOpaqueTokenIntrospector;
 
     @MockBean
     private EdcOrchestrationService edcOrchestrationService;
