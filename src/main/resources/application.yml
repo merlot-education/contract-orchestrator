@@ -1,12 +1,6 @@
 spring:
   application:
     name: contracts-orchestrator
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://key-server:8080/realms/POC1
-          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
   datasource:
     url: jdbc:h2:file:./database.db
     username: sa
@@ -38,12 +32,6 @@ spring:
   servlet:
     multipart:
       max-file-size: 2MB
-
-jwt:
-  auth:
-    converter:
-      resource-id: MARKETPLACE
-      principal-attribute: preferred_username
 
 logging:
   level:
@@ -83,9 +71,3 @@ s3-library:
   signer-type: S3SignerType
   bucket: merlot-storage-test
   root-directory: contract-orchestrator
-
-cors:
-  global:
-    origins:
-    patterns: >
-      http://localhost:[*]
