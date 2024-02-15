@@ -156,7 +156,6 @@ class EdcOrchestrationServiceTest {
         doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getDetails().getId()), any());
 
         OrganizationConnectorDto edc1 = new OrganizationConnectorDto();
-        edc1.setId("1234");
         edc1.setConnectorId("edc1");
         edc1.setConnectorEndpoint("http://example.com");
         edc1.setOrgaId(getParticipantId(20));
@@ -167,7 +166,6 @@ class EdcOrchestrationServiceTest {
         edc1.setBucketNames(bucketList);
 
         OrganizationConnectorDto edc2 = new OrganizationConnectorDto();
-        edc1.setId("1234");
         edc1.setConnectorId("edc2");
         edc1.setConnectorEndpoint("http://example.com");
         edc1.setOrgaId(getParticipantId(10));
