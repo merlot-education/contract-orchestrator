@@ -5,6 +5,7 @@ import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serv
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
 import eu.merloteducation.modelslib.edc.asset.AssetProperties;
@@ -78,7 +79,7 @@ public class EdcOrchestrationService {
         }
     }
 
-    private OrganizationConnectorDto getOrgaConnector(String orgaId, String connectorId) {
+    private OrganizationConnectorTransferDto getOrgaConnector(String orgaId, String connectorId) {
         return messageQueueService
                 .remoteRequestOrganizationConnectorByConnectorId(
                         orgaId, connectorId);
@@ -96,9 +97,9 @@ public class EdcOrchestrationService {
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId, String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
-        OrganizationConnectorDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
+        OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 contractDto.getProvisioning().getSelectedProviderConnectorId());
-        OrganizationConnectorDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+        OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient providerEdcClient = edcClientProvider.getObject(providerConnector);
@@ -210,7 +211,7 @@ public class EdcOrchestrationService {
                                                    String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
-        OrganizationConnectorDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+        OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
@@ -231,9 +232,9 @@ public class EdcOrchestrationService {
                                                 String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
-        OrganizationConnectorDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
+        OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 contractDto.getProvisioning().getSelectedProviderConnectorId());
-        OrganizationConnectorDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+        OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
@@ -278,7 +279,7 @@ public class EdcOrchestrationService {
                                                     String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
-        OrganizationConnectorDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
+        OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
                 contractDto.getProvisioning().getSelectedConsumerConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);

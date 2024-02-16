@@ -12,7 +12,7 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContra
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
-import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.common.IdResponse;
 import eu.merloteducation.modelslib.edc.negotiation.ContractNegotiation;
@@ -155,7 +155,7 @@ class EdcOrchestrationServiceTest {
         doReturn(wrongTypeContract).when(contractStorageService).getContractDetails(eq(wrongTypeContract.getDetails().getId()), any());
         doReturn(wrongStateContract).when(contractStorageService).getContractDetails(eq(wrongStateContract.getDetails().getId()), any());
 
-        OrganizationConnectorDto edc1 = new OrganizationConnectorDto();
+        OrganizationConnectorTransferDto edc1 = new OrganizationConnectorTransferDto();
         edc1.setConnectorId("edc1");
         edc1.setConnectorEndpoint("http://example.com");
         edc1.setOrgaId(getParticipantId(20));
@@ -165,12 +165,12 @@ class EdcOrchestrationServiceTest {
         bucketList.add("targetbucket");
         edc1.setBucketNames(bucketList);
 
-        OrganizationConnectorDto edc2 = new OrganizationConnectorDto();
-        edc1.setConnectorId("edc2");
-        edc1.setConnectorEndpoint("http://example.com");
-        edc1.setOrgaId(getParticipantId(10));
-        edc1.setConnectorAccessToken("1234");
-        edc1.setBucketNames(bucketList);
+        OrganizationConnectorTransferDto edc2 = new OrganizationConnectorTransferDto();
+        edc2.setConnectorId("edc2");
+        edc2.setConnectorEndpoint("http://example.com");
+        edc2.setOrgaId(getParticipantId(10));
+        edc2.setConnectorAccessToken("1234");
+        edc2.setBucketNames(bucketList);
 
         doReturn(edc1).when(messageQueueService)
                 .remoteRequestOrganizationConnectorByConnectorId(getParticipantId(20), "edc1");
