@@ -99,7 +99,7 @@ public interface ContractMapper {
     @Mapping(target = "details.providerSignerUserName", source = "contract.providerSignature.signerName")
     @Mapping(target = "details.providerSignature", source = "contract.providerSignature.signature")
     @Mapping(target = "details.providerSignatureDate", source = "contract.providerSignature.signatureDate")
-    @Mapping(target = "details.consumerSignerUserName", source = "contract.providerSignature.signerName")
+    @Mapping(target = "details.consumerSignerUserName", source = "contract.consumerSignature.signerName")
     @Mapping(target = "details.consumerSignature", source = "contract.consumerSignature.signature")
     @Mapping(target = "details.consumerSignatureDate", source = "contract.consumerSignature.signatureDate")
     @Mapping(target = "details.termsAndConditions", source = "contract.termsAndConditions")
