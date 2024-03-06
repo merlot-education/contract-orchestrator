@@ -17,7 +17,7 @@ This is by far the easiest way to get everything up and running locally.
 ## Structure
 
 ```
-├── src/main/java/eu/merloteducation/organisationsorchestrator
+├── src/main/java/eu/merloteducation/contractorchestrator
 │   ├── auth            # authorization checks
 │   ├── config          # configuration-related components
 │   ├── controller      # external REST API controllers
