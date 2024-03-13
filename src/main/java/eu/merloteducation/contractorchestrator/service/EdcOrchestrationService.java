@@ -4,7 +4,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.organization.IonosS3BucketDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
@@ -116,6 +116,13 @@ public class EdcOrchestrationService {
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
         // provider side
+
+        IonosS3BucketDto providerSelectedBucket = providerConnector.getIonosS3ExtensionConfig()
+                .getBuckets().stream()
+                .filter(b -> b.getName().equals(contractDto.getProvisioning().getDataAddressSourceBucketName()))
+                .findFirst().orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "The source bucket selected in the contract is not configured for the provider."));
         // create asset
         AssetCreateRequest assetCreateRequest = AssetCreateRequest.builder()
                 .id(assetId)
@@ -126,12 +133,12 @@ public class EdcOrchestrationService {
                         .contenttype("")
                         .build())
                 .dataAddress(IonosS3DataAddress.builder()
-                        .name(contractDto.getProvisioning().getDataAddressSourceBucketName())
-                        .bucketName(contractDto.getProvisioning().getDataAddressSourceBucketName())
+                        .name(providerSelectedBucket.getName())
+                        .bucketName(providerSelectedBucket.getName())
                         .container(providerConnector.getOrgaId())
                         .blobName(contractDto.getProvisioning().getDataAddressSourceFileName())
                         .keyName(contractDto.getProvisioning().getDataAddressSourceFileName())
-                        .storage("s3-eu-central-1.ionoscloud.com")  // TODO move this to bucket parameters?
+                        .storage(providerSelectedBucket.getStorageEndpoint())
                         .build())
                 .build();
         logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
@@ -241,19 +248,24 @@ public class EdcOrchestrationService {
 
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, authToken);
 
-        // agreement id is always formatted as contract_definition_id:assetId:random_uuid
+        IonosS3BucketDto consumerSelectedBucket = consumerConnector.getIonosS3ExtensionConfig()
+                .getBuckets().stream()
+                .filter(b -> b.getName().equals(contractDto.getProvisioning().getDataAddressTargetBucketName()))
+                .findFirst().orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "The target bucket selected in the contract is not configured for the consumer."));
         TransferRequest transferRequest = TransferRequest.builder()
                 .connectorId(providerConnector.getConnectorId())
                 .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
                 .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(IonosS3DataAddress.builder()
-                        .name(contractDto.getProvisioning().getDataAddressTargetBucketName())
-                        .bucketName(contractDto.getProvisioning().getDataAddressTargetBucketName())
+                        .name(consumerSelectedBucket.getName())
+                        .bucketName(consumerSelectedBucket.getName())
                         .container(contractDto.getDetails().getConsumerId())
                         .blobName(contractDto.getProvisioning().getDataAddressTargetFileName())
                         .keyName(contractDto.getProvisioning().getDataAddressTargetFileName())
-                        .storage("s3-eu-central-1.ionoscloud.com")
+                        .storage(consumerSelectedBucket.getStorageEndpoint())
                         .build())
                 .build();
         logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
