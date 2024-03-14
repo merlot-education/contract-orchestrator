@@ -12,6 +12,8 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContra
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
+import eu.merloteducation.modelslib.api.organization.IonosS3BucketDto;
+import eu.merloteducation.modelslib.api.organization.IonosS3ExtensionConfigDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.common.IdResponse;
@@ -160,17 +162,18 @@ class EdcOrchestrationServiceTest {
         edc1.setConnectorEndpoint("http://example.com");
         edc1.setOrgaId(getParticipantId(20));
         edc1.setConnectorAccessToken("1234");
-        List<String> bucketList = new ArrayList<>();
-        bucketList.add("sourcebucket");
-        bucketList.add("targetbucket");
-        edc1.setBucketNames(bucketList);
+        List<IonosS3BucketDto> bucketList = List.of(
+                new IonosS3BucketDto("sourcebucket", "http://example.com/"),
+                new IonosS3BucketDto("targetbucket", "http://example.com/")
+        );
+        edc1.setIonosS3ExtensionConfig(new IonosS3ExtensionConfigDto(bucketList));
 
         OrganizationConnectorTransferDto edc2 = new OrganizationConnectorTransferDto();
         edc2.setConnectorId("edc2");
         edc2.setConnectorEndpoint("http://example.com");
         edc2.setOrgaId(getParticipantId(10));
         edc2.setConnectorAccessToken("1234");
-        edc2.setBucketNames(bucketList);
+        edc2.setIonosS3ExtensionConfig(new IonosS3ExtensionConfigDto(bucketList));
 
         doReturn(edc1).when(messageQueueService)
                 .remoteRequestOrganizationConnectorByConnectorId(getParticipantId(20), "edc1");
