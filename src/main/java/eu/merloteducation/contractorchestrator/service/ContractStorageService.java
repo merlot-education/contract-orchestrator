@@ -322,7 +322,7 @@ public class ContractStorageService {
         // check that fields are in a valid format
         String regexServiceOfferingId = "(^ServiceOffering:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^ServiceOffering:\\d+$)";
 
-        String regexOrganizationId = "did:web:[-.#A-Za-z0-9]*";
+        String regexOrganizationId = "did:web:[-.A-Za-z0-9:%#]*";
         String offeringId = contractCreateRequest.getOfferingId();
         String consumerId = contractCreateRequest.getConsumerId();
 
