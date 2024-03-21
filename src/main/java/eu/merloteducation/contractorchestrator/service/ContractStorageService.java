@@ -182,7 +182,7 @@ public class ContractStorageService {
                                             DataDeliveryContractDto editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
-        DataDeliveryProvisioning targetProvisioning = (DataDeliveryProvisioning) targetContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
 
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(
