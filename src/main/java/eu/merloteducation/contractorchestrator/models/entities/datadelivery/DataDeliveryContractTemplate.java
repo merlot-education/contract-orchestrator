@@ -30,6 +30,11 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
     }
 
     @Override
+    public DataDeliveryProvisioning getServiceContractProvisioning() {
+        return (DataDeliveryProvisioning) super.getServiceContractProvisioning();
+    }
+
+    @Override
     public boolean transitionAllowed(ContractState targetState) {
         return super.transitionAllowed(targetState) && switch (targetState) {
             case SIGNED_CONSUMER ->

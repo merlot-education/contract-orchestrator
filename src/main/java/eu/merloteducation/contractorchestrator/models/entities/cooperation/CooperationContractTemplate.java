@@ -14,14 +14,17 @@ import lombok.ToString;
 @ToString
 public class CooperationContractTemplate extends ContractTemplate {
 
-    private DefaultProvisioning serviceContractProvisioning;
-
     public CooperationContractTemplate() {
         super();
     }
 
     public CooperationContractTemplate(CooperationContractTemplate template, boolean regenerate) {
         super(template, regenerate);
+    }
+
+    @Override
+    public DefaultProvisioning getServiceContractProvisioning() {
+        return (DefaultProvisioning) super.getServiceContractProvisioning();
     }
 
     @Override

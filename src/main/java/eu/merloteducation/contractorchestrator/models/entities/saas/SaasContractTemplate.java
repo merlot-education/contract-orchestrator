@@ -17,8 +17,6 @@ public class SaasContractTemplate extends ContractTemplate {
 
     private String userCountSelection;
 
-    private DefaultProvisioning serviceContractProvisioning;
-
     public SaasContractTemplate() {
         super();
     }
@@ -26,6 +24,11 @@ public class SaasContractTemplate extends ContractTemplate {
     public SaasContractTemplate(SaasContractTemplate template, boolean regenerate) {
         super(template, regenerate);
         this.userCountSelection = template.getUserCountSelection();
+    }
+
+    @Override
+    public DefaultProvisioning getServiceContractProvisioning() {
+        return (DefaultProvisioning) super.getServiceContractProvisioning();
     }
 
     @Override

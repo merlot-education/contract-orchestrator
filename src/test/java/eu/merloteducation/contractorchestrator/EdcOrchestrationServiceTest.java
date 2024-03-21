@@ -10,6 +10,7 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContra
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractNegotiationDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.IonosS3BucketDto;
@@ -76,7 +77,7 @@ class EdcOrchestrationServiceTest {
         ObjectMapper mapper = new ObjectMapper();
 
         validPushContract = new DataDeliveryContractDto();
-        validPushContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        validPushContract.setProvisioning(new IonosS3DataDeliveryContractProvisioningDto());
         validPushContract.setNegotiation(new DataDeliveryContractNegotiationDto());
         validPushContract.setDetails(new DataDeliveryContractDetailsDto());
         validPushContract.getNegotiation().setRuntimeSelection("0 unlimited");
@@ -90,11 +91,11 @@ class EdcOrchestrationServiceTest {
         validPushContract.getDetails().setState("RELEASED");
         validPushContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPushContract.getProvisioning().setDataAddressType("IonosS3");
-        validPushContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
-        validPushContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressSourceFileName("sourcefile.json");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressSourceBucketName("sourcebucket");
         validPushContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        validPushContract.getProvisioning().setDataAddressTargetPath("myTargetPath/"); // TODO
-        validPushContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/"); // TODO
+        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPushContract.setOffering(new ServiceOfferingDto());
         validPushContract.getOffering().setSelfDescription(new SelfDescription());
         validPushContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
@@ -106,7 +107,7 @@ class EdcOrchestrationServiceTest {
 
 
         validPullContract = new DataDeliveryContractDto();
-        validPullContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        validPullContract.setProvisioning(new IonosS3DataDeliveryContractProvisioningDto());
         validPullContract.setNegotiation(new DataDeliveryContractNegotiationDto());
         validPullContract.setDetails(new DataDeliveryContractDetailsDto());
         validPullContract.getNegotiation().setRuntimeSelection("0 unlimited");
@@ -120,11 +121,11 @@ class EdcOrchestrationServiceTest {
         validPullContract.getDetails().setState("RELEASED");
         validPullContract.getProvisioning().setSelectedProviderConnectorId("edc1");
         validPullContract.getProvisioning().setDataAddressType("IonosS3");
-        validPullContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
-        validPullContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressSourceFileName("sourcefile.json");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressSourceBucketName("sourcebucket");
         validPullContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        validPullContract.getProvisioning().setDataAddressTargetPath("myTargetPath/"); // TODO
-        validPullContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
+        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/"); // TODO
+        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPullContract.setOffering(new ServiceOfferingDto());
         validPullContract.getOffering().setSelfDescription(new SelfDescription());
         validPullContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
@@ -142,7 +143,7 @@ class EdcOrchestrationServiceTest {
         wrongTypeContract.getDetails().setProviderId(getParticipantId(20));
 
         wrongStateContract = new DataDeliveryContractDto();
-        wrongStateContract.setProvisioning(new DataDeliveryContractProvisioningDto());
+        wrongStateContract.setProvisioning(new IonosS3DataDeliveryContractProvisioningDto());
         wrongStateContract.setNegotiation(new DataDeliveryContractNegotiationDto());
         wrongStateContract.setDetails(new DataDeliveryContractDetailsDto());
         wrongStateContract.getDetails().setId("wrongStateContract");

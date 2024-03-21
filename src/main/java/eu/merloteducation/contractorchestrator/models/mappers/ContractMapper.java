@@ -136,6 +136,7 @@ public interface ContractMapper {
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,
                                                   ServiceOfferingDto offeringDetails);
 
+    @Mapping(target = "dataAddressType", constant = "IonosS3")
     @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId", defaultValue = "")
     @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId", defaultValue = "")
     @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName", defaultValue = "")

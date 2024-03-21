@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.entities.datadelivery;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
+import eu.merloteducation.contractorchestrator.models.entities.DefaultProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.Entity;

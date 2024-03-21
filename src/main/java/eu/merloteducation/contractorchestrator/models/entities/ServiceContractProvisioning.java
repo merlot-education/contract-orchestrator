@@ -35,10 +35,6 @@ public abstract class ServiceContractProvisioning {
     }
 
     public boolean transitionAllowed(ContractState targetState) {
-        return switch (targetState) {
-            case RELEASED ->
-                    validUntil != null;
-            default -> true;
-        };
+        return true; // validUntil can be null if selected time is unlimited
     }
 }

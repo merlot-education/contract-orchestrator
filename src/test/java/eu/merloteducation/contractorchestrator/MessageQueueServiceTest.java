@@ -3,6 +3,7 @@ package eu.merloteducation.contractorchestrator;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3DataDeliveryProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
@@ -116,7 +117,7 @@ class MessageQueueServiceTest {
         templateData.setAttachments(new HashSet<>());
         templateData.setConsumerTncAccepted(true);
         templateData.setExchangeCountSelection("anything");
-        DataDeliveryProvisioning dataDeliveryProvisioning = new DataDeliveryProvisioning();
+        IonosS3DataDeliveryProvisioning dataDeliveryProvisioning = new IonosS3DataDeliveryProvisioning();
         dataDeliveryProvisioning.setDataAddressTargetBucketName("foo");
         dataDeliveryProvisioning.setDataAddressTargetPath("bar");
         dataDeliveryProvisioning.setSelectedConsumerConnectorId("something");
