@@ -9,7 +9,8 @@ import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransf
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
 import eu.merloteducation.modelslib.edc.asset.AssetProperties;
-import eu.merloteducation.modelslib.edc.asset.IonosS3DataAddress;
+import eu.merloteducation.modelslib.edc.asset.ionoss3extension.IonosS3DataDestination;
+import eu.merloteducation.modelslib.edc.asset.ionoss3extension.IonosS3DataSource;
 import eu.merloteducation.modelslib.edc.catalog.CatalogRequest;
 import eu.merloteducation.modelslib.edc.catalog.DcatCatalog;
 import eu.merloteducation.modelslib.edc.catalog.DcatDataset;
@@ -132,7 +133,7 @@ public class EdcOrchestrationService {
                         .version("")
                         .contenttype("")
                         .build())
-                .dataAddress(IonosS3DataAddress.builder()
+                .dataAddress(IonosS3DataSource.builder()
                         .name(providerSelectedBucket.getName())
                         .bucketName(providerSelectedBucket.getName())
                         .container(providerConnector.getOrgaId())
@@ -259,12 +260,12 @@ public class EdcOrchestrationService {
                 .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
                 .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
-                .dataDestination(IonosS3DataAddress.builder()
+                .dataDestination(IonosS3DataDestination.builder()
                         .name(consumerSelectedBucket.getName())
                         .bucketName(consumerSelectedBucket.getName())
                         .container(contractDto.getDetails().getConsumerId())
-                        .blobName(contractDto.getProvisioning().getDataAddressTargetFileName())
-                        .keyName(contractDto.getProvisioning().getDataAddressTargetFileName())
+                        .path(contractDto.getProvisioning().getDataAddressTargetPath())
+                        .keyName(contractDto.getProvisioning().getDataAddressTargetPath())
                         .storage(consumerSelectedBucket.getStorageEndpoint())
                         .build())
                 .build();

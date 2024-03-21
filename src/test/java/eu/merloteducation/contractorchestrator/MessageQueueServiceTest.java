@@ -115,7 +115,7 @@ class MessageQueueServiceTest {
         templateData.setExchangeCountSelection("anything");
         DataDeliveryProvisioning dataDeliveryProvisioning = new DataDeliveryProvisioning();
         dataDeliveryProvisioning.setDataAddressTargetBucketName("foo");
-        dataDeliveryProvisioning.setDataAddressTargetFileName("bar");
+        dataDeliveryProvisioning.setDataAddressTargetPath("bar");
         dataDeliveryProvisioning.setSelectedConsumerConnectorId("something");
         templateData.setServiceContractProvisioning(dataDeliveryProvisioning);
         templateData.transitionState(ContractState.SIGNED_CONSUMER);

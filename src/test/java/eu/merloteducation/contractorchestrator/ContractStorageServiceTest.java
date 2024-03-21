@@ -31,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -1134,7 +1133,7 @@ class ContractStorageServiceTest {
         template.setRuntimeSelection("0 unlimited");
         template.setConsumerTncAccepted(true);
         template.setConsumerAttachmentsAccepted(true);
-        provisioning.setDataAddressTargetFileName("MyFile.json");
+        provisioning.setDataAddressTargetPath("MyFile.json");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);

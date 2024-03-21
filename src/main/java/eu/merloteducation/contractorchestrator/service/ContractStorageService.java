@@ -27,7 +27,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -186,8 +185,8 @@ public class ContractStorageService {
                 // TODO verify that this is a bucket that belongs to the connector
                 targetProvisioning.setDataAddressTargetBucketName(
                         editedContract.getProvisioning().getDataAddressTargetBucketName());
-                targetProvisioning.setDataAddressTargetFileName(
-                        editedContract.getProvisioning().getDataAddressTargetFileName());
+                targetProvisioning.setDataAddressTargetPath(
+                        editedContract.getProvisioning().getDataAddressTargetPath());
                 targetProvisioning.setSelectedConsumerConnectorId(
                         editedContract.getProvisioning().getSelectedConsumerConnectorId());
             }
