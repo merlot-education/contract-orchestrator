@@ -93,7 +93,7 @@ class EdcOrchestrationServiceTest {
         validPushContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
         validPushContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
         validPushContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        validPushContract.getProvisioning().setDataAddressTargetPath("myTargetPath/"); // TODO
+        validPushContract.getProvisioning().setDataAddressTargetPath("myTargetPath/");
         validPushContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
         validPushContract.setOffering(new ServiceOfferingDto());
         validPushContract.getOffering().setSelfDescription(new SelfDescription());
@@ -123,7 +123,7 @@ class EdcOrchestrationServiceTest {
         validPullContract.getProvisioning().setDataAddressSourceFileName("sourcefile.json");
         validPullContract.getProvisioning().setDataAddressSourceBucketName("sourcebucket");
         validPullContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        validPullContract.getProvisioning().setDataAddressTargetPath("myTargetPath/"); // TODO
+        validPullContract.getProvisioning().setDataAddressTargetPath("myTargetPath/");
         validPullContract.getProvisioning().setDataAddressTargetBucketName("targetbucket");
         validPullContract.setOffering(new ServiceOfferingDto());
         validPullContract.getOffering().setSelfDescription(new SelfDescription());
