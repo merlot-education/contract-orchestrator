@@ -1,9 +1,12 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.CooperationContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
@@ -12,6 +15,8 @@ import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serv
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -126,16 +131,26 @@ public interface ContractMapper {
 
     @InheritConfiguration(name = "contractToContractDto")
     @Mapping(target = "negotiation.exchangeCountSelection", source = "contract.exchangeCountSelection", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressType", source = "contract.serviceContractProvisioning.dataAddressType", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressSourceBucketName", source = "contract.serviceContractProvisioning.dataAddressSourceBucketName", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName", defaultValue = "")
-    @Mapping(target = "provisioning.selectedProviderConnectorId", source = "contract.serviceContractProvisioning.selectedProviderConnectorId", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressTargetBucketName", source = "contract.serviceContractProvisioning.dataAddressTargetBucketName", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressTargetPath", source = "contract.serviceContractProvisioning.dataAddressTargetPath", defaultValue = "")
-    @Mapping(target = "provisioning.selectedConsumerConnectorId", source = "contract.serviceContractProvisioning.selectedConsumerConnectorId", defaultValue = "")
+    @Mapping(target = "provisioning", source = "contract.serviceContractProvisioning", qualifiedByName = "mapDataDeliveryProvisioning")
     DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,
                                                   ServiceOfferingDto offeringDetails);
+
+    @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId", defaultValue = "")
+    @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId", defaultValue = "")
+    @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName", defaultValue = "")
+    @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName", defaultValue = "")
+    @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName", defaultValue = "")
+    @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath", defaultValue = "")
+    IonosS3DataDeliveryContractProvisioningDto ionosProvisioningToDto(IonosS3DataDeliveryProvisioning provisioning);
+
+    @Named("mapDataDeliveryProvisioning")
+    default IonosS3DataDeliveryContractProvisioningDto mapDataDeliveryProvisioning(ServiceContractProvisioning provisioning) {
+        if (provisioning instanceof IonosS3DataDeliveryProvisioning ionosS3DataDeliveryProvisioning) {
+            return ionosProvisioningToDto(ionosS3DataDeliveryProvisioning);
+        }
+        throw new IllegalArgumentException("Unknown provisioning type.");
+    }
 
     @Mapping(target = "contractId", expression = "java(contractDto.getDetails().getId().replace(\"Contract:\", \"\"))")
     @Mapping(target = "contractCreationDate", source = "contractDto.details.creationDate")

@@ -29,6 +29,16 @@ public abstract class ServiceContractProvisioning {
     }
 
     protected ServiceContractProvisioning(ServiceContractProvisioning provisioning) {
-        this();
+        this.id = provisioning.getId();
+        this.validUntil = provisioning.getValidUntil();
+        this.contractTemplate = provisioning.getContractTemplate();
+    }
+
+    public boolean transitionAllowed(ContractState targetState) {
+        return switch (targetState) {
+            case RELEASED ->
+                    validUntil != null;
+            default -> true;
+        };
     }
 }

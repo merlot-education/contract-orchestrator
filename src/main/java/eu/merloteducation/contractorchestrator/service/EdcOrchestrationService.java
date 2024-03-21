@@ -4,6 +4,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.organization.IonosS3BucketDto;
 import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -97,11 +98,13 @@ public class EdcOrchestrationService {
      */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId, String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
+        IonosS3DataDeliveryContractProvisioningDto provisioningDto =
+                (IonosS3DataDeliveryContractProvisioningDto) contractDto.getProvisioning();
 
         OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
-                contractDto.getProvisioning().getSelectedProviderConnectorId());
+                provisioningDto.getSelectedProviderConnectorId());
         OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
-                contractDto.getProvisioning().getSelectedConsumerConnectorId());
+                provisioningDto.getSelectedConsumerConnectorId());
 
         EdcClient providerEdcClient = edcClientProvider.getObject(providerConnector);
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
@@ -120,7 +123,7 @@ public class EdcOrchestrationService {
 
         IonosS3BucketDto providerSelectedBucket = providerConnector.getIonosS3ExtensionConfig()
                 .getBuckets().stream()
-                .filter(b -> b.getName().equals(contractDto.getProvisioning().getDataAddressSourceBucketName()))
+                .filter(b -> b.getName().equals(provisioningDto.getDataAddressSourceBucketName()))
                 .findFirst().orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                 "The source bucket selected in the contract is not configured for the provider."));
@@ -135,8 +138,8 @@ public class EdcOrchestrationService {
                         .build())
                 .dataAddress(IonosS3DataSource.builder()
                         .bucketName(providerSelectedBucket.getName())
-                        .blobName(contractDto.getProvisioning().getDataAddressSourceFileName())
-                        .keyName(contractDto.getProvisioning().getDataAddressSourceFileName())
+                        .blobName(provisioningDto.getDataAddressSourceFileName())
+                        .keyName(provisioningDto.getDataAddressSourceFileName())
                         .storage(providerSelectedBucket.getStorageEndpoint())
                         .build())
                 .build();
@@ -237,6 +240,8 @@ public class EdcOrchestrationService {
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
+        IonosS3DataDeliveryContractProvisioningDto provisioningDto =
+                (IonosS3DataDeliveryContractProvisioningDto) contractDto.getProvisioning();
 
         OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 contractDto.getProvisioning().getSelectedProviderConnectorId());
@@ -249,7 +254,7 @@ public class EdcOrchestrationService {
 
         IonosS3BucketDto consumerSelectedBucket = consumerConnector.getIonosS3ExtensionConfig()
                 .getBuckets().stream()
-                .filter(b -> b.getName().equals(contractDto.getProvisioning().getDataAddressTargetBucketName()))
+                .filter(b -> b.getName().equals(provisioningDto.getDataAddressTargetBucketName()))
                 .findFirst().orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.BAD_REQUEST,
                                 "The target bucket selected in the contract is not configured for the consumer."));
@@ -260,8 +265,8 @@ public class EdcOrchestrationService {
                 .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(IonosS3DataDestination.builder()
                         .bucketName(consumerSelectedBucket.getName())
-                        .path(contractDto.getProvisioning().getDataAddressTargetPath())
-                        .keyName(contractDto.getProvisioning().getDataAddressTargetPath())
+                        .path(provisioningDto.getDataAddressTargetPath())
+                        .keyName(provisioningDto.getDataAddressTargetPath())
                         .storage(consumerSelectedBucket.getStorageEndpoint())
                         .build())
                 .build();

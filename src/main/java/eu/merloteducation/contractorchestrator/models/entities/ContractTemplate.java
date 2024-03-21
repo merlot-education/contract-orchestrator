@@ -56,7 +56,7 @@ public abstract class ContractTemplate {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
-    private ServiceContractProvisioning serviceContractProvisioning;
+    private ServiceContractProvisioning serviceContractProvisioning; // TODO maybe split provisioning into provider/consumer
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "consumer_signature_id")
@@ -94,32 +94,45 @@ public abstract class ContractTemplate {
         this.serviceContractProvisioning = template.getServiceContractProvisioning();
     }
 
-    public void transitionState(ContractState targetState) {
-        if (state.checkTransitionAllowed(targetState)) {
-            if ((targetState == ContractState.SIGNED_CONSUMER &&
-                    (StringUtil.isNullOrEmpty(runtimeSelection)
-                            || (consumerSignature == null)
-                            || !consumerTncAccepted
-                            || (!attachments.isEmpty() && !consumerAttachmentsAccepted)))
-                    || (targetState == ContractState.RELEASED &&
-                            ((providerSignature == null) ||
-                                    !providerTncAccepted))) {
-                throw new IllegalStateException(
-                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
-                                state.name(), targetState.name()));
-
-            }
-            state = targetState;
-        } else {
-            throw new IllegalStateException(
-                    String.format("Not allowed to transition from state %s to %s", state.name(), targetState.name()));
-        }
-    }
-
     public void addAttachment(String attachment) {
         if (this.state != ContractState.IN_DRAFT) {
             throw new IllegalStateException("Cannot add attachment to contract since it is not in draft");
         }
         this.attachments.add(attachment);
+    }
+
+    public boolean transitionAllowed(ContractState targetState) {
+
+        boolean templateAllowed = switch (targetState) {
+            case SIGNED_CONSUMER ->
+                    !StringUtil.isNullOrEmpty(runtimeSelection)
+                    && consumerSignature != null
+                    && consumerTncAccepted
+                    && (attachments.isEmpty() || consumerAttachmentsAccepted);
+            case RELEASED ->
+                    providerSignature != null
+                    && providerTncAccepted;
+            default -> true;
+        };
+
+        ServiceContractProvisioning provisioning = getServiceContractProvisioning();
+        boolean provisioningAllowed = provisioning != null && provisioning.transitionAllowed(targetState);
+
+        return templateAllowed && provisioningAllowed; // ask both the template and provisioning
+    }
+
+    public void transitionState(ContractState targetState) {
+        if (state.checkTransitionAllowed(targetState)) { // general transition by state allowed?
+            if (this.transitionAllowed(targetState)) { // all mandatory fields set for transition?
+                state = targetState;
+            } else {
+                throw new IllegalStateException(
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                                state.name(), targetState.name()));
+            }
+        } else {
+            throw new IllegalStateException(
+                    String.format("Not allowed to transition from state %s to %s", state.name(), targetState.name()));
+        }
     }
 }

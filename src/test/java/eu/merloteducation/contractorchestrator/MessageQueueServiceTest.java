@@ -1,6 +1,9 @@
 package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.models.entities.*;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;

@@ -2,6 +2,11 @@ package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.entities.*;
+import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
@@ -16,6 +21,7 @@ import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -176,43 +182,52 @@ public class ContractStorageService {
                                             DataDeliveryContractDto editedContract,
                                             boolean isConsumer,
                                             boolean isProvider) {
-        DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
+        DataDeliveryProvisioning targetProvisioning = (DataDeliveryProvisioning) targetContract.getServiceContractProvisioning();
 
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(
                     editedContract.getNegotiation().getExchangeCountSelection());
             if (isConsumer) {
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressTargetBucketName(
-                        editedContract.getProvisioning().getDataAddressTargetBucketName());
-                targetProvisioning.setDataAddressTargetPath(
-                        editedContract.getProvisioning().getDataAddressTargetPath());
+
                 targetProvisioning.setSelectedConsumerConnectorId(
                         editedContract.getProvisioning().getSelectedConsumerConnectorId());
+
+                if (targetProvisioning instanceof IonosS3DataDeliveryProvisioning ionosTarget
+                && editedContract.getProvisioning() instanceof IonosS3DataDeliveryContractProvisioningDto ionosEdited) {
+                    // TODO verify that this is a bucket that belongs to the connector
+                    ionosTarget.setDataAddressTargetBucketName(
+                            ionosEdited.getDataAddressTargetBucketName());
+                    ionosTarget.setDataAddressTargetPath(
+                            ionosEdited.getDataAddressTargetPath());
+                }
             }
             if (isProvider) {
-                targetProvisioning.setDataAddressType(
-                        editedContract.getProvisioning().getDataAddressType());
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressSourceBucketName(
-                        editedContract.getProvisioning().getDataAddressSourceBucketName());
-                targetProvisioning.setDataAddressSourceFileName(
-                        editedContract.getProvisioning().getDataAddressSourceFileName());
                 // TODO verify that this is a valid connectorId
                 targetProvisioning.setSelectedProviderConnectorId(
                         editedContract.getProvisioning().getSelectedProviderConnectorId());
+
+                if (targetProvisioning instanceof IonosS3DataDeliveryProvisioning ionosTarget
+                        && editedContract.getProvisioning() instanceof IonosS3DataDeliveryContractProvisioningDto ionosEdited) {
+                    // TODO verify that this is a bucket that belongs to the connector
+                    ionosTarget.setDataAddressSourceBucketName(
+                            ionosEdited.getDataAddressSourceBucketName());
+                    ionosTarget.setDataAddressSourceFileName(
+                            ionosEdited.getDataAddressSourceFileName());
+                }
             }
         } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetProvisioning.setDataAddressType(
-                    editedContract.getProvisioning().getDataAddressType());
-            // TODO verify that this is a bucket that belongs to the connector
-            targetProvisioning.setDataAddressSourceBucketName(
-                    editedContract.getProvisioning().getDataAddressSourceBucketName());
-            targetProvisioning.setDataAddressSourceFileName(
-                    editedContract.getProvisioning().getDataAddressSourceFileName());
             // TODO verify that this is a valid connectorId
             targetProvisioning.setSelectedProviderConnectorId(
                     editedContract.getProvisioning().getSelectedProviderConnectorId());
+
+            if (targetProvisioning instanceof IonosS3DataDeliveryProvisioning ionosTarget
+                    && editedContract.getProvisioning() instanceof IonosS3DataDeliveryContractProvisioningDto ionosEdited) {
+                // TODO verify that this is a bucket that belongs to the connector
+                ionosTarget.setDataAddressSourceBucketName(
+                        ionosEdited.getDataAddressSourceBucketName());
+                ionosTarget.setDataAddressSourceFileName(
+                        ionosEdited.getDataAddressSourceFileName());
+            }
         }
     }
 
@@ -346,7 +361,10 @@ public class ContractStorageService {
 
         switch (credentialSubject.getType()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
-            case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
+            case "merlot:MerlotServiceOfferingDataDelivery" -> {
+                contract = new DataDeliveryContractTemplate();
+                contract.setServiceContractProvisioning(new IonosS3DataDeliveryProvisioning());
+            }
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
             default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
@@ -394,8 +412,10 @@ public class ContractStorageService {
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
             contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
+            // TODO set this transfer type from the service offering level
             contract.setServiceContractProvisioning(
-                    new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
+                    new IonosS3DataDeliveryProvisioning(
+                            (IonosS3DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
         } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
             contract = new SaasContractTemplate(saasContractTemplate, true);
             contract.setServiceContractProvisioning(
