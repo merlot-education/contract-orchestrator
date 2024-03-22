@@ -35,7 +35,7 @@ public class DataDeliveryContractTemplate extends ContractTemplate {
         if ((targetState == ContractState.SIGNED_CONSUMER &&
                 (StringUtil.isNullOrEmpty(exchangeCountSelection) ||
                         serviceContractProvisioning == null ||
-                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetFileName()) ||
+                        StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetPath()) ||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getDataAddressTargetBucketName())||
                         StringUtil.isNullOrEmpty(serviceContractProvisioning.getSelectedConsumerConnectorId())))
                 || (targetState == ContractState.RELEASED &&

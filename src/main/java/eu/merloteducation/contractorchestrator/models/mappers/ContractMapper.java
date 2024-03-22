@@ -131,7 +131,7 @@ public interface ContractMapper {
     @Mapping(target = "provisioning.dataAddressSourceFileName", source = "contract.serviceContractProvisioning.dataAddressSourceFileName", defaultValue = "")
     @Mapping(target = "provisioning.selectedProviderConnectorId", source = "contract.serviceContractProvisioning.selectedProviderConnectorId", defaultValue = "")
     @Mapping(target = "provisioning.dataAddressTargetBucketName", source = "contract.serviceContractProvisioning.dataAddressTargetBucketName", defaultValue = "")
-    @Mapping(target = "provisioning.dataAddressTargetFileName", source = "contract.serviceContractProvisioning.dataAddressTargetFileName", defaultValue = "")
+    @Mapping(target = "provisioning.dataAddressTargetPath", source = "contract.serviceContractProvisioning.dataAddressTargetPath", defaultValue = "")
     @Mapping(target = "provisioning.selectedConsumerConnectorId", source = "contract.serviceContractProvisioning.selectedConsumerConnectorId", defaultValue = "")
     DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,

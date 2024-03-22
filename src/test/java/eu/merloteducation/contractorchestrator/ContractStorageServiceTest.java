@@ -31,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -927,7 +926,7 @@ class ContractStorageServiceTest {
                 "authToken");
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
-        editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+        editedContract.getProvisioning().setDataAddressTargetPath("targetpath/");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
@@ -969,7 +968,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
         editedContract.getNegotiation().setConsumerTncAccepted(true);
         editedContract.getNegotiation().setConsumerAttachmentsAccepted(true);
-        editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+        editedContract.getProvisioning().setDataAddressTargetPath("targetpath/");
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
@@ -1040,7 +1039,7 @@ class ContractStorageServiceTest {
                 contract.getNegotiation().setRuntimeSelection("0 unlimited");
                 contract.getNegotiation().setConsumerTncAccepted(true);
                 contract.getNegotiation().setConsumerAttachmentsAccepted(true);
-                contract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+                contract.getProvisioning().setDataAddressTargetPath("targetpath/");
                 contract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
                 contract.getProvisioning().setSelectedConsumerConnectorId("edc1");
 
@@ -1134,7 +1133,7 @@ class ContractStorageServiceTest {
         template.setRuntimeSelection("0 unlimited");
         template.setConsumerTncAccepted(true);
         template.setConsumerAttachmentsAccepted(true);
-        provisioning.setDataAddressTargetFileName("MyFile.json");
+        provisioning.setDataAddressTargetPath("targetpath/");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);
@@ -1299,7 +1298,7 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
         editedContract.getProvisioning().setDataAddressTargetBucketName("MyBucket");
-        editedContract.getProvisioning().setDataAddressTargetFileName("MyFile.json");
+        editedContract.getProvisioning().setDataAddressTargetPath("targetpath/");
         editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
@@ -1311,7 +1310,7 @@ class ContractStorageServiceTest {
         assertEquals(editedContract.getNegotiation().getExchangeCountSelection(), result.getNegotiation().getExchangeCountSelection());
         assertEquals(editedContract.getNegotiation().getRuntimeSelection(), result.getNegotiation().getRuntimeSelection());
         assertEquals(editedContract.getProvisioning().getDataAddressTargetBucketName(), result.getProvisioning().getDataAddressTargetBucketName());
-        assertEquals(editedContract.getProvisioning().getDataAddressTargetFileName(), result.getProvisioning().getDataAddressTargetFileName());
+        assertEquals(editedContract.getProvisioning().getDataAddressTargetPath(), result.getProvisioning().getDataAddressTargetPath());
         assertEquals(editedContract.getProvisioning().getSelectedConsumerConnectorId(), result.getProvisioning().getSelectedConsumerConnectorId());
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),

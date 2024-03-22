@@ -18,7 +18,7 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
 
     private String dataAddressTargetBucketName;
 
-    private String dataAddressTargetFileName;
+    private String dataAddressTargetPath;
 
     private String selectedConsumerConnectorId;
 
@@ -28,7 +28,7 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
         this.dataAddressSourceBucketName = "";
         this.dataAddressSourceFileName = "";
         this.dataAddressTargetBucketName = "";
-        this.dataAddressTargetFileName = "";
+        this.dataAddressTargetPath = "";
     }
 
     public DataDeliveryProvisioning(DataDeliveryProvisioning provisioning) {
@@ -37,7 +37,7 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
         this.dataAddressSourceBucketName = provisioning.getDataAddressSourceBucketName();
         this.dataAddressSourceFileName = provisioning.getDataAddressSourceFileName();
         this.dataAddressTargetBucketName = provisioning.getDataAddressTargetBucketName();
-        this.dataAddressTargetFileName = provisioning.getDataAddressTargetFileName();
+        this.dataAddressTargetPath = provisioning.getDataAddressTargetPath();
         this.selectedConsumerConnectorId = provisioning.getSelectedConsumerConnectorId();
         this.selectedProviderConnectorId = provisioning.getSelectedProviderConnectorId();
     }
