@@ -1140,7 +1140,7 @@ class ContractStorageServiceTest {
         template.setRuntimeSelection("0 unlimited");
         template.setConsumerTncAccepted(true);
         template.setConsumerAttachmentsAccepted(true);
-        provisioning.setDataAddressTargetPath("MyFile.json");
+        provisioning.setDataAddressTargetPath("targetpath/");
         provisioning.setDataAddressTargetBucketName("MyBucket");
         provisioning.setSelectedConsumerConnectorId("edc1");
         contractTemplateRepository.save(template);

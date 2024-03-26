@@ -94,7 +94,7 @@ class EdcOrchestrationServiceTest {
         ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressSourceFileName("sourcefile.json");
         ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressSourceBucketName("sourcebucket");
         validPushContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/"); // TODO
+        ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/");
         ((IonosS3DataDeliveryContractProvisioningDto) validPushContract.getProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPushContract.setOffering(new ServiceOfferingDto());
         validPushContract.getOffering().setSelfDescription(new SelfDescription());
@@ -124,7 +124,7 @@ class EdcOrchestrationServiceTest {
         ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressSourceFileName("sourcefile.json");
         ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressSourceBucketName("sourcebucket");
         validPullContract.getProvisioning().setSelectedConsumerConnectorId("edc2");
-        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/"); // TODO
+        ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressTargetPath("myTargetPath/");
         ((IonosS3DataDeliveryContractProvisioningDto) validPullContract.getProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPullContract.setOffering(new ServiceOfferingDto());
         validPullContract.getOffering().setSelfDescription(new SelfDescription());

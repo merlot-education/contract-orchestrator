@@ -119,7 +119,7 @@ class MessageQueueServiceTest {
         templateData.setExchangeCountSelection("anything");
         IonosS3DataDeliveryProvisioning dataDeliveryProvisioning = new IonosS3DataDeliveryProvisioning();
         dataDeliveryProvisioning.setDataAddressTargetBucketName("foo");
-        dataDeliveryProvisioning.setDataAddressTargetPath("bar");
+        dataDeliveryProvisioning.setDataAddressTargetPath("bar/");
         dataDeliveryProvisioning.setSelectedConsumerConnectorId("something");
         templateData.setServiceContractProvisioning(dataDeliveryProvisioning);
         templateData.transitionState(ContractState.SIGNED_CONSUMER);

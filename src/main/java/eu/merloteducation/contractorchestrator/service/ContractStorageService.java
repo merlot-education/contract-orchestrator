@@ -336,7 +336,7 @@ public class ContractStorageService {
         // check that fields are in a valid format
         String regexServiceOfferingId = "(^ServiceOffering:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^ServiceOffering:\\d+$)";
 
-        String regexOrganizationId = "did:web:[-.#A-Za-z0-9]*";
+        String regexOrganizationId = "did:web:[-.A-Za-z0-9:%#]*";
         String offeringId = contractCreateRequest.getOfferingId();
         String consumerId = contractCreateRequest.getConsumerId();
 
@@ -585,7 +585,7 @@ public class ContractStorageService {
      */
     public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter,
                                                            String authToken) {
-        String regex = "did:web:[-.#A-Za-z0-9]*";
+        String regex = "did:web:[-.A-Za-z0-9:%#]*";
         if (!orgaId.matches(regex)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }
