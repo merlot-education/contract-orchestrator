@@ -98,8 +98,10 @@ public class EdcOrchestrationService {
      */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId, String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
-        IonosS3DataDeliveryContractProvisioningDto provisioningDto =
-                (IonosS3DataDeliveryContractProvisioningDto) contractDto.getProvisioning();
+
+        if (!(contractDto.getProvisioning() instanceof IonosS3DataDeliveryContractProvisioningDto provisioningDto)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown transfer method selected in contract.");
+        }
 
         OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
                 provisioningDto.getSelectedProviderConnectorId());
