@@ -1,7 +1,6 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ConsumerTransferProvisioningDto;
