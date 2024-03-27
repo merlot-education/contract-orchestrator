@@ -22,7 +22,9 @@ import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -184,26 +186,23 @@ public class ContractStorageService {
                                             boolean isConsumer,
                                             boolean isProvider) {
         DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
+        DataDeliveryContractProvisioningDto sourceProvisioning = editedContract.getProvisioning();
 
         if (isConsumer
-                && targetContract.getState() == ContractState.IN_DRAFT
-                && targetProvisioning.getConsumerTransferProvisioning()
-                instanceof IonosS3ConsumerTransferProvisioning) {
+                && targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
             targetProvisioning.setConsumerTransferProvisioning(
-                    contractMapper.ionosProvisioningDtoToConsumerProvisioning(
-                                (IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()));
+                    contractMapper.transferProvisioningDtoToProvisioning(
+                            sourceProvisioning.getConsumerTransferProvisioning()));
         } else if (isProvider
                 && (targetContract.getState() == ContractState.IN_DRAFT
-                || targetContract.getState() == ContractState.SIGNED_CONSUMER)
-                && targetProvisioning.getProviderTransferProvisioning()
-                instanceof IonosS3ProviderTransferProvisioning) {
+                || targetContract.getState() == ContractState.SIGNED_CONSUMER)) {
             if (targetContract.getState() == ContractState.IN_DRAFT) {
                 targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
             }
             targetProvisioning.setProviderTransferProvisioning(
-                    contractMapper.ionosProvisioningDtoToProviderProvisioning(
-                            (IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()));
+                    contractMapper.transferProvisioningDtoToProvisioning(
+                            sourceProvisioning.getProviderTransferProvisioning()));
         }
     }
 

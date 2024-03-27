@@ -17,7 +17,9 @@ import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
@@ -940,21 +942,21 @@ class ContractStorageServiceTest {
                 "authToken");
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetPath("targetpath/");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("targetpath/");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetBucketName("MyBucket");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("MyBucket");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         contractStorageService.getContractDetails(editedContract.getDetails().getId(),
                 "authToken");
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.SIGNED_CONSUMER, consumer);
 
-        editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+        editedContract.getProvisioning().getConsumerTransferProvisioning().setSelectedConsumerConnectorId("edc1");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(editedContract.getDetails().getId(),
@@ -984,9 +986,9 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setRuntimeSelection("0 unlimited");
         editedContract.getNegotiation().setConsumerTncAccepted(true);
         editedContract.getNegotiation().setConsumerAttachmentsAccepted(true);
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetPath("targetpath/");
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetBucketName("MyBucket");
-        editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("targetpath/");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("MyBucket");
+        editedContract.getProvisioning().getConsumerTransferProvisioning().setSelectedConsumerConnectorId("edc1");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 consumer);
 
@@ -1001,22 +1003,23 @@ class ContractStorageServiceTest {
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        editedContract.getProvisioning().setDataAddressType("IonosS3");
+        editedContract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3");
+        editedContract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressSourceBucketName("MyBucket2");
+        ((IonosS3ProviderTransferProvisioningDto) editedContract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceBucketName("MyBucket2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressSourceFileName("MyFile2.json");
+        ((IonosS3ProviderTransferProvisioningDto) editedContract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceFileName("MyFile2.json");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        editedContract.getProvisioning().setSelectedProviderConnectorId("edc2");
+        editedContract.getProvisioning().getProviderTransferProvisioning().setSelectedProviderConnectorId("edc2");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
 
@@ -1057,9 +1060,9 @@ class ContractStorageServiceTest {
                 contract.getNegotiation().setRuntimeSelection("0 unlimited");
                 contract.getNegotiation().setConsumerTncAccepted(true);
                 contract.getNegotiation().setConsumerAttachmentsAccepted(true);
-                ((IonosS3DataDeliveryContractProvisioningDto) contract.getProvisioning()).setDataAddressTargetPath("targetpath/");
-                ((IonosS3DataDeliveryContractProvisioningDto) contract.getProvisioning()).setDataAddressTargetBucketName("MyBucket");
-                contract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+                ((IonosS3ConsumerTransferProvisioningDto) contract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("targetpath/");
+                ((IonosS3ConsumerTransferProvisioningDto) contract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("MyBucket");
+                contract.getProvisioning().getConsumerTransferProvisioning().setSelectedConsumerConnectorId("edc1");
 
                 contract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(contract, "authToken",
                     consumer);
@@ -1081,10 +1084,11 @@ class ContractStorageServiceTest {
                 try {
                     DataDeliveryContractDto contract = editedContract;
                     contract.getNegotiation().setProviderTncAccepted(true);
-                    contract.getProvisioning().setDataAddressType("IonosS3");
-                    ((IonosS3DataDeliveryContractProvisioningDto) contract.getProvisioning()).setDataAddressSourceBucketName("MyBucket2");
-                    ((IonosS3DataDeliveryContractProvisioningDto) contract.getProvisioning()).setDataAddressSourceFileName("MyFile2.json");
-                    contract.getProvisioning().setSelectedProviderConnectorId("edc2");
+                    contract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3");
+                    contract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3");
+                    ((IonosS3ProviderTransferProvisioningDto) contract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceBucketName("MyBucket2");
+                    ((IonosS3ProviderTransferProvisioningDto) contract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceFileName("MyFile2.json");
+                    contract.getProvisioning().getProviderTransferProvisioning().setSelectedProviderConnectorId("edc2");
                     contract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(contract,
                         "authToken", provider);
 
@@ -1321,47 +1325,47 @@ class ContractStorageServiceTest {
         editedContract.getNegotiation().setConsumerAttachmentsAccepted(true);
         editedContract.getNegotiation().setExchangeCountSelection("0");
         editedContract.getNegotiation().setRuntimeSelection("4 day(s)");
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetBucketName("MyBucket");
-        ((IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning()).setDataAddressTargetPath("targetpath/");
-        editedContract.getProvisioning().setSelectedConsumerConnectorId("edc1");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("MyBucket");
+        ((IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("targetpath/");
+        editedContract.getProvisioning().getConsumerTransferProvisioning().setSelectedConsumerConnectorId("edc1");
 
         DataDeliveryContractDto result = (DataDeliveryContractDto) contractStorageService
                 .updateContractTemplate(editedContract, "authToken",
                         consumer);
 
-        IonosS3DataDeliveryContractProvisioningDto editedContractProvisioning =
-                (IonosS3DataDeliveryContractProvisioningDto) editedContract.getProvisioning();
-        IonosS3DataDeliveryContractProvisioningDto resultProvisioning =
-                (IonosS3DataDeliveryContractProvisioningDto) result.getProvisioning();
+        IonosS3ConsumerTransferProvisioningDto editedContractConsumerProvisioning =
+                (IonosS3ConsumerTransferProvisioningDto) editedContract.getProvisioning().getConsumerTransferProvisioning();
+        IonosS3ConsumerTransferProvisioningDto resultConsumerProvisioning =
+                (IonosS3ConsumerTransferProvisioningDto) result.getProvisioning().getConsumerTransferProvisioning();
         assertEquals(editedContract.getNegotiation().isConsumerTncAccepted(), result.getNegotiation().isConsumerTncAccepted());
         assertEquals(editedContract.getNegotiation().isConsumerAttachmentsAccepted(), result.getNegotiation().isConsumerAttachmentsAccepted());
         assertEquals(editedContract.getNegotiation().getExchangeCountSelection(), result.getNegotiation().getExchangeCountSelection());
         assertEquals(editedContract.getNegotiation().getRuntimeSelection(), result.getNegotiation().getRuntimeSelection());
-        assertEquals(editedContractProvisioning.getDataAddressTargetBucketName(), resultProvisioning.getDataAddressTargetBucketName());
-        assertEquals(editedContractProvisioning.getDataAddressTargetPath(), resultProvisioning.getDataAddressTargetPath());
-        assertEquals(editedContractProvisioning.getSelectedConsumerConnectorId(), resultProvisioning.getSelectedConsumerConnectorId());
+        assertEquals(editedContractConsumerProvisioning.getDataAddressTargetBucketName(), resultConsumerProvisioning.getDataAddressTargetBucketName());
+        assertEquals(editedContractConsumerProvisioning.getDataAddressTargetPath(), resultConsumerProvisioning.getDataAddressTargetPath());
+        assertEquals(editedContractConsumerProvisioning.getSelectedConsumerConnectorId(), resultConsumerProvisioning.getSelectedConsumerConnectorId());
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
                 ContractState.SIGNED_CONSUMER, consumer, "userId", "User Name", "authToken");
 
-        resultProvisioning =
-                (IonosS3DataDeliveryContractProvisioningDto) result.getProvisioning();
+        IonosS3ProviderTransferProvisioningDto resultProviderProvisioning =
+                (IonosS3ProviderTransferProvisioningDto) result.getProvisioning().getProviderTransferProvisioning();
         result.getNegotiation().setProviderTncAccepted(true);
-        resultProvisioning.setDataAddressType("IonosS3");
-        resultProvisioning.setDataAddressSourceBucketName("MyBucket2");
-        resultProvisioning.setDataAddressSourceFileName("MyFile2.json");
-        resultProvisioning.setSelectedProviderConnectorId("edc2");
+        resultProviderProvisioning.setDataAddressType("IonosS3");
+        resultProviderProvisioning.setDataAddressSourceBucketName("MyBucket2");
+        resultProviderProvisioning.setDataAddressSourceFileName("MyFile2.json");
+        resultProviderProvisioning.setSelectedProviderConnectorId("edc2");
 
         DataDeliveryContractDto result2 = (DataDeliveryContractDto) contractStorageService
                 .updateContractTemplate(result, "token", provider);
-        IonosS3DataDeliveryContractProvisioningDto result2Provisioning =
-                (IonosS3DataDeliveryContractProvisioningDto) result2.getProvisioning();
+        IonosS3ProviderTransferProvisioningDto result2ProviderProvisioning =
+                (IonosS3ProviderTransferProvisioningDto) result2.getProvisioning().getProviderTransferProvisioning();
 
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
-        assertEquals(resultProvisioning.getDataAddressType(), result2Provisioning.getDataAddressType());
-        assertEquals(resultProvisioning.getDataAddressSourceFileName(), result2Provisioning.getDataAddressSourceFileName());
-        assertEquals(resultProvisioning.getDataAddressSourceBucketName(), result2Provisioning.getDataAddressSourceBucketName());
-        assertEquals(resultProvisioning.getSelectedProviderConnectorId(), result2Provisioning.getSelectedProviderConnectorId());
+        assertEquals(resultProviderProvisioning.getDataAddressType(), result2ProviderProvisioning.getDataAddressType());
+        assertEquals(resultProviderProvisioning.getDataAddressSourceFileName(), result2ProviderProvisioning.getDataAddressSourceFileName());
+        assertEquals(resultProviderProvisioning.getDataAddressSourceBucketName(), result2ProviderProvisioning.getDataAddressSourceBucketName());
+        assertEquals(resultProviderProvisioning.getSelectedProviderConnectorId(), result2ProviderProvisioning.getSelectedProviderConnectorId());
 
         result = (DataDeliveryContractDto) contractStorageService.transitionContractTemplateState(result.getDetails().getId(),
                 ContractState.RELEASED, provider, "userId", "User Name", "authToken");

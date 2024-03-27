@@ -1,7 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
@@ -17,8 +16,12 @@ import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serv
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ProviderTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -133,46 +136,65 @@ public interface ContractMapper {
 
     @InheritConfiguration(name = "contractToContractDto")
     @Mapping(target = "negotiation.exchangeCountSelection", source = "contract.exchangeCountSelection", defaultValue = "")
-    @Mapping(target = "provisioning", source = "contract.serviceContractProvisioning", qualifiedByName = "mapDataDeliveryProvisioning")
+    @Mapping(target = "provisioning.consumerTransferProvisioning", source = "contract.serviceContractProvisioning.consumerTransferProvisioning", qualifiedByName = "transferProvisioningToDto")
+    @Mapping(target = "provisioning.providerTransferProvisioning", source = "contract.serviceContractProvisioning.providerTransferProvisioning", qualifiedByName = "transferProvisioningToDto")
     DataDeliveryContractDto contractToContractDto(DataDeliveryContractTemplate contract,
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,
                                                   ServiceOfferingDto offeringDetails);
 
+    @Named("transferProvisioningToDto")
+    default ConsumerTransferProvisioningDto transferProvisioningToDto(ConsumerTransferProvisioning provisioning) {
+        if (provisioning instanceof IonosS3ConsumerTransferProvisioning ionosProvisioning) {
+            return ionosProvisioningToConsumerProvisioningDto(ionosProvisioning);
+        }
+        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
+    }
+
+    @Named("transferProvisioningToDto")
+    default ProviderTransferProvisioningDto transferProvisioningToDto(ProviderTransferProvisioning provisioning) {
+        if (provisioning instanceof IonosS3ProviderTransferProvisioning ionosProvisioning) {
+            return ionosProvisioningToProviderProvisioningDto(ionosProvisioning);
+        }
+        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
+    }
+
+    @Named("transferProvisioningDtoToProvisioning")
+    default ConsumerTransferProvisioning transferProvisioningDtoToProvisioning(ConsumerTransferProvisioningDto provisioning) {
+        if (provisioning instanceof IonosS3ConsumerTransferProvisioningDto ionosProvisioning) {
+            return ionosProvisioningDtoToConsumerProvisioning(ionosProvisioning);
+        }
+        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
+    }
+
+    @Named("transferProvisioningDtoToProvisioning")
+    default ProviderTransferProvisioning transferProvisioningDtoToProvisioning(ProviderTransferProvisioningDto provisioning) {
+        if (provisioning instanceof IonosS3ProviderTransferProvisioningDto ionosProvisioning) {
+            return ionosProvisioningDtoToProviderProvisioning(ionosProvisioning);
+        }
+        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
+    }
+
     @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId")
     @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName")
     @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath")
-    IonosS3ConsumerTransferProvisioning ionosProvisioningDtoToConsumerProvisioning(IonosS3DataDeliveryContractProvisioningDto dto);
+    IonosS3ConsumerTransferProvisioning ionosProvisioningDtoToConsumerProvisioning(IonosS3ConsumerTransferProvisioningDto dto);
 
     @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId")
     @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName")
     @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName")
-    IonosS3ProviderTransferProvisioning ionosProvisioningDtoToProviderProvisioning(IonosS3DataDeliveryContractProvisioningDto dto);
+    IonosS3ProviderTransferProvisioning ionosProvisioningDtoToProviderProvisioning(IonosS3ProviderTransferProvisioningDto dto);
 
+    @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId")
+    @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName")
+    @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath")
     @Mapping(target = "dataAddressType", constant = "IonosS3")
-    @Mapping(target = "selectedProviderConnectorId", source = "provider.selectedProviderConnectorId")
-    @Mapping(target = "selectedConsumerConnectorId", source = "consumer.selectedConsumerConnectorId")
-    @Mapping(target = "dataAddressSourceBucketName", source = "provider.dataAddressSourceBucketName")
-    @Mapping(target = "dataAddressSourceFileName", source = "provider.dataAddressSourceFileName")
-    @Mapping(target = "dataAddressTargetBucketName", source = "consumer.dataAddressTargetBucketName")
-    @Mapping(target = "dataAddressTargetPath", source = "consumer.dataAddressTargetPath")
-    IonosS3DataDeliveryContractProvisioningDto ionosProvisioningDtoToProviderProvisioning(
-            IonosS3ConsumerTransferProvisioning consumer,
-            IonosS3ProviderTransferProvisioning provider
-    );
+    IonosS3ConsumerTransferProvisioningDto ionosProvisioningToConsumerProvisioningDto(IonosS3ConsumerTransferProvisioning provisioning);
 
-    @Named("mapDataDeliveryProvisioning")
-    default IonosS3DataDeliveryContractProvisioningDto mapDataDeliveryProvisioning(DataDeliveryProvisioning provisioning) {
-        ConsumerTransferProvisioning consumerProv = provisioning.getConsumerTransferProvisioning();
-        ProviderTransferProvisioning providerProv = provisioning.getProviderTransferProvisioning();
-        if (consumerProv instanceof IonosS3ConsumerTransferProvisioning consumerProvIonos
-                && providerProv instanceof IonosS3ProviderTransferProvisioning providerProvIonos) {
-            IonosS3DataDeliveryContractProvisioningDto dto =
-                    ionosProvisioningDtoToProviderProvisioning(consumerProvIonos, providerProvIonos);
-            dto.setValidUntil(map(provisioning.getValidUntil()));
-            return dto;
-        }
-        throw new IllegalArgumentException("Unknown provisioning type.");
-    }
+    @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId")
+    @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName")
+    @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName")
+    @Mapping(target = "dataAddressType", constant = "IonosS3")
+    IonosS3ProviderTransferProvisioningDto ionosProvisioningToProviderProvisioningDto(IonosS3ProviderTransferProvisioning provisioning);
 
     @Mapping(target = "contractId", expression = "java(contractDto.getDetails().getId().replace(\"Contract:\", \"\"))")
     @Mapping(target = "contractCreationDate", source = "contractDto.details.creationDate")
