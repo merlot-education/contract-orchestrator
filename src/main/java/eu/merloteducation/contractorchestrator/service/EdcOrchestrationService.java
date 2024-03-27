@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ConsumerTransferProvisioningDto;
@@ -13,6 +14,7 @@ import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransf
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.edc.asset.AssetCreateRequest;
 import eu.merloteducation.modelslib.edc.asset.AssetProperties;
+import eu.merloteducation.modelslib.edc.asset.DataAddress;
 import eu.merloteducation.modelslib.edc.asset.ionoss3extension.IonosS3DataDestination;
 import eu.merloteducation.modelslib.edc.asset.ionoss3extension.IonosS3DataSource;
 import eu.merloteducation.modelslib.edc.catalog.CatalogRequest;
@@ -123,7 +125,7 @@ public class EdcOrchestrationService {
         String contractDefinitionId = instanceUuid + "_ContractDefinition";
 
         // provider side
-        // create asset, build without data address first as it depends on provisioning
+        // create asset
         AssetCreateRequest assetCreateRequest = AssetCreateRequest.builder()
                 .id(assetId)
                 .properties(AssetProperties.builder()
@@ -132,27 +134,8 @@ public class EdcOrchestrationService {
                         .version("")
                         .contenttype("")
                         .build())
+                .dataAddress(getProviderDataAddress(providerTransferDto, providerConnector))
                 .build();
-
-        // set data address depending on provider transfer provisioning type
-        // TODO put into method
-        if (providerTransferDto instanceof IonosS3ProviderTransferProvisioningDto provisioningDto) {
-            IonosS3BucketDto providerSelectedBucket = providerConnector.getIonosS3ExtensionConfig()
-                    .getBuckets().stream()
-                    .filter(b -> b.getName().equals(provisioningDto.getDataAddressSourceBucketName()))
-                    .findFirst().orElseThrow(() ->
-                            new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                    "The source bucket selected in the contract is not configured for the provider."));
-
-            assetCreateRequest.setDataAddress(IonosS3DataSource.builder()
-                    .bucketName(providerSelectedBucket.getName())
-                    .blobName(provisioningDto.getDataAddressSourceFileName())
-                    .keyName(provisioningDto.getDataAddressSourceFileName())
-                    .storage(providerSelectedBucket.getStorageEndpoint())
-                    .build());
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown transfer type selected for provider.");
-        }
 
         logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
         IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
@@ -264,32 +247,14 @@ public class EdcOrchestrationService {
         ContractNegotiation negotiation = getNegotationStatus(negotiationId, contractId, activeRoleOrgaId, authToken);
 
         // consumer side
-        // create transfer request, build without data address first as it depends on provisioning
+        // create transfer request
         TransferRequest transferRequest = TransferRequest.builder()
                 .connectorId(providerConnector.getConnectorId())
                 .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
                 .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
+                .dataDestination(getConsumerDataAddress(consumerTransferDto, consumerConnector))
                 .build();
-
-        // set data address depending on provider transfer provisioning type
-        // TODO put into method
-        if (consumerTransferDto instanceof IonosS3ConsumerTransferProvisioningDto provisioningDto) {
-            IonosS3BucketDto consumerSelectedBucket = consumerConnector.getIonosS3ExtensionConfig()
-                    .getBuckets().stream()
-                    .filter(b -> b.getName().equals(provisioningDto.getDataAddressTargetBucketName()))
-                    .findFirst().orElseThrow(() ->
-                            new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                    "The target bucket selected in the contract is not configured for the consumer."));
-            transferRequest.setDataDestination(IonosS3DataDestination.builder()
-                    .bucketName(consumerSelectedBucket.getName())
-                    .path(provisioningDto.getDataAddressTargetPath())
-                    .keyName(provisioningDto.getDataAddressTargetPath())
-                    .storage(consumerSelectedBucket.getStorageEndpoint())
-                    .build());
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown transfer type selected for consumer.");
-        }
 
         logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
         IdResponse transferResponse = consumerEdcClient.initiateTransfer(transferRequest);
@@ -322,4 +287,75 @@ public class EdcOrchestrationService {
 
         return consumerEdcClient.checkTransferStatus(transferId);
     }
+
+    /**
+     * Given the consumer provisioning and their connector, build an EDC Data address depending
+     * on the specific provisioning type.
+     *
+     * @param provisioning consumer transfer provisioning from contract
+     * @param connector consumer connector
+     * @return consumer data address based on the provisioning
+     */
+    private DataAddress getConsumerDataAddress(ConsumerTransferProvisioningDto provisioning,
+                                               OrganizationConnectorTransferDto connector) {
+        // add further transfer methods if needed
+        if (provisioning instanceof IonosS3ConsumerTransferProvisioningDto provisioningDto) {
+            return buildIonosS3DataDestination(provisioningDto, connector);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown transfer type selected for consumer.");
+        }
+    }
+
+    /**
+     * Given the provider provisioning and their connector, build an EDC Data address depending
+     * on the specific provisioning type.
+     *
+     * @param provisioning provider transfer provisioning from contract
+     * @param connector provider connector
+     * @return provider data address based on the provisioning
+     */
+    private DataAddress getProviderDataAddress(ProviderTransferProvisioningDto provisioning,
+                                               OrganizationConnectorTransferDto connector) {
+        // add further transfer methods if needed
+        if (provisioning instanceof IonosS3ProviderTransferProvisioningDto provisioningDto) {
+            return buildIonosS3DataSource(provisioningDto, connector);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown transfer type selected for provider.");
+        }
+    }
+
+    private IonosS3DataDestination buildIonosS3DataDestination(IonosS3ConsumerTransferProvisioningDto provisioning,
+                                                          OrganizationConnectorTransferDto connector) {
+        IonosS3BucketDto consumerSelectedBucket = connector.getIonosS3ExtensionConfig()
+                .getBuckets().stream()
+                .filter(b -> b.getName().equals(provisioning.getDataAddressTargetBucketName()))
+                .findFirst().orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "The target bucket selected in the contract is not configured for the consumer."));
+        return IonosS3DataDestination.builder()
+                .bucketName(consumerSelectedBucket.getName())
+                .path(provisioning.getDataAddressTargetPath())
+                .keyName(provisioning.getDataAddressTargetPath())
+                .storage(consumerSelectedBucket.getStorageEndpoint())
+                .build();
+    }
+
+    private IonosS3DataSource buildIonosS3DataSource(IonosS3ProviderTransferProvisioningDto provisioning,
+                                                        OrganizationConnectorTransferDto connector) {
+        IonosS3BucketDto providerSelectedBucket = connector.getIonosS3ExtensionConfig()
+                .getBuckets().stream()
+                .filter(b -> b.getName().equals(provisioning.getDataAddressSourceBucketName()))
+                .findFirst().orElseThrow(() ->
+                        new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                "The source bucket selected in the contract is not configured for the provider."));
+
+        return IonosS3DataSource.builder()
+                .bucketName(providerSelectedBucket.getName())
+                .blobName(provisioning.getDataAddressSourceFileName())
+                .keyName(provisioning.getDataAddressSourceFileName())
+                .storage(providerSelectedBucket.getStorageEndpoint())
+                .build();
+    }
+
+
 }
