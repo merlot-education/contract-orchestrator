@@ -16,15 +16,14 @@ import java.util.UUID;
 public class ContractSignature {
     @Id
     @Setter(AccessLevel.NONE)
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     private String signature;
     private String signerName;
     private OffsetDateTime signatureDate;
 
     public ContractSignature(String signature, String signerName) {
-        this.id = "ContractSignature:" + UUID.randomUUID();
-
         this.signature = signature;
         this.signerName = signerName;
 

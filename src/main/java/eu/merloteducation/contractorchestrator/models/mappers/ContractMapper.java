@@ -3,9 +3,12 @@ package eu.merloteducation.contractorchestrator.models.mappers;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.ServiceContractProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ProviderTransferProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
@@ -15,7 +18,6 @@ import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serv
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
@@ -136,19 +138,38 @@ public interface ContractMapper {
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,
                                                   ServiceOfferingDto offeringDetails);
 
+    @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId")
+    @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName")
+    @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath")
+    IonosS3ConsumerTransferProvisioning ionosProvisioningDtoToConsumerProvisioning(IonosS3DataDeliveryContractProvisioningDto dto);
+
+    @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId")
+    @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName")
+    @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName")
+    IonosS3ProviderTransferProvisioning ionosProvisioningDtoToProviderProvisioning(IonosS3DataDeliveryContractProvisioningDto dto);
+
     @Mapping(target = "dataAddressType", constant = "IonosS3")
-    @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId", defaultValue = "")
-    @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId", defaultValue = "")
-    @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName", defaultValue = "")
-    @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName", defaultValue = "")
-    @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName", defaultValue = "")
-    @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath", defaultValue = "")
-    IonosS3DataDeliveryContractProvisioningDto ionosProvisioningToDto(IonosS3DataDeliveryProvisioning provisioning);
+    @Mapping(target = "selectedProviderConnectorId", source = "provider.selectedProviderConnectorId")
+    @Mapping(target = "selectedConsumerConnectorId", source = "consumer.selectedConsumerConnectorId")
+    @Mapping(target = "dataAddressSourceBucketName", source = "provider.dataAddressSourceBucketName")
+    @Mapping(target = "dataAddressSourceFileName", source = "provider.dataAddressSourceFileName")
+    @Mapping(target = "dataAddressTargetBucketName", source = "consumer.dataAddressTargetBucketName")
+    @Mapping(target = "dataAddressTargetPath", source = "consumer.dataAddressTargetPath")
+    IonosS3DataDeliveryContractProvisioningDto ionosProvisioningDtoToProviderProvisioning(
+            IonosS3ConsumerTransferProvisioning consumer,
+            IonosS3ProviderTransferProvisioning provider
+    );
 
     @Named("mapDataDeliveryProvisioning")
-    default IonosS3DataDeliveryContractProvisioningDto mapDataDeliveryProvisioning(ServiceContractProvisioning provisioning) {
-        if (provisioning instanceof IonosS3DataDeliveryProvisioning ionosS3DataDeliveryProvisioning) {
-            return ionosProvisioningToDto(ionosS3DataDeliveryProvisioning);
+    default IonosS3DataDeliveryContractProvisioningDto mapDataDeliveryProvisioning(DataDeliveryProvisioning provisioning) {
+        ConsumerTransferProvisioning consumerProv = provisioning.getConsumerTransferProvisioning();
+        ProviderTransferProvisioning providerProv = provisioning.getProviderTransferProvisioning();
+        if (consumerProv instanceof IonosS3ConsumerTransferProvisioning consumerProvIonos
+                && providerProv instanceof IonosS3ProviderTransferProvisioning providerProvIonos) {
+            IonosS3DataDeliveryContractProvisioningDto dto =
+                    ionosProvisioningDtoToProviderProvisioning(consumerProvIonos, providerProvIonos);
+            dto.setValidUntil(map(provisioning.getValidUntil()));
+            return dto;
         }
         throw new IllegalArgumentException("Unknown provisioning type.");
     }

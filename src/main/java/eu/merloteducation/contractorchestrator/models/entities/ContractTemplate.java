@@ -56,7 +56,7 @@ public abstract class ContractTemplate {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "provisioning_id")
-    private ServiceContractProvisioning serviceContractProvisioning; // TODO maybe split provisioning into provider/consumer
+    private ServiceContractProvisioning serviceContractProvisioning;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "consumer_signature_id")
@@ -91,7 +91,7 @@ public abstract class ContractTemplate {
         this.attachments = new HashSet<>(template.getAttachments());
         this.providerSignature = regenerate ? null : template.getProviderSignature();
         this.consumerSignature = regenerate ? null : template.getConsumerSignature();
-        this.serviceContractProvisioning = template.getServiceContractProvisioning();
+        this.serviceContractProvisioning = template.getServiceContractProvisioning().makeCopy();
     }
 
     public void addAttachment(String attachment) {
