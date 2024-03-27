@@ -6,7 +6,9 @@ import eu.merloteducation.contractorchestrator.models.entities.cooperation.Coope
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractFromDtoMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractToDtoMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
@@ -76,7 +78,13 @@ public class ContractStorageService {
     private ContractTemplateRepository contractTemplateRepository;
 
     @Autowired
-    private ContractMapper contractMapper;
+    private ContractToDtoMapper contractToDtoMapper;
+
+    @Autowired
+    private ContractFromDtoMapper contractFromDtoMapper;
+
+    @Autowired
+    private ContractDtoToPdfMapper contractDtoToPdfMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -184,7 +192,7 @@ public class ContractStorageService {
                 && targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
             targetProvisioning.setConsumerTransferProvisioning(
-                    contractMapper.transferProvisioningDtoToProvisioning(
+                    contractFromDtoMapper.transferProvisioningDtoToProvisioning(
                             sourceProvisioning.getConsumerTransferProvisioning()));
         } else if (isProvider
                 && (targetContract.getState() == ContractState.IN_DRAFT
@@ -193,7 +201,7 @@ public class ContractStorageService {
                 targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
             }
             targetProvisioning.setProviderTransferProvisioning(
-                    contractMapper.transferProvisioningDtoToProvisioning(
+                    contractFromDtoMapper.transferProvisioningDtoToProvisioning(
                             sourceProvisioning.getProviderTransferProvisioning()));
         }
     }
@@ -254,7 +262,7 @@ public class ContractStorageService {
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
-        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
+        return contractToDtoMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
@@ -266,13 +274,13 @@ public class ContractStorageService {
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
-            return contractMapper.contractToContractDto(dataTemplate,
+            return contractToDtoMapper.contractToContractDto(dataTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
-            return contractMapper.contractToContractDto(saasTemplate,
+            return contractToDtoMapper.contractToContractDto(saasTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
-            return contractMapper.contractToContractDto(coopTemplate,
+            return contractToDtoMapper.contractToContractDto(coopTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
@@ -530,11 +538,11 @@ public class ContractStorageService {
     private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
 
         if (contractDto instanceof DataDeliveryContractDto dataDto) {
-            return contractMapper.contractDtoToContractPdfDto(dataDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(dataDto);
         } else if (contractDto instanceof SaasContractDto saasDto) {
-            return contractMapper.contractDtoToContractPdfDto(saasDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(saasDto);
         } else if (contractDto instanceof CooperationContractDto coopDto) {
-            return contractMapper.contractDtoToContractPdfDto(coopDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(coopDto);
         }
 
         throw new IllegalArgumentException("Unknown contract or offering type.");

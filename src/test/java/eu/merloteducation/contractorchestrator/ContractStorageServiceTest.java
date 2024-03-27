@@ -9,7 +9,9 @@ import eu.merloteducation.contractorchestrator.models.entities.datadelivery.Data
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
-import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractFromDtoMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractToDtoMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
@@ -17,7 +19,6 @@ import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
@@ -67,7 +68,13 @@ import static org.mockito.Mockito.*;
 class ContractStorageServiceTest {
 
     @Autowired
-    private ContractMapper contractMapper;
+    private ContractToDtoMapper contractToDtoMapper;
+
+    @Autowired
+    private ContractFromDtoMapper contractFromDtoMapper;
+
+    @Autowired
+    private ContractDtoToPdfMapper contractDtoToPdfMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -404,7 +411,9 @@ class ContractStorageServiceTest {
         ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
         ReflectionTestUtils.setField(contractStorageService, "storageClient", storageClient);
         ReflectionTestUtils.setField(contractStorageService, "pdfServiceClient", pdfServiceClient);
-        ReflectionTestUtils.setField(contractStorageService, "contractMapper", contractMapper);
+        ReflectionTestUtils.setField(contractStorageService, "contractToDtoMapper", contractToDtoMapper);
+        ReflectionTestUtils.setField(contractStorageService, "contractFromDtoMapper", contractFromDtoMapper);
+        ReflectionTestUtils.setField(contractStorageService, "contractDtoToPdfMapper", contractDtoToPdfMapper);
         ReflectionTestUtils.setField(contractStorageService, "objectMapper", objectMapper);
         ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
         ReflectionTestUtils.setField(contractStorageService, "organizationOrchestratorClient", organizationOrchestratorClient);
