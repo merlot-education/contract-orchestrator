@@ -341,11 +341,12 @@ public class ContractStorageService {
                 DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
                 // provider transfer method should be set on service offering level,
                 // which should also limit available consumer methods.
-                // for now we force the IONOS transfer method. If this is to be exchanged later by potential other methods,
+                // for now we let the users select the method, and currently only IONOS is supported.
+                // If this is to be exchanged later by potential other methods,
                 // we need to carefully consider which methods are inter-compatible
                 // (or only allow same-type transfers on provider and consumer side)
-                provisioning.setProviderTransferProvisioning(new IonosS3ProviderTransferProvisioning());
-                provisioning.setConsumerTransferProvisioning(new IonosS3ConsumerTransferProvisioning());
+                // provisioning.setProviderTransferProvisioning(new IonosS3ProviderTransferProvisioning());
+                // provisioning.setConsumerTransferProvisioning(new IonosS3ConsumerTransferProvisioning());
                 contract.setServiceContractProvisioning(provisioning);
             }
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();

@@ -144,6 +144,9 @@ public interface ContractMapper {
 
     @Named("transferProvisioningToDto")
     default ConsumerTransferProvisioningDto transferProvisioningToDto(ConsumerTransferProvisioning provisioning) {
+        if (provisioning == null) {
+            return null;
+        }
         if (provisioning instanceof IonosS3ConsumerTransferProvisioning ionosProvisioning) {
             return ionosProvisioningToConsumerProvisioningDto(ionosProvisioning);
         }
@@ -152,6 +155,9 @@ public interface ContractMapper {
 
     @Named("transferProvisioningToDto")
     default ProviderTransferProvisioningDto transferProvisioningToDto(ProviderTransferProvisioning provisioning) {
+        if (provisioning == null) {
+            return null;
+        }
         if (provisioning instanceof IonosS3ProviderTransferProvisioning ionosProvisioning) {
             return ionosProvisioningToProviderProvisioningDto(ionosProvisioning);
         }
@@ -160,6 +166,9 @@ public interface ContractMapper {
 
     @Named("transferProvisioningDtoToProvisioning")
     default ConsumerTransferProvisioning transferProvisioningDtoToProvisioning(ConsumerTransferProvisioningDto provisioning) {
+        if (provisioning == null) {
+            return null;
+        }
         if (provisioning instanceof IonosS3ConsumerTransferProvisioningDto ionosProvisioning) {
             return ionosProvisioningDtoToConsumerProvisioning(ionosProvisioning);
         }
@@ -168,6 +177,9 @@ public interface ContractMapper {
 
     @Named("transferProvisioningDtoToProvisioning")
     default ProviderTransferProvisioning transferProvisioningDtoToProvisioning(ProviderTransferProvisioningDto provisioning) {
+        if (provisioning == null) {
+            return null;
+        }
         if (provisioning instanceof IonosS3ProviderTransferProvisioningDto ionosProvisioning) {
             return ionosProvisioningDtoToProviderProvisioning(ionosProvisioning);
         }
