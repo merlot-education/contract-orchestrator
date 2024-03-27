@@ -5,8 +5,6 @@ import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
@@ -23,8 +21,6 @@ import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -56,11 +52,7 @@ public class ContractStorageService {
     private static final String INVALID_STATE_TRANSITION = "Requested transition is not allowed.";
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
-    private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
-    private static final String CREDENTIAL_SUBJECT = "credentialSubject";
-    private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
     private static final String AUTHORIZATION = "Authorization";
-    private static final String VALUE = "@value";
 
     @Autowired
     private EntityManager entityManager;
@@ -345,8 +337,6 @@ public class ContractStorageService {
                 // If this is to be exchanged later by potential other methods,
                 // we need to carefully consider which methods are inter-compatible
                 // (or only allow same-type transfers on provider and consumer side)
-                // provisioning.setProviderTransferProvisioning(new IonosS3ProviderTransferProvisioning());
-                // provisioning.setConsumerTransferProvisioning(new IonosS3ConsumerTransferProvisioning());
                 contract.setServiceContractProvisioning(provisioning);
             }
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
