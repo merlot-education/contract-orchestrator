@@ -123,7 +123,7 @@ class MessageQueueServiceTest {
         IonosS3ProviderTransferProvisioning providerProvisioning = new IonosS3ProviderTransferProvisioning();
         consumerProvisioning.setDataAddressTargetBucketName("foo");
         consumerProvisioning.setDataAddressTargetPath("bar/");
-        consumerProvisioning.setSelectedConsumerConnectorId("something");
+        consumerProvisioning.setSelectedConnectorId("something");
         dataDeliveryProvisioning.setConsumerTransferProvisioning(consumerProvisioning);
         dataDeliveryProvisioning.setProviderTransferProvisioning(providerProvisioning);
         templateData.setServiceContractProvisioning(dataDeliveryProvisioning);

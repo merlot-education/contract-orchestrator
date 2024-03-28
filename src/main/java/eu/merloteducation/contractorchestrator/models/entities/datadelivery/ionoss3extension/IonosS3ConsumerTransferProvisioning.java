@@ -1,8 +1,7 @@
 package eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension;
 
-import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.TransferProvisioning;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.Entity;
 import lombok.Getter;
@@ -12,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-public class IonosS3ConsumerTransferProvisioning extends ConsumerTransferProvisioning {
+public class IonosS3ConsumerTransferProvisioning extends TransferProvisioning {
 
     private String dataAddressTargetBucketName;
 
@@ -25,19 +24,25 @@ public class IonosS3ConsumerTransferProvisioning extends ConsumerTransferProvisi
     }
 
     @Override
-    public boolean transitionAllowed(ContractState targetState, DataDeliveryProvisioning provisioning) {
-        return super.transitionAllowed(targetState, provisioning) && switch (targetState) {
-            case SIGNED_CONSUMER ->
-                    !StringUtil.isNullOrEmpty(dataAddressTargetBucketName)
-                    && !StringUtil.isNullOrEmpty(dataAddressTargetPath);
-            default -> true;
-        };
+    public boolean configurationValid(DataDeliveryProvisioning provisioning) {
+        return super.configurationValid(provisioning)
+                && !StringUtil.isNullOrEmpty(dataAddressTargetBucketName)
+                && !StringUtil.isNullOrEmpty(dataAddressTargetPath)
+                && commonConfigurationValid(provisioning);
+    }
+
+    private boolean commonConfigurationValid(DataDeliveryProvisioning provisioning) {
+        if (provisioning.getProviderTransferProvisioning() instanceof IonosS3ProviderTransferProvisioning providerProv) {
+            // if both are ionos, the bucket name is not allowed to be equal
+            return !this.getDataAddressTargetBucketName().equals(providerProv.getDataAddressSourceBucketName());
+        }
+        return true;
     }
 
     @Override
-    public ConsumerTransferProvisioning makeCopy() {
+    public TransferProvisioning makeCopy() {
         IonosS3ConsumerTransferProvisioning provisioning = new IonosS3ConsumerTransferProvisioning();
-        provisioning.setSelectedConsumerConnectorId(getSelectedConsumerConnectorId());
+        provisioning.setSelectedConnectorId(getSelectedConnectorId());
         provisioning.setDataAddressTargetPath(getDataAddressTargetPath());
         provisioning.setDataAddressTargetBucketName(getDataAddressTargetBucketName());
         return provisioning;

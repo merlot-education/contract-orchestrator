@@ -3,9 +3,8 @@ package eu.merloteducation.contractorchestrator.service;
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ProviderTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.TransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.organization.IonosS3BucketDto;
@@ -102,13 +101,13 @@ public class EdcOrchestrationService {
      */
     public IdResponse initiateConnectorNegotiation(String contractId, String activeRoleOrgaId, String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
-        ProviderTransferProvisioningDto providerTransferDto = contractDto.getProvisioning().getProviderTransferProvisioning();
-        ConsumerTransferProvisioningDto consumerTransferDto = contractDto.getProvisioning().getConsumerTransferProvisioning();
+        TransferProvisioningDto providerTransferDto = contractDto.getProvisioning().getProviderTransferProvisioning();
+        TransferProvisioningDto consumerTransferDto = contractDto.getProvisioning().getConsumerTransferProvisioning();
 
         OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
-                providerTransferDto.getSelectedProviderConnectorId());
+                providerTransferDto.getSelectedConnectorId());
         OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
-                consumerTransferDto.getSelectedConsumerConnectorId());
+                consumerTransferDto.getSelectedConnectorId());
 
         EdcClient providerEdcClient = edcClientProvider.getObject(providerConnector);
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
@@ -214,7 +213,7 @@ public class EdcOrchestrationService {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
-                contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConsumerConnectorId());
+                contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of offer {} on {}", negotiationId, consumerConnector);
@@ -233,13 +232,13 @@ public class EdcOrchestrationService {
     public IdResponse initiateConnectorTransfer(String negotiationId, String contractId, String activeRoleOrgaId,
                                                 String authToken) {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
-        ProviderTransferProvisioningDto providerTransferDto = contractDto.getProvisioning().getProviderTransferProvisioning();
-        ConsumerTransferProvisioningDto consumerTransferDto = contractDto.getProvisioning().getConsumerTransferProvisioning();
+        TransferProvisioningDto providerTransferDto = contractDto.getProvisioning().getProviderTransferProvisioning();
+        TransferProvisioningDto consumerTransferDto = contractDto.getProvisioning().getConsumerTransferProvisioning();
 
         OrganizationConnectorTransferDto providerConnector = getOrgaConnector(contractDto.getDetails().getProviderId(),
-                providerTransferDto.getSelectedProviderConnectorId());
+                providerTransferDto.getSelectedConnectorId());
         OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
-                consumerTransferDto.getSelectedConsumerConnectorId());
+                consumerTransferDto.getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
 
@@ -279,7 +278,7 @@ public class EdcOrchestrationService {
         DataDeliveryContractDto contractDto = loadContract(contractId, activeRoleOrgaId, authToken);
 
         OrganizationConnectorTransferDto consumerConnector = getOrgaConnector(contractDto.getDetails().getConsumerId(),
-                contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConsumerConnectorId());
+                contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
         logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
@@ -295,7 +294,7 @@ public class EdcOrchestrationService {
      * @param connector consumer connector
      * @return consumer data address based on the provisioning
      */
-    private DataAddress getConsumerDataAddress(ConsumerTransferProvisioningDto provisioning,
+    private DataAddress getConsumerDataAddress(TransferProvisioningDto provisioning,
                                                OrganizationConnectorTransferDto connector) {
         // add further transfer methods if needed
         if (provisioning instanceof IonosS3ConsumerTransferProvisioningDto provisioningDto) {
@@ -313,7 +312,7 @@ public class EdcOrchestrationService {
      * @param connector provider connector
      * @return provider data address based on the provisioning
      */
-    private DataAddress getProviderDataAddress(ProviderTransferProvisioningDto provisioning,
+    private DataAddress getProviderDataAddress(TransferProvisioningDto provisioning,
                                                OrganizationConnectorTransferDto connector) {
         // add further transfer methods if needed
         if (provisioning instanceof IonosS3ProviderTransferProvisioningDto provisioningDto) {

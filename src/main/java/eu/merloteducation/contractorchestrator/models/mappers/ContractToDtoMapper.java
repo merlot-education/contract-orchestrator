@@ -2,23 +2,20 @@ package eu.merloteducation.contractorchestrator.models.mappers;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ProviderTransferProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.TransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
-import eu.merloteducation.modelslib.api.contract.datadelivery.ProviderTransferProvisioningDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.TransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
@@ -94,13 +91,13 @@ public interface ContractToDtoMapper {
                                                   MerlotParticipantDto providerOrgaDetails, MerlotParticipantDto consumerOrgaDetails,
                                                   ServiceOfferingDto offeringDetails);
 
-    @Mapping(target = "selectedConsumerConnectorId", source = "selectedConsumerConnectorId")
+    @Mapping(target = "selectedConnectorId", source = "selectedConnectorId")
     @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName")
     @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath")
     @Mapping(target = "dataAddressType", constant = "IonosS3")
     IonosS3ConsumerTransferProvisioningDto ionosProvisioningToConsumerProvisioningDto(IonosS3ConsumerTransferProvisioning provisioning);
 
-    @Mapping(target = "selectedProviderConnectorId", source = "selectedProviderConnectorId")
+    @Mapping(target = "selectedConnectorId", source = "selectedConnectorId")
     @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName")
     @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName")
     @Mapping(target = "dataAddressType", constant = "IonosS3")
@@ -127,24 +124,16 @@ public interface ContractToDtoMapper {
     }
 
     @Named("transferProvisioningToDto")
-    default ConsumerTransferProvisioningDto transferProvisioningToDto(ConsumerTransferProvisioning provisioning) {
+    default TransferProvisioningDto transferProvisioningToDto(TransferProvisioning provisioning) {
         if (provisioning == null) {
             return null;
         }
         if (provisioning instanceof IonosS3ConsumerTransferProvisioning ionosProvisioning) {
             return ionosProvisioningToConsumerProvisioningDto(ionosProvisioning);
         }
-        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
-    }
-
-    @Named("transferProvisioningToDto")
-    default ProviderTransferProvisioningDto transferProvisioningToDto(ProviderTransferProvisioning provisioning) {
-        if (provisioning == null) {
-            return null;
-        }
         if (provisioning instanceof IonosS3ProviderTransferProvisioning ionosProvisioning) {
             return ionosProvisioningToProviderProvisioningDto(ionosProvisioning);
         }
-        throw new IllegalArgumentException("Unknown consumer transfer provisioning type.");
+        throw new IllegalArgumentException("Unknown transfer provisioning type.");
     }
 }

@@ -14,11 +14,11 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @Nullable
-    private ConsumerTransferProvisioning consumerTransferProvisioning;
+    private TransferProvisioning consumerTransferProvisioning;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @Nullable
-    private ProviderTransferProvisioning providerTransferProvisioning;
+    private TransferProvisioning providerTransferProvisioning;
 
     @Override
     public boolean transitionAllowed(ContractState targetState) {
@@ -26,13 +26,13 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
             // on signed consumer at least the consumer provisioning needs to be done
             case SIGNED_CONSUMER ->
                     consumerTransferProvisioning != null
-                    && consumerTransferProvisioning.transitionAllowed(targetState, this);
+                    && consumerTransferProvisioning.configurationValid(this);
             // on released both consumer and provider must have valid provisioning
             case RELEASED ->
                     consumerTransferProvisioning != null
                     && providerTransferProvisioning != null
-                    && consumerTransferProvisioning.transitionAllowed(targetState, this)
-                    && providerTransferProvisioning.transitionAllowed(targetState, this);
+                    && consumerTransferProvisioning.configurationValid(this)
+                    && providerTransferProvisioning.configurationValid(this);
             // on other cases the provisioning is irrelevant
             default -> true;
         };
