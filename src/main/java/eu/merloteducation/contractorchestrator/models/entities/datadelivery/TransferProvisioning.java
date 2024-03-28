@@ -23,20 +23,20 @@ public abstract class TransferProvisioning {
         selectedConnectorId = "";
     }
 
-    public boolean configurationValid(DataDeliveryProvisioning provisioning) {
-        return !StringUtil.isNullOrEmpty(selectedConnectorId)
-                && commonConfigurationValid(provisioning);
+    public boolean configurationValid() {
+        return !StringUtil.isNullOrEmpty(selectedConnectorId);
     }
 
-    private boolean commonConfigurationValid(DataDeliveryProvisioning provisioning) {
+    public boolean commonConfigurationValid(DataDeliveryProvisioning provisioning) {
+        boolean result = true;
+
         TransferProvisioning consumerProv = provisioning.getConsumerTransferProvisioning();
         TransferProvisioning providerProv = provisioning.getProviderTransferProvisioning();
-
         if (consumerProv != null && providerProv != null) {
-            return !consumerProv.getSelectedConnectorId().equals(providerProv.getSelectedConnectorId());
+            result = !consumerProv.getSelectedConnectorId().equals(providerProv.getSelectedConnectorId());
         }
 
-        return true;
+        return result;
     }
 
     public abstract TransferProvisioning makeCopy();

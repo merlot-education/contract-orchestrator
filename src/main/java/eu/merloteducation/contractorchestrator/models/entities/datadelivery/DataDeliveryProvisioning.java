@@ -26,13 +26,16 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
             // on signed consumer at least the consumer provisioning needs to be done
             case SIGNED_CONSUMER ->
                     consumerTransferProvisioning != null
-                    && consumerTransferProvisioning.configurationValid(this);
+                    && consumerTransferProvisioning.configurationValid()
+                    && consumerTransferProvisioning.commonConfigurationValid(this);
             // on released both consumer and provider must have valid provisioning
             case RELEASED ->
                     consumerTransferProvisioning != null
                     && providerTransferProvisioning != null
-                    && consumerTransferProvisioning.configurationValid(this)
-                    && providerTransferProvisioning.configurationValid(this);
+                    && consumerTransferProvisioning.configurationValid()
+                    && consumerTransferProvisioning.commonConfigurationValid(this)
+                    && providerTransferProvisioning.configurationValid()
+                    && providerTransferProvisioning.commonConfigurationValid(this);
             // on other cases the provisioning is irrelevant
             default -> true;
         };

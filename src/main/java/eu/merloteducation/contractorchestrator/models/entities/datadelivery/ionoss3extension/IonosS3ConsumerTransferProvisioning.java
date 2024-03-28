@@ -24,19 +24,22 @@ public class IonosS3ConsumerTransferProvisioning extends TransferProvisioning {
     }
 
     @Override
-    public boolean configurationValid(DataDeliveryProvisioning provisioning) {
-        return super.configurationValid(provisioning)
+    public boolean configurationValid() {
+        return super.configurationValid()
                 && !StringUtil.isNullOrEmpty(dataAddressTargetBucketName)
-                && !StringUtil.isNullOrEmpty(dataAddressTargetPath)
-                && commonConfigurationValid(provisioning);
+                && !StringUtil.isNullOrEmpty(dataAddressTargetPath);
     }
 
-    private boolean commonConfigurationValid(DataDeliveryProvisioning provisioning) {
+    @Override
+    public boolean commonConfigurationValid(DataDeliveryProvisioning provisioning) {
+        boolean valid = super.commonConfigurationValid(provisioning);
+
         if (provisioning.getProviderTransferProvisioning() instanceof IonosS3ProviderTransferProvisioning providerProv) {
             // if both are ionos, the bucket name is not allowed to be equal
-            return !this.getDataAddressTargetBucketName().equals(providerProv.getDataAddressSourceBucketName());
+            valid &= !this.getDataAddressTargetBucketName().equals(providerProv.getDataAddressSourceBucketName());
         }
-        return true;
+
+        return valid;
     }
 
     @Override

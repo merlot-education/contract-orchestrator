@@ -56,41 +56,52 @@ public class ContractStorageService {
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
     private static final String AUTHORIZATION = "Authorization";
 
-    @Autowired
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
 
-    @Autowired
-    private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
+    private final ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
 
-    @Autowired
-    private OrganizationOrchestratorClient organizationOrchestratorClient;
+    private final OrganizationOrchestratorClient organizationOrchestratorClient;
 
-    @Autowired
-    private PdfServiceClient pdfServiceClient;
+    private final PdfServiceClient pdfServiceClient;
 
-    @Autowired
-    private MessageQueueService messageQueueService;
+    private final MessageQueueService messageQueueService;
 
-    @Autowired
-    private ContractSignerService contractSignerService;
+    private final ContractSignerService contractSignerService;
 
-    @Autowired
-    private ContractTemplateRepository contractTemplateRepository;
+    private final ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
-    private ContractToDtoMapper contractToDtoMapper;
+    private final ContractToDtoMapper contractToDtoMapper;
 
-    @Autowired
-    private ContractFromDtoMapper contractFromDtoMapper;
+    private final ContractFromDtoMapper contractFromDtoMapper;
 
-    @Autowired
-    private ContractDtoToPdfMapper contractDtoToPdfMapper;
+    private final ContractDtoToPdfMapper contractDtoToPdfMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final StorageClient storageClient;
 
-    @Autowired
-    private StorageClient storageClient;
+    public ContractStorageService(@Autowired EntityManager entityManager,
+                                  @Autowired ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient,
+                                  @Autowired OrganizationOrchestratorClient organizationOrchestratorClient,
+                                  @Autowired PdfServiceClient pdfServiceClient,
+                                  @Autowired MessageQueueService messageQueueService,
+                                  @Autowired ContractSignerService contractSignerService,
+                                  @Autowired ContractTemplateRepository contractTemplateRepository,
+                                  @Autowired ContractToDtoMapper contractToDtoMapper,
+                                  @Autowired ContractFromDtoMapper contractFromDtoMapper,
+                                  @Autowired ContractDtoToPdfMapper contractDtoToPdfMapper,
+                                  @Autowired StorageClient storageClient) {
+        this.entityManager = entityManager;
+        this.serviceOfferingOrchestratorClient = serviceOfferingOrchestratorClient;
+        this.organizationOrchestratorClient = organizationOrchestratorClient;
+        this.pdfServiceClient = pdfServiceClient;
+        this.messageQueueService = messageQueueService;
+        this.contractSignerService = contractSignerService;
+        this.contractTemplateRepository = contractTemplateRepository;
+        this.contractToDtoMapper = contractToDtoMapper;
+        this.contractFromDtoMapper = contractFromDtoMapper;
+        this.contractDtoToPdfMapper = contractDtoToPdfMapper;
+        this.storageClient = storageClient;
+    }
+
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());

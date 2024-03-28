@@ -77,9 +77,6 @@ class ContractStorageServiceTest {
     private ContractDtoToPdfMapper contractDtoToPdfMapper;
 
     @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
     private EntityManager entityManager;
 
     @Mock
@@ -106,7 +103,6 @@ class ContractStorageServiceTest {
     @Autowired
     private ContractSignerService contractSignerService;
 
-    @InjectMocks
     private ContractStorageService contractStorageService;
 
     private PageRequest defaultPageRequest;
@@ -408,19 +404,6 @@ class ContractStorageServiceTest {
 
     @BeforeAll
     public void setUp() {
-        ReflectionTestUtils.setField(contractStorageService, "serviceOfferingOrchestratorClient", serviceOfferingOrchestratorClient);
-        ReflectionTestUtils.setField(contractStorageService, "storageClient", storageClient);
-        ReflectionTestUtils.setField(contractStorageService, "pdfServiceClient", pdfServiceClient);
-        ReflectionTestUtils.setField(contractStorageService, "contractToDtoMapper", contractToDtoMapper);
-        ReflectionTestUtils.setField(contractStorageService, "contractFromDtoMapper", contractFromDtoMapper);
-        ReflectionTestUtils.setField(contractStorageService, "contractDtoToPdfMapper", contractDtoToPdfMapper);
-        ReflectionTestUtils.setField(contractStorageService, "objectMapper", objectMapper);
-        ReflectionTestUtils.setField(contractStorageService, "entityManager", entityManager);
-        ReflectionTestUtils.setField(contractStorageService, "organizationOrchestratorClient", organizationOrchestratorClient);
-        ReflectionTestUtils.setField(contractStorageService, "contractTemplateRepository", contractTemplateRepository);
-        ReflectionTestUtils.setField(contractStorageService, "messageQueueService", messageQueueService);
-        ReflectionTestUtils.setField(contractStorageService, "contractSignerService", contractSignerService);
-
         ContractTnc tnc = new ContractTnc();
         tnc.setContent("http://example.com");
         tnc.setHash("hash1234");
@@ -552,6 +535,20 @@ class ContractStorageServiceTest {
                 .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, MerlotParticipantDto.class));
 
         lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
+
+        contractStorageService = new ContractStorageService(
+                entityManager,
+                serviceOfferingOrchestratorClient,
+                organizationOrchestratorClient,
+                pdfServiceClient,
+                messageQueueService,
+                contractSignerService,
+                contractTemplateRepository,
+                contractToDtoMapper,
+                contractFromDtoMapper,
+                contractDtoToPdfMapper,
+                storageClient
+        );
     }
 
     @Test
