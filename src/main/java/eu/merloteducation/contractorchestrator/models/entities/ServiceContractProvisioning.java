@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,7 +15,8 @@ public abstract class ServiceContractProvisioning {
 
     @Id
     @Setter(AccessLevel.NONE)
-    private String id;
+    @GeneratedValue
+    private Long id;
 
     private OffsetDateTime validUntil;
 
@@ -24,11 +24,9 @@ public abstract class ServiceContractProvisioning {
     @OneToOne(mappedBy = "serviceContractProvisioning")
     private ContractTemplate contractTemplate;
 
-    protected ServiceContractProvisioning() {
-        this.id = "ServiceContractProvisioning:" + UUID.randomUUID();
+    public boolean transitionAllowed(ContractState targetState) {
+        return targetState != null; // validUntil can be null if selected time is unlimited
     }
 
-    protected ServiceContractProvisioning(ServiceContractProvisioning provisioning) {
-        this();
-    }
+    public abstract ServiceContractProvisioning makeCopy();
 }

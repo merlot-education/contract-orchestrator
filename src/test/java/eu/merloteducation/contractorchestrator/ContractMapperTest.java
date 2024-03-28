@@ -2,7 +2,7 @@ package eu.merloteducation.contractorchestrator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
@@ -31,15 +31,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class ContractMapperTest {
+
     @Autowired
-    ContractMapper contractMapper;
+    private ContractDtoToPdfMapper contractDtoToPdfMapper;
 
     ObjectMapper mapper = new ObjectMapper();
 
     @Test
     void mapToContractPdfDtoCorrectlySaas() throws IOException {
 
-        ContractPdfDto actual = contractMapper.contractDtoToContractPdfDto(getTestSaasContractDto());
+        ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestSaasContractDto());
         ContractPdfDto expected = getTestContractPdfDtoSaas();
         assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
@@ -49,7 +50,7 @@ class ContractMapperTest {
     @Test
     void mapToContractPdfDtoCorrectlyDataDelivery() throws IOException {
 
-        ContractPdfDto actual = contractMapper.contractDtoToContractPdfDto(getTestDataDeliveryContractDto());
+        ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestDataDeliveryContractDto());
         ContractPdfDto expected = getTestContractPdfDtoDataDelivery();
         assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
@@ -59,7 +60,7 @@ class ContractMapperTest {
     @Test
     void mapToContractPdfDtoCorrectlyCooperation() throws IOException {
 
-        ContractPdfDto actual = contractMapper.contractDtoToContractPdfDto(getTestCoopContractDto());
+        ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestCoopContractDto());
         ContractPdfDto expected = getTestContractPdfDto();
         expected.setServiceType("Coop");
         assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
@@ -77,13 +78,13 @@ class ContractMapperTest {
         String unlimitedExample1 = "0 hour(s)";
         String unlimitedExample2 = "12 unlimited";
 
-        assertThat(contractMapper.contractRuntimeMapper(hourExample)).isEqualTo("1 Stunde(n)");
-        assertThat(contractMapper.contractRuntimeMapper(dayExample)).isEqualTo("2 Tag(e)");
-        assertThat(contractMapper.contractRuntimeMapper(weekExample)).isEqualTo("3 Woche(n)");
-        assertThat(contractMapper.contractRuntimeMapper(monthExample)).isEqualTo("4 Monat(e)");
-        assertThat(contractMapper.contractRuntimeMapper(yearExample)).isEqualTo("5 Jahr(e)");
-        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample1)).isEqualTo("Unbegrenzt");
-        assertThat(contractMapper.contractRuntimeMapper(unlimitedExample2)).isEqualTo("Unbegrenzt");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(hourExample)).isEqualTo("1 Stunde(n)");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(dayExample)).isEqualTo("2 Tag(e)");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(weekExample)).isEqualTo("3 Woche(n)");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(monthExample)).isEqualTo("4 Monat(e)");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(yearExample)).isEqualTo("5 Jahr(e)");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(unlimitedExample1)).isEqualTo("Unbegrenzt");
+        assertThat(contractDtoToPdfMapper.contractRuntimeMapper(unlimitedExample2)).isEqualTo("Unbegrenzt");
     }
 
     ContractDto getTestContractDto(ContractDto contractDto) throws JsonProcessingException {

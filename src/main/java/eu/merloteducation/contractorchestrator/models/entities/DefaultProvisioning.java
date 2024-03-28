@@ -8,7 +8,9 @@ public class DefaultProvisioning extends ServiceContractProvisioning {
         super();
     }
 
-    public DefaultProvisioning(DefaultProvisioning provisioning) {
-        super(provisioning);
+    @Override
+    public ServiceContractProvisioning makeCopy() {
+        return new DefaultProvisioning();
     }
+
 }

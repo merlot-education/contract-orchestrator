@@ -4,7 +4,7 @@ import eu.merloteducation.authorizationlibrary.authorization.*;
 import eu.merloteducation.authorizationlibrary.config.InterceptorConfig;
 import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
-import eu.merloteducation.contractorchestrator.models.entities.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
