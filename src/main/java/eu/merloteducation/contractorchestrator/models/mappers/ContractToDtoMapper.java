@@ -94,13 +94,13 @@ public interface ContractToDtoMapper {
     @Mapping(target = "selectedConnectorId", source = "selectedConnectorId")
     @Mapping(target = "dataAddressTargetBucketName", source = "dataAddressTargetBucketName")
     @Mapping(target = "dataAddressTargetPath", source = "dataAddressTargetPath")
-    @Mapping(target = "dataAddressType", constant = "IonosS3")
+    @Mapping(target = "dataAddressType", constant = "IonosS3Dest")
     IonosS3ConsumerTransferProvisioningDto ionosProvisioningToConsumerProvisioningDto(IonosS3ConsumerTransferProvisioning provisioning);
 
     @Mapping(target = "selectedConnectorId", source = "selectedConnectorId")
     @Mapping(target = "dataAddressSourceBucketName", source = "dataAddressSourceBucketName")
     @Mapping(target = "dataAddressSourceFileName", source = "dataAddressSourceFileName")
-    @Mapping(target = "dataAddressType", constant = "IonosS3")
+    @Mapping(target = "dataAddressType", constant = "IonosS3Source")
     IonosS3ProviderTransferProvisioningDto ionosProvisioningToProviderProvisioningDto(IonosS3ProviderTransferProvisioning provisioning);
 
 

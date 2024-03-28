@@ -127,7 +127,7 @@ public abstract class ContractTemplate {
                 state = targetState;
             } else {
                 throw new IllegalStateException(
-                        String.format("Cannot transition from state %s to %s as mandatory fields are not set",
+                        String.format("Cannot transition from state %s to %s as mandatory fields are not set or invalid.",
                                 state.name(), targetState.name()));
             }
         } else {
