@@ -1012,8 +1012,8 @@ class ContractStorageServiceTest {
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
 
-        editedContract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3");
-        editedContract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3");
+        editedContract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3Dest");
+        editedContract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3Source");
         editedContract = (DataDeliveryContractDto) contractStorageService.updateContractTemplate(editedContract, "authToken",
                 provider);
         assertTransitionThrowsBadRequest(editedContract.getDetails().getId(), ContractState.RELEASED, provider);
@@ -1093,8 +1093,8 @@ class ContractStorageServiceTest {
                 try {
                     DataDeliveryContractDto contract = editedContract;
                     contract.getNegotiation().setProviderTncAccepted(true);
-                    contract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3");
-                    contract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3");
+                    contract.getProvisioning().getConsumerTransferProvisioning().setDataAddressType("IonosS3Dest");
+                    contract.getProvisioning().getProviderTransferProvisioning().setDataAddressType("IonosS3Source");
                     ((IonosS3ProviderTransferProvisioningDto) contract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceBucketName("MyBucket2");
                     ((IonosS3ProviderTransferProvisioningDto) contract.getProvisioning().getProviderTransferProvisioning()).setDataAddressSourceFileName("MyFile2.json");
                     contract.getProvisioning().getProviderTransferProvisioning().setSelectedConnectorId("edc2");
@@ -1360,7 +1360,7 @@ class ContractStorageServiceTest {
         IonosS3ProviderTransferProvisioningDto resultProviderProvisioning =
                 (IonosS3ProviderTransferProvisioningDto) result.getProvisioning().getProviderTransferProvisioning();
         result.getNegotiation().setProviderTncAccepted(true);
-        resultProviderProvisioning.setDataAddressType("IonosS3");
+        resultProviderProvisioning.setDataAddressType("IonosS3Source");
         resultProviderProvisioning.setDataAddressSourceBucketName("MyBucket2");
         resultProviderProvisioning.setDataAddressSourceFileName("MyFile2.json");
         resultProviderProvisioning.setSelectedConnectorId("edc2");
