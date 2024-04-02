@@ -37,6 +37,8 @@ public class IonosS3ConsumerTransferProvisioning extends TransferProvisioning {
         if (provisioning.getProviderTransferProvisioning() instanceof IonosS3ProviderTransferProvisioning providerProv) {
             // if both are ionos, the bucket name is not allowed to be equal
             valid &= !this.getDataAddressTargetBucketName().equals(providerProv.getDataAddressSourceBucketName());
+        } else {
+            valid = false; // for now we only allow if both provider and consumer provisioning are IONOS.
         }
 
         return valid;
