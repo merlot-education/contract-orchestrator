@@ -44,11 +44,11 @@ public class DataDeliveryProvisioning extends ServiceContractProvisioning {
     @Override
     public ServiceContractProvisioning makeCopy() {
         DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
-        if (provisioning.getConsumerTransferProvisioning() != null) {
-            this.consumerTransferProvisioning = provisioning.getConsumerTransferProvisioning().makeCopy();
+        if (this.consumerTransferProvisioning != null) {
+            provisioning.setConsumerTransferProvisioning(this.consumerTransferProvisioning.makeCopy());
         }
-        if (provisioning.getProviderTransferProvisioning() != null) {
-            this.providerTransferProvisioning = provisioning.getProviderTransferProvisioning().makeCopy();
+        if (this.providerTransferProvisioning != null) {
+            provisioning.setProviderTransferProvisioning(this.providerTransferProvisioning.makeCopy());
         }
         return provisioning;
     }

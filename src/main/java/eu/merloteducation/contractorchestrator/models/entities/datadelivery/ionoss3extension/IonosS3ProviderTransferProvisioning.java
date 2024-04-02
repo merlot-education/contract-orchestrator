@@ -48,6 +48,6 @@ public class IonosS3ProviderTransferProvisioning extends TransferProvisioning {
         provisioning.setSelectedConnectorId(getSelectedConnectorId());
         provisioning.setDataAddressSourceBucketName(getDataAddressSourceBucketName());
         provisioning.setDataAddressSourceFileName(getDataAddressSourceFileName());
-        return null;
+        return provisioning;
     }
 }
