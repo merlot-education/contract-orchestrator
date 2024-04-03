@@ -7,7 +7,7 @@ import eu.merloteducation.authorizationlibrary.config.InterceptorConfig;
 import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.ContractsController;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
-import eu.merloteducation.contractorchestrator.models.entities.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.security.WebSecurityConfig;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -26,7 +26,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
