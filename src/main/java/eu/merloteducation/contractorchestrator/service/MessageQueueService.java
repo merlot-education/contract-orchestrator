@@ -5,7 +5,7 @@ import eu.merloteducation.contractorchestrator.models.entities.ContractState;
 import eu.merloteducation.contractorchestrator.models.entities.ContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
-import eu.merloteducation.modelslib.api.organization.OrganizationConnectorDto;
+import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransferDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.queue.ConnectorDetailsRequest;
 import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
@@ -85,7 +85,7 @@ public class MessageQueueService {
      * @param connectorId connector id
      * @return connector details
      */
-    public OrganizationConnectorDto remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
+    public OrganizationConnectorTransferDto remoteRequestOrganizationConnectorByConnectorId(String orgaId, String connectorId) {
         return rabbitTemplate.convertSendAndReceiveAsType(
                 MessageQueueConfig.ORCHESTRATOR_EXCHANGE,
                 MessageQueueConfig.ORGANIZATIONCONNECTOR_REQUEST_KEY,

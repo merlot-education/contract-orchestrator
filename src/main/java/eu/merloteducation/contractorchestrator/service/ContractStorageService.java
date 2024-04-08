@@ -2,7 +2,13 @@ package eu.merloteducation.contractorchestrator.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.entities.*;
-import eu.merloteducation.contractorchestrator.models.mappers.ContractMapper;
+import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractFromDtoMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractToDtoMapper;
+import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
@@ -16,6 +22,7 @@ import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
+import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractProvisioningDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
@@ -27,7 +34,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.json.JSONException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -48,41 +54,54 @@ public class ContractStorageService {
     private static final String INVALID_STATE_TRANSITION = "Requested transition is not allowed.";
     private static final String CONTRACT_NOT_FOUND = "Could not find a contract with this id.";
     private static final String CONTRACT_EDIT_FORBIDDEN = "Not allowed to edit this contract.";
-    private static final String CONTRACT_VIEW_FORBIDDEN = "Not allowed to view this contract.";
-    private static final String CREDENTIAL_SUBJECT = "credentialSubject";
-    private static final String VERIFIABLE_CREDENTIAL = "verifiableCredential";
     private static final String AUTHORIZATION = "Authorization";
-    private static final String VALUE = "@value";
 
-    @Autowired
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
 
-    @Autowired
-    private ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
+    private final ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient;
 
-    @Autowired
-    private OrganizationOrchestratorClient organizationOrchestratorClient;
+    private final OrganizationOrchestratorClient organizationOrchestratorClient;
 
-    @Autowired
-    private PdfServiceClient pdfServiceClient;
+    private final PdfServiceClient pdfServiceClient;
 
-    @Autowired
-    private MessageQueueService messageQueueService;
+    private final MessageQueueService messageQueueService;
 
-    @Autowired
-    private ContractSignerService contractSignerService;
+    private final ContractSignerService contractSignerService;
 
-    @Autowired
-    private ContractTemplateRepository contractTemplateRepository;
+    private final ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
-    private ContractMapper contractMapper;
+    private final ContractToDtoMapper contractToDtoMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ContractFromDtoMapper contractFromDtoMapper;
 
-    @Autowired
-    private StorageClient storageClient;
+    private final ContractDtoToPdfMapper contractDtoToPdfMapper;
+
+    private final StorageClient storageClient;
+
+    public ContractStorageService(@Autowired EntityManager entityManager,
+                                  @Autowired ServiceOfferingOrchestratorClient serviceOfferingOrchestratorClient,
+                                  @Autowired OrganizationOrchestratorClient organizationOrchestratorClient,
+                                  @Autowired PdfServiceClient pdfServiceClient,
+                                  @Autowired MessageQueueService messageQueueService,
+                                  @Autowired ContractSignerService contractSignerService,
+                                  @Autowired ContractTemplateRepository contractTemplateRepository,
+                                  @Autowired ContractToDtoMapper contractToDtoMapper,
+                                  @Autowired ContractFromDtoMapper contractFromDtoMapper,
+                                  @Autowired ContractDtoToPdfMapper contractDtoToPdfMapper,
+                                  @Autowired StorageClient storageClient) {
+        this.entityManager = entityManager;
+        this.serviceOfferingOrchestratorClient = serviceOfferingOrchestratorClient;
+        this.organizationOrchestratorClient = organizationOrchestratorClient;
+        this.pdfServiceClient = pdfServiceClient;
+        this.messageQueueService = messageQueueService;
+        this.contractSignerService = contractSignerService;
+        this.contractTemplateRepository = contractTemplateRepository;
+        this.contractToDtoMapper = contractToDtoMapper;
+        this.contractFromDtoMapper = contractFromDtoMapper;
+        this.contractDtoToPdfMapper = contractDtoToPdfMapper;
+        this.storageClient = storageClient;
+    }
+
 
     private boolean isValidFieldSelections(ContractTemplate contract) throws JSONException {
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(contract.getOfferingId());
@@ -178,42 +197,23 @@ public class ContractStorageService {
                                             boolean isConsumer,
                                             boolean isProvider) {
         DataDeliveryProvisioning targetProvisioning = targetContract.getServiceContractProvisioning();
+        DataDeliveryContractProvisioningDto sourceProvisioning = editedContract.getProvisioning();
 
-        if (targetContract.getState() == ContractState.IN_DRAFT) {
-            targetContract.setExchangeCountSelection(
-                    editedContract.getNegotiation().getExchangeCountSelection());
-            if (isConsumer) {
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressTargetBucketName(
-                        editedContract.getProvisioning().getDataAddressTargetBucketName());
-                targetProvisioning.setDataAddressTargetFileName(
-                        editedContract.getProvisioning().getDataAddressTargetFileName());
-                targetProvisioning.setSelectedConsumerConnectorId(
-                        editedContract.getProvisioning().getSelectedConsumerConnectorId());
+        if (isConsumer
+                && targetContract.getState() == ContractState.IN_DRAFT) {
+            targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
+            targetProvisioning.setConsumerTransferProvisioning(
+                    contractFromDtoMapper.transferProvisioningDtoToProvisioning(
+                            sourceProvisioning.getConsumerTransferProvisioning()));
+        } else if (isProvider
+                && (targetContract.getState() == ContractState.IN_DRAFT
+                || targetContract.getState() == ContractState.SIGNED_CONSUMER)) {
+            if (targetContract.getState() == ContractState.IN_DRAFT) {
+                targetContract.setExchangeCountSelection(editedContract.getNegotiation().getExchangeCountSelection());
             }
-            if (isProvider) {
-                targetProvisioning.setDataAddressType(
-                        editedContract.getProvisioning().getDataAddressType());
-                // TODO verify that this is a bucket that belongs to the connector
-                targetProvisioning.setDataAddressSourceBucketName(
-                        editedContract.getProvisioning().getDataAddressSourceBucketName());
-                targetProvisioning.setDataAddressSourceFileName(
-                        editedContract.getProvisioning().getDataAddressSourceFileName());
-                // TODO verify that this is a valid connectorId
-                targetProvisioning.setSelectedProviderConnectorId(
-                        editedContract.getProvisioning().getSelectedProviderConnectorId());
-            }
-        } else if (targetContract.getState() == ContractState.SIGNED_CONSUMER && isProvider) {
-            targetProvisioning.setDataAddressType(
-                    editedContract.getProvisioning().getDataAddressType());
-            // TODO verify that this is a bucket that belongs to the connector
-            targetProvisioning.setDataAddressSourceBucketName(
-                    editedContract.getProvisioning().getDataAddressSourceBucketName());
-            targetProvisioning.setDataAddressSourceFileName(
-                    editedContract.getProvisioning().getDataAddressSourceFileName());
-            // TODO verify that this is a valid connectorId
-            targetProvisioning.setSelectedProviderConnectorId(
-                    editedContract.getProvisioning().getSelectedProviderConnectorId());
+            targetProvisioning.setProviderTransferProvisioning(
+                    contractFromDtoMapper.transferProvisioningDtoToProvisioning(
+                            sourceProvisioning.getProviderTransferProvisioning()));
         }
     }
 
@@ -273,7 +273,7 @@ public class ContractStorageService {
                 Map.of(AUTHORIZATION, authToken));
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
-        return contractMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
+        return contractToDtoMapper.contractToContractBasicDto(template, providerDetails, consumerDetails, offeringDetails);
     }
 
     private ContractDto castAndMapToContractDetailsDto(ContractTemplate template, String authToken) {
@@ -285,13 +285,13 @@ public class ContractStorageService {
         ServiceOfferingDto offeringDetails = messageQueueService.remoteRequestOfferingDetails(template.getOfferingId());
 
         if (template instanceof DataDeliveryContractTemplate dataTemplate) {
-            return contractMapper.contractToContractDto(dataTemplate,
+            return contractToDtoMapper.contractToContractDto(dataTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof SaasContractTemplate saasTemplate) {
-            return contractMapper.contractToContractDto(saasTemplate,
+            return contractToDtoMapper.contractToContractDto(saasTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         } else if (template instanceof CooperationContractTemplate coopTemplate) {
-            return contractMapper.contractToContractDto(coopTemplate,
+            return contractToDtoMapper.contractToContractDto(coopTemplate,
                 providerDetails, consumerDetails, offeringDetails);
         }
         throw new IllegalArgumentException("Unknown contract or offering type.");
@@ -322,7 +322,7 @@ public class ContractStorageService {
         // check that fields are in a valid format
         String regexServiceOfferingId = "(^ServiceOffering:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^ServiceOffering:\\d+$)";
 
-        String regexOrganizationId = "did:web:[-.#A-Za-z0-9]*";
+        String regexOrganizationId = "did:web:[-.A-Za-z0-9:%#]*";
         String offeringId = contractCreateRequest.getOfferingId();
         String consumerId = contractCreateRequest.getConsumerId();
 
@@ -347,7 +347,17 @@ public class ContractStorageService {
 
         switch (credentialSubject.getType()) {
             case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
-            case "merlot:MerlotServiceOfferingDataDelivery" -> contract = new DataDeliveryContractTemplate();
+            case "merlot:MerlotServiceOfferingDataDelivery" -> {
+                contract = new DataDeliveryContractTemplate();
+                DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
+                // provider transfer method should be set on service offering level,
+                // which should also limit available consumer methods.
+                // for now we let the users select the method, and currently only IONOS is supported.
+                // If this is to be exchanged later by potential other methods,
+                // we need to carefully consider which methods are inter-compatible
+                // (or only allow same-type transfers on provider and consumer side)
+                contract.setServiceContractProvisioning(provisioning);
+            }
             case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
             default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
@@ -395,16 +405,10 @@ public class ContractStorageService {
 
         if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract) {
             contract = new DataDeliveryContractTemplate(dataDeliveryContract, true);
-            contract.setServiceContractProvisioning(
-                    new DataDeliveryProvisioning((DataDeliveryProvisioning) contract.getServiceContractProvisioning()));
         } else if (contract instanceof SaasContractTemplate saasContractTemplate) {
             contract = new SaasContractTemplate(saasContractTemplate, true);
-            contract.setServiceContractProvisioning(
-                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
         } else if (contract instanceof CooperationContractTemplate cooperationContractTemplate) {
             contract = new CooperationContractTemplate(cooperationContractTemplate, true);
-            contract.setServiceContractProvisioning(
-                    new DefaultProvisioning((DefaultProvisioning) contract.getServiceContractProvisioning()));
         } else {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown contract type.");
         }
@@ -545,11 +549,11 @@ public class ContractStorageService {
     private ContractPdfDto castAndMapToContractPdfDto(ContractDto contractDto) {
 
         if (contractDto instanceof DataDeliveryContractDto dataDto) {
-            return contractMapper.contractDtoToContractPdfDto(dataDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(dataDto);
         } else if (contractDto instanceof SaasContractDto saasDto) {
-            return contractMapper.contractDtoToContractPdfDto(saasDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(saasDto);
         } else if (contractDto instanceof CooperationContractDto coopDto) {
-            return contractMapper.contractDtoToContractPdfDto(coopDto);
+            return contractDtoToPdfMapper.contractDtoToContractPdfDto(coopDto);
         }
 
         throw new IllegalArgumentException("Unknown contract or offering type.");
@@ -566,7 +570,7 @@ public class ContractStorageService {
      */
     public Page<ContractBasicDto> getOrganizationContracts(String orgaId, Pageable pageable, ContractState statusFilter,
                                                            String authToken) {
-        String regex = "did:web:[-.#A-Za-z0-9]*";
+        String regex = "did:web:[-.A-Za-z0-9:%#]*";
         if (!orgaId.matches(regex)) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, INVALID_FIELD_DATA);
         }

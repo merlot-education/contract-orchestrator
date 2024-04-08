@@ -1,6 +1,11 @@
 package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.contractorchestrator.models.entities.*;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
+import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
@@ -114,9 +119,13 @@ class MessageQueueServiceTest {
         templateData.setConsumerTncAccepted(true);
         templateData.setExchangeCountSelection("anything");
         DataDeliveryProvisioning dataDeliveryProvisioning = new DataDeliveryProvisioning();
-        dataDeliveryProvisioning.setDataAddressTargetBucketName("foo");
-        dataDeliveryProvisioning.setDataAddressTargetFileName("bar");
-        dataDeliveryProvisioning.setSelectedConsumerConnectorId("something");
+        IonosS3ConsumerTransferProvisioning consumerProvisioning = new IonosS3ConsumerTransferProvisioning();
+        IonosS3ProviderTransferProvisioning providerProvisioning = new IonosS3ProviderTransferProvisioning();
+        consumerProvisioning.setDataAddressTargetBucketName("foo");
+        consumerProvisioning.setDataAddressTargetPath("bar/");
+        consumerProvisioning.setSelectedConnectorId("something");
+        dataDeliveryProvisioning.setConsumerTransferProvisioning(consumerProvisioning);
+        dataDeliveryProvisioning.setProviderTransferProvisioning(providerProvisioning);
         templateData.setServiceContractProvisioning(dataDeliveryProvisioning);
         templateData.transitionState(ContractState.SIGNED_CONSUMER);
         templateData = contractTemplateRepository.save(templateData);
