@@ -1,7 +1,6 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
-import eu.merloteducation.authorizationlibrary.authorization.MerlotAuthenticationToken;
 import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -26,8 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -112,10 +109,10 @@ public class ContractsController {
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) throws IOException {
-        String fullName = ((MerlotAuthenticationToken) principal).getFullName();
+        String userName = principal.getName();
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
-                activeRole.getOrganizationId(), fullName, authToken);
+                activeRole.getOrganizationId(), userName, authToken);
     }
 
 

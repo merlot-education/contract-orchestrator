@@ -45,9 +45,6 @@ class DataTransferControllerTest {
     private MockMvc mvc;
 
     @MockBean
-    private JwtAuthConverterProperties jwtAuthConverterProperties;
-
-    @MockBean
     private UserInfoOpaqueTokenIntrospector userInfoOpaqueTokenIntrospector;
 
     @MockBean

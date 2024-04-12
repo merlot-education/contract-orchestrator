@@ -459,7 +459,7 @@ public class ContractStorageService {
      * @param contractId       id of the contract template to transition
      * @param targetState      target state of the contract template
      * @param activeRoleOrgaId the currently selected role of the user
-     * @param fullName         the fullName of the user that requested this action
+     * @param userName         the name of the user that requested this action
      * @param authToken        the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
@@ -467,7 +467,7 @@ public class ContractStorageService {
     public ContractDto transitionContractTemplateState(String contractId,
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
-                                                       String fullName,
+                                                       String userName,
                                                        String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
 
@@ -484,14 +484,14 @@ public class ContractStorageService {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setConsumerSignature(new ContractSignature(fullName));
+            contract.setConsumerSignature(new ContractSignature(userName));
         }
 
         if (targetState == ContractState.RELEASED) {
             if (!isProvider) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setProviderSignature(new ContractSignature(fullName));
+            contract.setProviderSignature(new ContractSignature(userName));
             contract.getServiceContractProvisioning().setValidUntil(
                     this.computeValidityTimestamp(contract.getRuntimeSelection()));
         }

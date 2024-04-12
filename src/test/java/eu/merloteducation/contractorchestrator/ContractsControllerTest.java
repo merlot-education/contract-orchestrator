@@ -30,14 +30,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -67,9 +64,6 @@ class ContractsControllerTest {
 
     @MockBean
     private EdcOrchestrationService edcOrchestrationService;
-
-    @MockBean
-    private JwtAuthConverterProperties jwtAuthConverterProperties;
 
     @MockBean
     JwtAuthConverter jwtAuthConverter;
@@ -305,9 +299,6 @@ class ContractsControllerTest {
     @Test
     void patchTransitionContractValid() throws Exception
     {
-        MerlotAuthenticationToken token = new MerlotAuthenticationToken(new Jwt("someValue", Instant.now(), Instant.now().plusSeconds(999), Map.of("header1", "header1"),
-            Map.of("sub", "myUserId", "realm_access", Collections.emptyMap())), Set.of(new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))), "principal name", "full name");
-
         mvc.perform(MockMvcRequestBuilders
                         .patch("/contract/status/" + template.getId() + "/IN_DRAFT")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -315,7 +306,9 @@ class ContractsControllerTest {
                         .header("Active-Role", "OrgLegRep_" + getParticipantId(10))
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
-                        .with(SecurityMockMvcRequestPostProcessors.authentication(token)))
+                        .with(jwt().authorities(
+                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                        )))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
