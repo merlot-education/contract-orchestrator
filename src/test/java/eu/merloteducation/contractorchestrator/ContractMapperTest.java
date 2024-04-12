@@ -110,11 +110,9 @@ class ContractMapperTest {
         contractDetailsDto.setTermsAndConditions(tncDtoList);
         contractDetailsDto.setProviderLegalName("MeinAnbieter GmbH");
         contractDetailsDto.setProviderSignerUserName("Hans Wurst");
-        contractDetailsDto.setProviderSignature("12345678");
         contractDetailsDto.setProviderSignatureDate("01.02.2023 10:05");
         contractDetailsDto.setConsumerLegalName("Konsum AG");
         contractDetailsDto.setConsumerSignerUserName("Marco Polo");
-        contractDetailsDto.setConsumerSignature("87654321");
         contractDetailsDto.setConsumerSignatureDate("01.02.2023 09:45");
 
         VCard providerLegalAddress = new VCard();
@@ -265,7 +263,6 @@ class ContractMapperTest {
         providerAddress.setPostalCode("12345");
 
         contractPdfDto.setProviderLegalAddress(providerAddress);
-        contractPdfDto.setProviderSignature("12345678");
         contractPdfDto.setProviderLegalName("MeinAnbieter GmbH");
         contractPdfDto.setProviderSignerUser("Hans Wurst");
         contractPdfDto.setProviderSignatureTimestamp("01.02.2023 10:05");
@@ -277,7 +274,6 @@ class ContractMapperTest {
         consumerAddress.setPostalCode("54321");
 
         contractPdfDto.setConsumerLegalAddress(consumerAddress);
-        contractPdfDto.setConsumerSignature("87654321");
         contractPdfDto.setConsumerSignerUser("Marco Polo");
         contractPdfDto.setConsumerLegalName("Konsum AG");
         contractPdfDto.setConsumerSignatureTimestamp("01.02.2023 09:45");

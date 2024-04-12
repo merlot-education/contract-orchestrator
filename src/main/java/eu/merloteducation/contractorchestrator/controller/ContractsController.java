@@ -1,6 +1,7 @@
 package eu.merloteducation.contractorchestrator.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import eu.merloteducation.authorizationlibrary.authorization.MerlotAuthenticationToken;
 import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
@@ -111,13 +112,10 @@ public class ContractsController {
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) throws IOException {
-        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
-        Jwt jwt = (Jwt) authenticationToken.getCredentials();
-        String userId = (String) jwt.getClaims().get("sub");
-        String userName = (String) jwt.getClaims().get("name");
+        String fullName = ((MerlotAuthenticationToken) principal).getFullName();
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
-                activeRole.getOrganizationId(), userId, userName, authToken);
+                activeRole.getOrganizationId(), fullName, authToken);
     }
 
 

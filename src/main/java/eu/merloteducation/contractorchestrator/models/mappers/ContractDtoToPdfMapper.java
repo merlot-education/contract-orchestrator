@@ -36,12 +36,10 @@ public interface ContractDtoToPdfMapper {
     @Mapping(target = "providerLegalName", source = "contractDto.details.providerLegalName")
     @Mapping(target = "providerLegalAddress", source = "contractDto.details.providerLegalAddress", qualifiedByName = "legalAddress")
     @Mapping(target = "providerSignerUser", source = "contractDto.details.providerSignerUserName")
-    @Mapping(target = "providerSignature", source = "contractDto.details.providerSignature")
     @Mapping(target = "providerSignatureTimestamp", source = "contractDto.details.providerSignatureDate")
     @Mapping(target = "consumerLegalName", source = "contractDto.details.consumerLegalName")
     @Mapping(target = "consumerLegalAddress", source = "contractDto.details.consumerLegalAddress", qualifiedByName = "legalAddress")
     @Mapping(target = "consumerSignerUser", source = "contractDto.details.consumerSignerUserName")
-    @Mapping(target = "consumerSignature", source = "contractDto.details.consumerSignature")
     @Mapping(target = "consumerSignatureTimestamp", source = "contractDto.details.consumerSignatureDate")
     ContractPdfDto contractDtoToContractPdfDto(ContractDto contractDto);
 

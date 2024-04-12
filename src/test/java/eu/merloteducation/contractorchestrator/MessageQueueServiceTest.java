@@ -113,7 +113,7 @@ class MessageQueueServiceTest {
         DataDeliveryContractTemplate templateData = new DataDeliveryContractTemplate();
         templateData.setConsumerId(orgaId);
         templateData.setRuntimeSelection("anything");
-        templateData.setConsumerSignature(new ContractSignature("signature", "signer"));
+        templateData.setConsumerSignature(new ContractSignature("signer"));
         templateData.setConsumerTncAccepted(true);
         templateData.setAttachments(new HashSet<>());
         templateData.setConsumerTncAccepted(true);
