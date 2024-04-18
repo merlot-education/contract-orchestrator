@@ -66,8 +66,6 @@ public class ContractStorageService {
 
     private final MessageQueueService messageQueueService;
 
-    private final ContractSignerService contractSignerService;
-
     private final ContractTemplateRepository contractTemplateRepository;
 
     private final ContractToDtoMapper contractToDtoMapper;
@@ -83,7 +81,6 @@ public class ContractStorageService {
                                   @Autowired OrganizationOrchestratorClient organizationOrchestratorClient,
                                   @Autowired PdfServiceClient pdfServiceClient,
                                   @Autowired MessageQueueService messageQueueService,
-                                  @Autowired ContractSignerService contractSignerService,
                                   @Autowired ContractTemplateRepository contractTemplateRepository,
                                   @Autowired ContractToDtoMapper contractToDtoMapper,
                                   @Autowired ContractFromDtoMapper contractFromDtoMapper,
@@ -94,7 +91,6 @@ public class ContractStorageService {
         this.organizationOrchestratorClient = organizationOrchestratorClient;
         this.pdfServiceClient = pdfServiceClient;
         this.messageQueueService = messageQueueService;
-        this.contractSignerService = contractSignerService;
         this.contractTemplateRepository = contractTemplateRepository;
         this.contractToDtoMapper = contractToDtoMapper;
         this.contractFromDtoMapper = contractFromDtoMapper;
@@ -463,7 +459,7 @@ public class ContractStorageService {
      * @param contractId       id of the contract template to transition
      * @param targetState      target state of the contract template
      * @param activeRoleOrgaId the currently selected role of the user
-     * @param userId           the id of the user that requested this action
+     * @param userName         the name of the user that requested this action
      * @param authToken        the OAuth2 Token from the user requesting this action
      * @return updated contract template from database
      */
@@ -471,7 +467,6 @@ public class ContractStorageService {
     public ContractDto transitionContractTemplateState(String contractId,
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
-                                                       String userId,
                                                        String userName,
                                                        String authToken) throws IOException {
         ContractTemplate contract = this.loadContract(contractId);
@@ -489,18 +484,14 @@ public class ContractStorageService {
             if (!isConsumer) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setConsumerSignature(new ContractSignature(
-                    contractSignerService.generateContractSignature(contract, userId),
-                    userName));
+            contract.setConsumerSignature(new ContractSignature(userName));
         }
 
         if (targetState == ContractState.RELEASED) {
             if (!isProvider) {
                 throw new ResponseStatusException(FORBIDDEN, INVALID_STATE_TRANSITION);
             }
-            contract.setProviderSignature(new ContractSignature(
-                    contractSignerService.generateContractSignature(contract, userId),
-                    userName));
+            contract.setProviderSignature(new ContractSignature(userName));
             contract.getServiceContractProvisioning().setValidUntil(
                     this.computeValidityTimestamp(contract.getRuntimeSelection()));
         }

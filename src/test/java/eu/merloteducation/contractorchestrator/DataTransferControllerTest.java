@@ -2,6 +2,7 @@ package eu.merloteducation.contractorchestrator;
 
 import eu.merloteducation.authorizationlibrary.authorization.*;
 import eu.merloteducation.authorizationlibrary.config.InterceptorConfig;
+import eu.merloteducation.authorizationlibrary.config.MerlotSecurityConfig;
 import eu.merloteducation.contractorchestrator.auth.ContractAuthorityChecker;
 import eu.merloteducation.contractorchestrator.controller.DataTransferController;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
@@ -35,7 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({DataTransferController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
-@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class})
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, InterceptorConfig.class,
+        MerlotSecurityConfig.class})
 @AutoConfigureMockMvc()
 class DataTransferControllerTest {
 
@@ -43,7 +45,7 @@ class DataTransferControllerTest {
     private MockMvc mvc;
 
     @MockBean
-    private JwtAuthConverterProperties jwtAuthConverterProperties;
+    private UserInfoOpaqueTokenIntrospector userInfoOpaqueTokenIntrospector;
 
     @MockBean
     private EdcOrchestrationService edcOrchestrationService;
@@ -56,6 +58,9 @@ class DataTransferControllerTest {
 
     @MockBean
     private ContractTemplateRepository contractTemplateRepository;
+
+    @MockBean
+    JwtAuthConverter jwtAuthConverter;
 
     @BeforeEach
     public void beforeEach() throws JSONException {
@@ -138,7 +143,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -154,7 +159,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -170,7 +175,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -186,7 +191,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -202,7 +207,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -218,7 +223,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -234,7 +239,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -250,7 +255,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
