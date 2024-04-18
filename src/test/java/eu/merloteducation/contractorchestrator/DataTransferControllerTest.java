@@ -143,7 +143,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -159,7 +159,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -175,7 +175,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -191,7 +191,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -207,7 +207,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -223,7 +223,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -239,7 +239,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
@@ -255,7 +255,7 @@ class DataTransferControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .with(csrf())
                         .with(jwt().authorities(
-                                new OrganizationRoleGrantedAuthority("OrgLegRep_" + getParticipantId(10))
+                                new OrganizationRoleGrantedAuthority(OrganizationRole.ORG_LEG_REP, getParticipantId(10))
                         )))
                 .andDo(print())
                 .andExpect(status().isForbidden());
