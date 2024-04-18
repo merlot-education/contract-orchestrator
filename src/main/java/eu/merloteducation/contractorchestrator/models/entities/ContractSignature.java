@@ -19,12 +19,10 @@ public class ContractSignature {
     @GeneratedValue
     private Long id;
 
-    private String signature;
     private String signerName;
     private OffsetDateTime signatureDate;
 
-    public ContractSignature(String signature, String signerName) {
-        this.signature = signature;
+    public ContractSignature(String signerName) {
         this.signerName = signerName;
 
         this.signatureDate = OffsetDateTime.now();

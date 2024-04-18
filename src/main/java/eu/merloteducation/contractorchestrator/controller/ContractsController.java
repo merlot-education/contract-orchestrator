@@ -25,8 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -111,13 +109,10 @@ public class ContractsController {
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken,
                                                   Principal principal) throws IOException {
-        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) principal;
-        Jwt jwt = (Jwt) authenticationToken.getCredentials();
-        String userId = (String) jwt.getClaims().get("sub");
-        String userName = (String) jwt.getClaims().get("name");
+        String userName = principal.getName();
 
         return contractStorageService.transitionContractTemplateState(contractId, status,
-                activeRole.getOrganizationId(), userId, userName, authToken);
+                activeRole.getOrganizationId(), userName, authToken);
     }
 
 

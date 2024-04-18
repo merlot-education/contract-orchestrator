@@ -35,10 +35,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -48,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({ContractsController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
-@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class,
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, InterceptorConfig.class,
         MerlotSecurityConfig.class})
 @AutoConfigureMockMvc()
 class ContractsControllerTest {
@@ -69,7 +66,7 @@ class ContractsControllerTest {
     private EdcOrchestrationService edcOrchestrationService;
 
     @MockBean
-    private JwtAuthConverterProperties jwtAuthConverterProperties;
+    JwtAuthConverter jwtAuthConverter;
 
     private SaasContractTemplate template;
 

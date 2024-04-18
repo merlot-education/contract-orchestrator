@@ -36,16 +36,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({DataTransferController.class, WebSecurityConfig.class, ContractAuthorityChecker.class})
-@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, JwtAuthConverter.class, InterceptorConfig.class,
+@Import({AuthorityChecker.class, ActiveRoleHeaderHandlerInterceptor.class, InterceptorConfig.class,
         MerlotSecurityConfig.class})
 @AutoConfigureMockMvc()
 class DataTransferControllerTest {
 
     @Autowired
     private MockMvc mvc;
-
-    @MockBean
-    private JwtAuthConverterProperties jwtAuthConverterProperties;
 
     @MockBean
     private UserInfoOpaqueTokenIntrospector userInfoOpaqueTokenIntrospector;
@@ -61,6 +58,9 @@ class DataTransferControllerTest {
 
     @MockBean
     private ContractTemplateRepository contractTemplateRepository;
+
+    @MockBean
+    JwtAuthConverter jwtAuthConverter;
 
     @BeforeEach
     public void beforeEach() throws JSONException {
