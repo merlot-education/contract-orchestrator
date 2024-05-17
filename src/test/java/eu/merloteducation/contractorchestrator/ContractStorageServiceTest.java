@@ -149,8 +149,8 @@ class ContractStorageServiceTest {
                                 "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..UAsRkuZgeWte1E4pBO0QcVeociUNUwgT-NOjCPmoAVJ2ghC9aqVp3I-UtX8yVKgSLwx6hod1dg1bX2Q5NbtRz6eTV8W5vNN0W-tLJBA713CwtxgEymve7phxv98UPQSFs5_P1eg3gcYL7vxj4uDNds4AFAzFWo-FqKpRhSZIsD84869pha9h7d533__IxBKCE4mOXwqKlySeZ6w_4w9p8rlCgAnGMDf7369AxB_gUaTApDkRItJzXowcX9tyEb-t7GtvWbvgSBM4SfugvPDCcP0ZP9lybyVyQv8LIRS4CSq_ohmjhwZWmnbOkOPm_usWe-rYGLBryBQILwZvqgX4r0kRQDALmHsOgqZUOqyBW_vw_lpLSM_Wo82avoZXao6HG3ZFoTnWjFrmh1XiBEVBWWBNkYLDEJlqkfhYO0xU0nroTmnD3UGJs-cKoS8jvJiBkQCqYYY-up-YWVoiaLz0b9B0j7Pc1KpyQh1egoEugo9u0S244gBsXWak30Pp6sTI_MUNga3Ybiqj5Ar-KC0Qu6noXS2RcAh9XQmRr4qPP36-tt1H0eoTFDWP8wGhsYkJF7rf-CLf7H2urGFX-4Y_K_RXjQgVJohWYSPjX6O5GYifa16o4iEuMCDhwRX9ekAnOGeTwQywOUicglf5oc5q1rFCCNKxY1386AZ3_LzR3F8"
                             },
                             "credentialSubject": {
-                                "@id": "${id}",
-                                "@type": "${offeringType}",
+                                "id": "${id}",
+                                "type": "${offeringType}",
                                 "@context": {
                                     "merlot": "http://w3id.org/gaia-x/merlot#",
                                     "dct": "http://purl.org/dc/terms/",
@@ -243,12 +243,12 @@ class ContractStorageServiceTest {
                             "@context": [
                                 "https://www.w3.org/2018/credentials/v1"
                             ],
-                            "@id": "https://www.example.org/ServiceOffering.json",
-                            "@type": [
+                            "id": "https://www.example.org/ServiceOffering.json",
+                            "type": [
                                 "VerifiableCredential"
                             ]
                         },
-                        "@id": "http://example.edu/verifiablePresentation/self-description1",
+                        "id": "http://example.edu/verifiablePresentation/self-description1",
                         "@context": [
                             "https://www.w3.org/2018/credentials/v1"
                         ]
@@ -283,8 +283,8 @@ class ContractStorageServiceTest {
                         ],
                         "verifiableCredential": {
                             "credentialSubject": {
-                                "@id": "did:web:${merlotDomain}#orga-${id}",
-                                "@type": "merlot:MerlotOrganization",
+                                "id": "did:web:${merlotDomain}#orga-${id}",
+                                "type": "merlot:MerlotOrganization",
                                 "@context": {
                                     "merlot": "http://w3id.org/gaia-x/merlot#",
                                     "gax-trust-framework": "http://w3id.org/gaia-x/gax-trust-framework#",
@@ -375,15 +375,15 @@ class ContractStorageServiceTest {
                                 "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
                             },
                             "issuer": "did:web:${merlotDomain}#orga-${id}",
-                            "@type": [
+                            "type": [
                                 "VerifiableCredential"
                             ],
-                            "@id": "https://www.example.org/legalPerson.json",
+                            "id": "https://www.example.org/legalPerson.json",
                             "@context": [
                                 "https://www.w3.org/2018/credentials/v1"
                             ]
                         },
-                        "@id": "http://example.edu/verifiablePresentation/self-description1",
+                        "id": "http://example.edu/verifiablePresentation/self-description1",
                         "@context": [
                             "https://www.w3.org/2018/credentials/v1"
                         ]
