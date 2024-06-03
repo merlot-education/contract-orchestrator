@@ -7,12 +7,13 @@ import eu.merloteducation.contractorchestrator.models.entities.datadelivery.Tran
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ConsumerTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.ionoss3extension.IonosS3ProviderTransferProvisioning;
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxVcard;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.participants.GxLegalParticipantCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.participants.GxLegalRegistrationNumberCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotLegalParticipantCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
+import eu.merloteducation.modelslib.api.contract.ContractVcard;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.TransferProvisioningDto;
@@ -28,7 +29,8 @@ import org.mapstruct.Named;
 
 import java.time.OffsetDateTime;
 
-@Mapper(componentModel = "spring", imports = { DataDeliveryCredentialSubject.class, SaaSCredentialSubject.class })
+@Mapper(componentModel = "spring", imports = { GxLegalParticipantCredentialSubject.class,
+        GxLegalRegistrationNumberCredentialSubject.class, MerlotLegalParticipantCredentialSubject.class })
 public interface ContractToDtoMapper {
     @Mapping(target = "id", source = "contract.id")
     @Mapping(target = "creationDate", source = "contract.creationDate")
@@ -36,7 +38,7 @@ public interface ContractToDtoMapper {
     @Mapping(target = "providerId", source = "offeringDetails.providerDetails.providerId")
     @Mapping(target = "providerLegalName", source = "offeringDetails.providerDetails.providerLegalName")
     @Mapping(target = "providerActive", source = "providerOrgaDetails.metadata.active")
-    @Mapping(target = "consumerId", source = "consumerOrgaDetails.selfDescription.verifiableCredential.credentialSubject.id")
+    @Mapping(target = "consumerId", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantId")
     @Mapping(target = "consumerLegalName", source = "consumerOrgaDetails", qualifiedByName = "mapParticipantLegalName")
     @Mapping(target = "consumerActive", source = "consumerOrgaDetails.metadata.active")
     @Mapping(target = "state", source = "contract.state")
@@ -101,24 +103,33 @@ public interface ContractToDtoMapper {
     @Mapping(target = "dataAddressType", constant = "IonosS3Source")
     IonosS3ProviderTransferProvisioningDto ionosProvisioningToProviderProvisioningDto(IonosS3ProviderTransferProvisioning provisioning);
 
+    ContractVcard gxVcardToContractVcard(GxVcard vcard);
+
 
     default String map(OffsetDateTime offsetDateTime) {
 
         return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 
+    @Named("mapParticipantId")
+    default String mapParticipantId(MerlotParticipantDto consumerOrgaDetails) {
+        return consumerOrgaDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxLegalParticipantCredentialSubject.class)
+                .getId();
+    }
+
     @Named("mapParticipantLegalName")
     default String mapParticipantLegalName(MerlotParticipantDto consumerOrgaDetails) {
-        return ((MerlotOrganizationCredentialSubject)
-                consumerOrgaDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+        return consumerOrgaDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotLegalParticipantCredentialSubject.class)
                 .getLegalName();
     }
 
     @Named("mapParticipantLegalAddress")
-    default VCard mapParticipantLegalAddress(MerlotParticipantDto consumerOrgaDetails) {
-        return ((MerlotOrganizationCredentialSubject)
-                consumerOrgaDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject())
-                .getLegalAddress();
+    default ContractVcard mapParticipantLegalAddress(MerlotParticipantDto consumerOrgaDetails) {
+        return gxVcardToContractVcard(consumerOrgaDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxLegalParticipantCredentialSubject.class)
+                .getLegalAddress());
     }
 
     @Named("transferProvisioningToDto")

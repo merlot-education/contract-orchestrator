@@ -1,13 +1,11 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.VCard;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.serviceofferings.GxServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotCoopContractServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotSaasServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
-import eu.merloteducation.modelslib.api.contract.ContractDto;
-import eu.merloteducation.modelslib.api.contract.ContractPdfAddressDto;
-import eu.merloteducation.modelslib.api.contract.ContractPdfDto;
-import eu.merloteducation.modelslib.api.contract.ContractTncDto;
+import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
@@ -21,14 +19,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Mapper(componentModel = "spring", imports = {DataDeliveryCredentialSubject.class, SaaSCredentialSubject.class })
+@Mapper(componentModel = "spring", imports = {GxServiceOfferingCredentialSubject.class,
+        MerlotServiceOfferingCredentialSubject.class, MerlotSaasServiceOfferingCredentialSubject.class,
+        MerlotDataDeliveryServiceOfferingCredentialSubject.class, MerlotCoopContractServiceOfferingCredentialSubject.class})
 public interface ContractDtoToPdfMapper {
     @Mapping(target = "contractId", expression = "java(contractDto.getDetails().getId().replace(\"Contract:\", \"\"))")
     @Mapping(target = "contractCreationDate", source = "contractDto.details.creationDate")
     @Mapping(target = "contractRuntime", source = "contractDto.negotiation.runtimeSelection", qualifiedByName = "contractRuntime")
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
-    @Mapping(target = "serviceId", expression = "java(contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject().getId().replace(\"ServiceOffering:\", \"\"))")
+    @Mapping(target = "serviceId", source = "contractDto.offering", qualifiedByName = "mapOfferingId")
     @Mapping(target = "serviceType", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.type")
     @Mapping(target = "serviceName", source = "contractDto.offering", qualifiedByName = "mapOfferingName")
     @Mapping(target = "serviceDescription", source = "contractDto.offering", qualifiedByName = "mapOfferingDescription")
@@ -45,13 +45,13 @@ public interface ContractDtoToPdfMapper {
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractDataTransferCount", source = "contractDto.negotiation.exchangeCountSelection")
-    @Mapping(target = "serviceDataAccessType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataAccessType())")
-    @Mapping(target = "serviceDataTransferType", expression = "java(((DataDeliveryCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getDataTransferType())")
+    @Mapping(target = "serviceDataAccessType", source = "contractDto.offering", qualifiedByName = "mapDataAccessType")
+    @Mapping(target = "serviceDataTransferType", source = "contractDto.offering", qualifiedByName = "mapDataTransferType")
     ContractPdfDto contractDtoToContractPdfDto(DataDeliveryContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
     @Mapping(target = "contractUserCount", source = "contractDto.negotiation.userCountSelection")
-    @Mapping(target = "serviceHardwareRequirements", expression = "java(((SaaSCredentialSubject) contractDto.getOffering().getSelfDescription().getVerifiableCredential().getCredentialSubject()).getHardwareRequirements())")
+    @Mapping(target = "serviceHardwareRequirements", source = "contractDto.offering", qualifiedByName = "mapHardwareRequirements")
     ContractPdfDto contractDtoToContractPdfDto(SaasContractDto contractDto);
 
     @InheritConfiguration(name = "contractDtoToContractPdfDto")
@@ -69,9 +69,9 @@ public interface ContractDtoToPdfMapper {
     }
 
     @Named("legalAddress")
-    default ContractPdfAddressDto legalAddressMapper(VCard legalAddress) {
+    default ContractPdfAddressDto legalAddressMapper(ContractVcard legalAddress) {
         ContractPdfAddressDto contractPdfAddressDto = new ContractPdfAddressDto();
-        contractPdfAddressDto.setCountryName(legalAddress.getCountryName());
+        contractPdfAddressDto.setCountryName(legalAddress.getCountryCode());
         contractPdfAddressDto.setStreetAddress(legalAddress.getStreetAddress());
         contractPdfAddressDto.setLocality(legalAddress.getLocality());
         contractPdfAddressDto.setPostalCode(legalAddress.getPostalCode());
@@ -104,27 +104,55 @@ public interface ContractDtoToPdfMapper {
         return runtimeCount + " " + runtimeMeasurementGerman;
     }
 
+    @Named("mapOfferingId")
+    default String mapOfferingId(ServiceOfferingDto offeringDto) {
+        return offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxServiceOfferingCredentialSubject.class)
+                .getId();
+    }
+
     @Named("mapOfferingName")
     default String mapOfferingName(ServiceOfferingDto offeringDto) {
-        String name = ((MerlotServiceOfferingCredentialSubject)
-                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+        String name = offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxServiceOfferingCredentialSubject.class)
                 .getName();
         return name == null ? "" : name;
     }
 
     @Named("mapOfferingDescription")
     default String mapOfferingDescription(ServiceOfferingDto offeringDto) {
-        String description = ((MerlotServiceOfferingCredentialSubject)
-                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+        String description = offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxServiceOfferingCredentialSubject.class)
                 .getDescription();
         return description == null ? "" : description;
     }
 
     @Named("mapOfferingExampleCosts")
     default String mapOfferingExampleCosts(ServiceOfferingDto offeringDto) {
-        String exampleCosts = ((MerlotServiceOfferingCredentialSubject)
-                offeringDto.getSelfDescription().getVerifiableCredential().getCredentialSubject())
+        String exampleCosts = offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotServiceOfferingCredentialSubject.class)
                 .getExampleCosts();
         return exampleCosts == null ? "" : exampleCosts;
+    }
+
+    @Named("mapDataAccessType")
+    default String mapDataAccessType(ServiceOfferingDto offeringDto) {
+        return offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotDataDeliveryServiceOfferingCredentialSubject.class)
+                .getDataAccessType();
+    }
+
+    @Named("mapDataTransferType")
+    default String mapDataTransferType(ServiceOfferingDto offeringDto) {
+        return offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotDataDeliveryServiceOfferingCredentialSubject.class)
+                .getDataTransferType();
+    }
+
+    @Named("mapHardwareRequirements")
+    default String mapHardwareRequirements(ServiceOfferingDto offeringDto) {
+        return offeringDto.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotSaasServiceOfferingCredentialSubject.class)
+                .getHardwareRequirements();
     }
 }

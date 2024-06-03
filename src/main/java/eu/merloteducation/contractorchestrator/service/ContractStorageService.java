@@ -1,6 +1,5 @@
 package eu.merloteducation.contractorchestrator.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.entities.cooperation.CooperationContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
@@ -10,12 +9,16 @@ import eu.merloteducation.contractorchestrator.models.mappers.ContractFromDtoMap
 import eu.merloteducation.contractorchestrator.models.mappers.ContractToDtoMapper;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
+import eu.merloteducation.gxfscataloglibrary.models.credentials.ExtendedVerifiablePresentation;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.PojoCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.serviceofferings.GxServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.OfferingRuntime;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotCoopContractServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotSaasServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.Runtime;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.SaaSCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
@@ -127,15 +130,14 @@ public class ContractStorageService {
     }
 
     private boolean isValidRuntimeSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
-        MerlotServiceOfferingCredentialSubject credentialSubject = (MerlotServiceOfferingCredentialSubject)
-                offeringDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject();
-        List<Runtime> runtimeOptions = credentialSubject.getRuntimeOptions();
+        MerlotServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotServiceOfferingCredentialSubject.class);
+        List<OfferingRuntime> runtimeOptions = credentialSubject.getRuntimeOptions();
         if (runtimeOptions.isEmpty()) {
             return false;
         }
 
-        for (Runtime option : runtimeOptions) {
+        for (OfferingRuntime option : runtimeOptions) {
             if (selection.equals(option.getRuntimeCount()
                     + " " + option.getRuntimeMeasurement())) {
                 return true;
@@ -147,8 +149,8 @@ public class ContractStorageService {
 
     private boolean isValidUserCountSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
 
-        SaaSCredentialSubject credentialSubject = (SaaSCredentialSubject) offeringDetails.getSelfDescription()
-                .getVerifiableCredential().getCredentialSubject();
+        MerlotSaasServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotSaasServiceOfferingCredentialSubject.class);
         List<AllowedUserCount> userCountOptions = credentialSubject.getUserCountOptions();
         if (userCountOptions.isEmpty()) {
             return false;
@@ -165,8 +167,8 @@ public class ContractStorageService {
 
     private boolean isValidExchangeCountSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
 
-        DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
-                .getSelfDescription().getVerifiableCredential().getCredentialSubject();
+        MerlotDataDeliveryServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotDataDeliveryServiceOfferingCredentialSubject.class);
         List<DataExchangeCount> exchangeCountOptions = credentialSubject.getExchangeCountOptions();
         if (exchangeCountOptions.isEmpty()) {
             return false;
@@ -316,7 +318,7 @@ public class ContractStorageService {
             throws JSONException {
 
         // check that fields are in a valid format
-        String regexServiceOfferingId = "(^ServiceOffering:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)|(^ServiceOffering:\\d+$)";
+        String regexServiceOfferingId = "(^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$)";
 
         String regexOrganizationId = "did:web:[-.A-Za-z0-9:%#]*";
         String offeringId = contractCreateRequest.getOfferingId();
@@ -330,20 +332,23 @@ public class ContractStorageService {
         ServiceOfferingDto offeringDetails = serviceOfferingOrchestratorClient.getOfferingDetails(
             offeringId, Map.of(AUTHORIZATION, authToken));
 
+        GxServiceOfferingCredentialSubject gxServiceOfferingCs = offeringDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(GxServiceOfferingCredentialSubject.class);
+        PojoCredentialSubject merlotSpecificServiceOfferingCs =
+                getSpecificServiceOfferingCs(offeringDetails.getSelfDescription());
+
         // in case someone with access rights to the state attempts to load this check the state as well
-        if (offeringDetails.getMetadata().getState() != null && !offeringDetails.getMetadata().getState().equals("RELEASED")) {
+        if ((offeringDetails.getMetadata().getState() != null && !offeringDetails.getMetadata().getState().equals("RELEASED"))
+            || gxServiceOfferingCs == null || merlotSpecificServiceOfferingCs == null) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Referenced service offering is not valid");
         }
 
         // initialize contract fields, id and creation date
         ContractTemplate contract;
 
-        MerlotServiceOfferingCredentialSubject credentialSubject = (MerlotServiceOfferingCredentialSubject)
-                offeringDetails.getSelfDescription().getVerifiableCredential().getCredentialSubject();
-
-        switch (credentialSubject.getType()) {
-            case "merlot:MerlotServiceOfferingSaaS" -> contract = new SaasContractTemplate();
-            case "merlot:MerlotServiceOfferingDataDelivery" -> {
+        switch (merlotSpecificServiceOfferingCs.getType()) {
+            case MerlotSaasServiceOfferingCredentialSubject.TYPE -> contract = new SaasContractTemplate();
+            case MerlotDataDeliveryServiceOfferingCredentialSubject.TYPE -> {
                 contract = new DataDeliveryContractTemplate();
                 DataDeliveryProvisioning provisioning = new DataDeliveryProvisioning();
                 // provider transfer method should be set on service offering level,
@@ -354,14 +359,14 @@ public class ContractStorageService {
                 // (or only allow same-type transfers on provider and consumer side)
                 contract.setServiceContractProvisioning(provisioning);
             }
-            case "merlot:MerlotServiceOfferingCooperation" -> contract = new CooperationContractTemplate();
+            case MerlotCoopContractServiceOfferingCredentialSubject.TYPE -> contract = new CooperationContractTemplate();
             default -> throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "Unknown Service Offering Type.");
         }
 
         // extract data from request
         contract.setOfferingId(offeringId);
         contract.setConsumerId(consumerId);
-        contract.setProviderId(credentialSubject.getOfferedBy().getId());
+        contract.setProviderId(gxServiceOfferingCs.getProvidedBy().getId());
 
         // check if consumer and provider are equal, and if so abort
         if (contract.getProviderId().equals(contract.getConsumerId())) {
@@ -369,7 +374,7 @@ public class ContractStorageService {
         }
 
         // copy all terms and conditions entries from offering to contract
-        List<ContractTnc> offeringTnC = credentialSubject.getTermsAndConditions().stream().map(ContractTnc::new)
+        List<ContractTnc> offeringTnC = gxServiceOfferingCs.getTermsAndConditions().stream().map(ContractTnc::new)
                 .toList();
         contract.setTermsAndConditions(offeringTnC);
 
@@ -673,5 +678,26 @@ public class ContractStorageService {
 
     private String getPathToContractPdf(String contractId){
         return contractId + "/contractPdf";
+    }
+
+    private PojoCredentialSubject getSpecificServiceOfferingCs(ExtendedVerifiablePresentation vp) {
+
+        // consider all MERLOT specific offering classes
+        List<Class<? extends PojoCredentialSubject>> csClasses =
+                List.of(
+                        MerlotDataDeliveryServiceOfferingCredentialSubject.class,
+                        MerlotSaasServiceOfferingCredentialSubject.class,
+                        MerlotCoopContractServiceOfferingCredentialSubject.class
+                );
+
+        // check if any of them match, and if so, return the pojo object
+        for (Class<? extends PojoCredentialSubject> csClass : csClasses) {
+            PojoCredentialSubject cs = vp.findFirstCredentialSubjectByType(csClass);
+            // if additional logic is needed per type, it can be added here
+            if (cs != null) {
+                return cs;
+            }
+        }
+        return null;
     }
 }
