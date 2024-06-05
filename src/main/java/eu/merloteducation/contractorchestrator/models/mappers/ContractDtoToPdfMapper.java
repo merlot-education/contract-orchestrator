@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.mappers;
 
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.PojoCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.serviceofferings.GxServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotCoopContractServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
@@ -29,7 +30,7 @@ public interface ContractDtoToPdfMapper {
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
     @Mapping(target = "serviceId", source = "contractDto.offering", qualifiedByName = "mapOfferingId")
-    @Mapping(target = "serviceType", source = "contractDto.offering.selfDescription.verifiableCredential.credentialSubject.type")
+    @Mapping(target = "serviceType", source = "contractDto.offering", qualifiedByName = "mapOfferingType")
     @Mapping(target = "serviceName", source = "contractDto.offering", qualifiedByName = "mapOfferingName")
     @Mapping(target = "serviceDescription", source = "contractDto.offering", qualifiedByName = "mapOfferingDescription")
     @Mapping(target = "serviceExampleCosts", source = "contractDto.offering", qualifiedByName = "mapOfferingExampleCosts")
@@ -109,6 +110,26 @@ public interface ContractDtoToPdfMapper {
         return offeringDto.getSelfDescription()
                 .findFirstCredentialSubjectByType(GxServiceOfferingCredentialSubject.class)
                 .getId();
+    }
+
+    @Named("mapOfferingType")
+    default String mapOfferingType(ServiceOfferingDto offeringDto) {
+        // consider all MERLOT specific offering classes
+        List<Class<? extends PojoCredentialSubject>> csClasses =
+                List.of(
+                        MerlotDataDeliveryServiceOfferingCredentialSubject.class,
+                        MerlotSaasServiceOfferingCredentialSubject.class,
+                        MerlotCoopContractServiceOfferingCredentialSubject.class
+                );
+
+        // check if any of them match, and if so, return the type
+        for (Class<? extends PojoCredentialSubject> csClass : csClasses) {
+            PojoCredentialSubject cs = offeringDto.getSelfDescription().findFirstCredentialSubjectByType(csClass);
+            if (cs != null) {
+                return cs.getType();
+            }
+        }
+        return "";
     }
 
     @Named("mapOfferingName")
