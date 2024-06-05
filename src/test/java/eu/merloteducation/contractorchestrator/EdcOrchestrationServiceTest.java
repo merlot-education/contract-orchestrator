@@ -34,6 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
+import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -98,13 +99,14 @@ class EdcOrchestrationServiceTest {
         ((IonosS3ConsumerTransferProvisioningDto) validPushContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("myTargetPath/");
         ((IonosS3ConsumerTransferProvisioningDto) validPushContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPushContract.setOffering(new ServiceOfferingDto());
-        validPushContract.getOffering().setSelfDescription(new SelfDescription());
-        validPushContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
-        validPushContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
-        DataDeliveryCredentialSubject credentialSubject =
-                (DataDeliveryCredentialSubject) validPushContract.getOffering().getSelfDescription()
-                        .getVerifiableCredential().getCredentialSubject();
-        credentialSubject.setDataTransferType("Push");
+        String pushOfferingId = "urn:uuid:" + UUID.randomUUID();
+        validPushContract.getOffering().setSelfDescription(createVpFromCsList(
+                List.of(
+                        getGxServiceOfferingCs(pushOfferingId, "Some Offering", "did:web:someorga"),
+                        getMerlotServiceOfferingCs(pushOfferingId),
+                        getMerlotDataDeliveryServiceOfferingCs(pushOfferingId, "Push")
+                )
+        ));
 
 
         validPullContract = new DataDeliveryContractDto();
@@ -131,13 +133,14 @@ class EdcOrchestrationServiceTest {
         ((IonosS3ConsumerTransferProvisioningDto) validPullContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetPath("myTargetPath/");
         ((IonosS3ConsumerTransferProvisioningDto) validPullContract.getProvisioning().getConsumerTransferProvisioning()).setDataAddressTargetBucketName("targetbucket");
         validPullContract.setOffering(new ServiceOfferingDto());
-        validPullContract.getOffering().setSelfDescription(new SelfDescription());
-        validPullContract.getOffering().getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
-        validPullContract.getOffering().getSelfDescription().getVerifiableCredential().setCredentialSubject(new DataDeliveryCredentialSubject());
-        credentialSubject =
-                (DataDeliveryCredentialSubject) validPullContract.getOffering().getSelfDescription()
-                        .getVerifiableCredential().getCredentialSubject();
-        credentialSubject.setDataTransferType("Pull");
+        String pullOfferingId = "urn:uuid:" + UUID.randomUUID();
+        validPullContract.getOffering().setSelfDescription(createVpFromCsList(
+                List.of(
+                        getGxServiceOfferingCs(pullOfferingId, "Some Offering", "did:web:someorga"),
+                        getMerlotServiceOfferingCs(pullOfferingId),
+                        getMerlotDataDeliveryServiceOfferingCs(pullOfferingId, "Pull")
+                )
+        ));
 
         wrongTypeContract = new SaasContractDto();
         wrongTypeContract.setDetails(new SaasContractDetailsDto());

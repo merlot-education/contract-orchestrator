@@ -39,6 +39,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.*;
 
+import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -97,90 +98,6 @@ class ContractMapperTest {
         assertThat(contractDtoToPdfMapper.contractRuntimeMapper(yearExample)).isEqualTo("5 Jahr(e)");
         assertThat(contractDtoToPdfMapper.contractRuntimeMapper(unlimitedExample1)).isEqualTo("Unbegrenzt");
         assertThat(contractDtoToPdfMapper.contractRuntimeMapper(unlimitedExample2)).isEqualTo("Unbegrenzt");
-    }
-
-    private GxServiceOfferingCredentialSubject getGxServiceOfferingCs(String id, String name, String providedBy){
-        GxServiceOfferingCredentialSubject cs = new GxServiceOfferingCredentialSubject();
-        cs.setId(id);
-        cs.setName(name);
-        cs.setPolicy(List.of("policy"));
-        cs.setProvidedBy(new NodeKindIRITypeId(providedBy));
-        GxDataAccountExport accountExport = new GxDataAccountExport();
-        accountExport.setFormatType("application/json");
-        accountExport.setAccessType("digital");
-        accountExport.setRequestType("API");
-        cs.setDataAccountExport(List.of(accountExport));
-        cs.setDataProtectionRegime(List.of("GDPR2016"));
-        cs.setDescription("Some offering description");
-        GxSOTermsAndConditions tnc1 = new GxSOTermsAndConditions();
-        tnc1.setUrl("http://example.com/1");
-        tnc1.setHash("1234");
-        GxSOTermsAndConditions tnc2 = new GxSOTermsAndConditions();
-        tnc2.setUrl("http://example.com/2");
-        tnc2.setHash("1234");
-        cs.setTermsAndConditions(List.of(tnc1, tnc2));
-        return cs;
-    }
-
-    private MerlotServiceOfferingCredentialSubject getMerlotServiceOfferingCs(String id){
-        MerlotServiceOfferingCredentialSubject cs = new MerlotServiceOfferingCredentialSubject();
-        cs.setId(id);
-        cs.setCreationDate("2023-05-24T13:32:22.712661Z");
-        cs.setExampleCosts("5€");
-        cs.setMerlotTermsAndConditionsAccepted(true);
-        OfferingRuntime option1 = new OfferingRuntime();
-        option1.setRuntimeCount(4);
-        option1.setRuntimeMeasurement("day(s)");
-        OfferingRuntime option2 = new OfferingRuntime();
-        option2.setRuntimeCount(0);
-        option2.setRuntimeMeasurement("unlimited");
-        cs.setRuntimeOptions(List.of(option1, option2));
-        return cs;
-    }
-
-    private MerlotSaasServiceOfferingCredentialSubject getMerlotSaasServiceOfferingCs(String id){
-        MerlotSaasServiceOfferingCredentialSubject cs = new MerlotSaasServiceOfferingCredentialSubject();
-        cs.setId(id);
-        cs.setHardwareRequirements("1.21 Gigawatts");
-        AllowedUserCount userCount = new AllowedUserCount();
-        userCount.setUserCountUpTo(0);
-        cs.setUserCountOptions(List.of(userCount));
-        return cs;
-    }
-
-    private MerlotDataDeliveryServiceOfferingCredentialSubject getMerlotDataDeliveryServiceOfferingCs(String id){
-        MerlotDataDeliveryServiceOfferingCredentialSubject cs = new MerlotDataDeliveryServiceOfferingCredentialSubject();
-        cs.setId(id);
-        cs.setDataAccessType("Download");
-        cs.setDataTransferType("Push");
-        DataExchangeCount exchangeCount = new DataExchangeCount();
-        exchangeCount.setExchangeCountUpTo(0);
-        cs.setExchangeCountOptions(List.of(exchangeCount));
-        return cs;
-    }
-
-    private MerlotCoopContractServiceOfferingCredentialSubject getMerlotCoopContractServiceOfferingCs(String id){
-        MerlotCoopContractServiceOfferingCredentialSubject cs = new MerlotCoopContractServiceOfferingCredentialSubject();
-        cs.setId(id);
-        return cs;
-    }
-
-    private ExtendedVerifiablePresentation createVpFromCsList(List<PojoCredentialSubject> csList) throws JsonProcessingException {
-        ExtendedVerifiablePresentation vp = new ExtendedVerifiablePresentation();
-        List<ExtendedVerifiableCredential> vcList = new ArrayList<>();
-        for (PojoCredentialSubject cs : csList) {
-            CastableCredentialSubject ccs = CastableCredentialSubject.fromPojo(cs);
-            VerifiableCredential vc = VerifiableCredential
-                    .builder()
-                    .id(URI.create(cs.getId() + "#" + cs.getType()))
-                    .issuanceDate(Date.from(Instant.now()))
-                    .credentialSubject(ccs)
-                    .issuer(URI.create("did:web:some-issuer"))
-                    .build();
-            vcList.add(ExtendedVerifiableCredential.fromMap(vc.getJsonObject()));
-        }
-        vp.setVerifiableCredentials(vcList);
-        return vp;
     }
 
     private ContractDto getTestContractDto(ContractDto contractDto) throws JsonProcessingException {
@@ -281,7 +198,7 @@ class ContractMapperTest {
                 List.of(
                         getGxServiceOfferingCs(id, "Mein Dienst", "did:web:someorga"),
                         getMerlotServiceOfferingCs(id),
-                        getMerlotDataDeliveryServiceOfferingCs(id)
+                        getMerlotDataDeliveryServiceOfferingCs(id, "Push")
                 )
         ));
         return contractDto;
