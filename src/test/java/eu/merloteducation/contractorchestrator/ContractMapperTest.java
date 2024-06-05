@@ -177,7 +177,8 @@ class ContractMapperTest {
                         getGxServiceOfferingCs(id, "Mein Dienst", "did:web:someorga"),
                         getMerlotServiceOfferingCs(id),
                         getMerlotSaasServiceOfferingCs(id)
-                )
+                ),
+                "did:web:someorga"
         ));
 
         return contractDto;
@@ -199,7 +200,8 @@ class ContractMapperTest {
                         getGxServiceOfferingCs(id, "Mein Dienst", "did:web:someorga"),
                         getMerlotServiceOfferingCs(id),
                         getMerlotDataDeliveryServiceOfferingCs(id, "Push")
-                )
+                ),
+                "did:web:someorga"
         ));
         return contractDto;
     }
@@ -219,7 +221,8 @@ class ContractMapperTest {
                         getGxServiceOfferingCs(id, "Mein Dienst", "did:web:someorga"),
                         getMerlotServiceOfferingCs(id),
                         getMerlotCoopContractServiceOfferingCs(id)
-                )
+                ),
+                "did:web:someorga"
         ));
 
         return contractDto;

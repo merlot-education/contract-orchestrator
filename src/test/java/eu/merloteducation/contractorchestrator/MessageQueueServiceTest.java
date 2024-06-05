@@ -68,7 +68,8 @@ class MessageQueueServiceTest {
                        getGxParticipantCs(orga10Id),
                         getGxRegistrationNumberCs(orga10Id),
                         getMerlotParticipantCs(orga10Id)
-                )
+                ),
+                "did:web:someorga"
         ));
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());

@@ -167,7 +167,8 @@ class ContractStorageServiceTest {
                         gxCs,
                         merlotCs,
                         merlotSpecificCs
-                )
+                ),
+                "did:web:someorga"
         );
 
         dto.setMetadata(metaDto);
@@ -183,7 +184,8 @@ class ContractStorageServiceTest {
                         getGxParticipantCs(id),
                         getGxRegistrationNumberCs(id),
                         getMerlotParticipantCs(id)
-                )
+                ),
+                "did:web:someorga"
         ));
         return dto;
     }

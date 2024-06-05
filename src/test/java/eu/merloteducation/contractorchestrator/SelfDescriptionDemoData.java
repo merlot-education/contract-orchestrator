@@ -31,7 +31,7 @@ import java.util.List;
 
 class SelfDescriptionDemoData {
 
-    static ExtendedVerifiablePresentation createVpFromCsList(List<PojoCredentialSubject> csList) throws JsonProcessingException {
+    static ExtendedVerifiablePresentation createVpFromCsList(List<PojoCredentialSubject> csList, String issuer) throws JsonProcessingException {
         ExtendedVerifiablePresentation vp = new ExtendedVerifiablePresentation();
         List<ExtendedVerifiableCredential> vcList = new ArrayList<>();
         for (PojoCredentialSubject cs : csList) {

@@ -105,7 +105,8 @@ class EdcOrchestrationServiceTest {
                         getGxServiceOfferingCs(pushOfferingId, "Some Offering", "did:web:someorga"),
                         getMerlotServiceOfferingCs(pushOfferingId),
                         getMerlotDataDeliveryServiceOfferingCs(pushOfferingId, "Push")
-                )
+                ),
+                "did:web:someorga"
         ));
 
 
@@ -139,7 +140,8 @@ class EdcOrchestrationServiceTest {
                         getGxServiceOfferingCs(pullOfferingId, "Some Offering", "did:web:someorga"),
                         getMerlotServiceOfferingCs(pullOfferingId),
                         getMerlotDataDeliveryServiceOfferingCs(pullOfferingId, "Pull")
-                )
+                ),
+                "did:web:someorga"
         ));
 
         wrongTypeContract = new SaasContractDto();
