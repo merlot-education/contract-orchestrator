@@ -1,5 +1,7 @@
 package eu.merloteducation.contractorchestrator;
 
+import com.danubetech.verifiablecredentials.VerifiableCredential;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.entities.*;
@@ -14,6 +16,26 @@ import eu.merloteducation.contractorchestrator.models.mappers.ContractFromDtoMap
 import eu.merloteducation.contractorchestrator.models.mappers.ContractToDtoMapper;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.*;
+import eu.merloteducation.gxfscataloglibrary.models.credentials.CastableCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.credentials.ExtendedVerifiableCredential;
+import eu.merloteducation.gxfscataloglibrary.models.credentials.ExtendedVerifiablePresentation;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.PojoCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxDataAccountExport;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxSOTermsAndConditions;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxVcard;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.NodeKindIRITypeId;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.participants.GxLegalParticipantCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.participants.GxLegalRegistrationNumberCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.serviceofferings.GxServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.OfferingRuntime;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.ParticipantTermsAndConditions;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotLegalParticipantCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotCoopContractServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotSaasServiceOfferingCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
@@ -24,6 +46,8 @@ import eu.merloteducation.modelslib.api.contract.datadelivery.ionoss3extension.I
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.saas.SaasContractDto;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
+import eu.merloteducation.modelslib.api.serviceoffering.OfferingMetaDto;
+import eu.merloteducation.modelslib.api.serviceoffering.ProviderDetailsDto;
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
@@ -54,8 +78,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 
+import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -113,290 +140,58 @@ class ContractStorageServiceTest {
     private TransactionTemplate transactionTemplate;
     private final String merlotDomain = "test.eu";
 
-    private String createServiceOfferingOrchestratorResponse(String id, String hash, String name, String offeredBy,
-                                                             String offeringType, String typeSpecificFields) {
-        String response = """
-                {
-                    "metadata": {
-                        "state": "RELEASED",
-                        "hash": "${hash}",
-                        "creationDate": "2023-08-21T15:32:19.100661+02:00",
-                        "modifiedDate": "2023-08-21T13:32:19.487564Z"
-                    },
-                    "providerDetails": {
-                        "providerId": "${offeredBy}",
-                        "providerLegalName": "MyProvider"
-                    },
-                    "selfDescription": {
-                        "type": [
-                            "VerifiablePresentation"
-                        ],
-                        "proof": {
-                            "type": "JsonWebSignature2020",
-                            "created": "2023-08-21T13:32:19Z",
-                            "proofPurpose": "assertionMethod",
-                            "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-                            "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..sn4reXz8hO1EUDEPgwFV9rKwFztC9s4T6mfQyhhc8Mcpj0tZCslDYv4EPBY7wqx4viKMNFZoTRBv8NjbccXD90CUFNX_OvvFGJhtzRiXX7rtl29D0dJvMYn_HDIQ1n3bquqEdL4H3N3xxk6o0V2AKMfMp8KMMMllCm2h0t_KDbXvA-6u1WaFMCTTE5rij8-IyQV7e3UA3dz6ZKK8eWREHTGqCkRkdKDvyuBPH6lEaGkqm914OLYFiRiqGSSS0smDcZAetjgLIu2DeAqpt24es2fmQPXy1ewT6GWJS9rgwK_iEeBTZFUvMg45wDxp9dFwrVGAklOP4i9DY_wcT_sGocwwDsQI844HyuQrL0OKoM6vex57fzQh9JfY3srXYnPrsW--2yqXqOzJHfmjDp6M6iroonukknsc7Y35UG92omWB2d86dj_NnQhaKQJY7cvQTPFNF71_ziBM15PZ10tJixdASIzmOiawZIY1GlGhh8tKj_nzS6IbIenFXtBKo9XMs_fzUqzrx9I7EP7B95Oy3hqFV8qQA9EvE91gLkJmm7du4q3DRHt17Se5rZf2bcBPGp0FaFsWR2JPJR0N-NPCd5pliJoVo5MqnxcEgDyZo8nVz3WWfS1hM1oKiNP6-Oh0YEW9aCaEw9bCtBk0-DGBl0M46QNpFnMu8toideFVYcs"
-                        },
-                        "verifiableCredential": {
-                            "issuer": "${offeredBy}",
-                            "issuanceDate": "2023-08-21T13:32:19.102073393Z",
-                            "proof": {
-                                "type": "JsonWebSignature2020",
-                                "created": "2023-08-21T13:32:19Z",
-                                "proofPurpose": "assertionMethod",
-                                "verificationMethod": "did:web:compliance.lab.gaia-x.eu",
-                                "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..UAsRkuZgeWte1E4pBO0QcVeociUNUwgT-NOjCPmoAVJ2ghC9aqVp3I-UtX8yVKgSLwx6hod1dg1bX2Q5NbtRz6eTV8W5vNN0W-tLJBA713CwtxgEymve7phxv98UPQSFs5_P1eg3gcYL7vxj4uDNds4AFAzFWo-FqKpRhSZIsD84869pha9h7d533__IxBKCE4mOXwqKlySeZ6w_4w9p8rlCgAnGMDf7369AxB_gUaTApDkRItJzXowcX9tyEb-t7GtvWbvgSBM4SfugvPDCcP0ZP9lybyVyQv8LIRS4CSq_ohmjhwZWmnbOkOPm_usWe-rYGLBryBQILwZvqgX4r0kRQDALmHsOgqZUOqyBW_vw_lpLSM_Wo82avoZXao6HG3ZFoTnWjFrmh1XiBEVBWWBNkYLDEJlqkfhYO0xU0nroTmnD3UGJs-cKoS8jvJiBkQCqYYY-up-YWVoiaLz0b9B0j7Pc1KpyQh1egoEugo9u0S244gBsXWak30Pp6sTI_MUNga3Ybiqj5Ar-KC0Qu6noXS2RcAh9XQmRr4qPP36-tt1H0eoTFDWP8wGhsYkJF7rf-CLf7H2urGFX-4Y_K_RXjQgVJohWYSPjX6O5GYifa16o4iEuMCDhwRX9ekAnOGeTwQywOUicglf5oc5q1rFCCNKxY1386AZ3_LzR3F8"
-                            },
-                            "credentialSubject": {
-                                "id": "${id}",
-                                "type": "${offeringType}",
-                                "@context": {
-                                    "merlot": "http://w3id.org/gaia-x/merlot#",
-                                    "dct": "http://purl.org/dc/terms/",
-                                    "gax-trust-framework": "http://w3id.org/gaia-x/gax-trust-framework#",
-                                    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-                                    "sh": "http://www.w3.org/ns/shacl#",
-                                    "xsd": "http://www.w3.org/2001/XMLSchema#",
-                                    "gax-validation": "http://w3id.org/gaia-x/validation#",
-                                    "skos": "http://www.w3.org/2004/02/skos/core#",
-                                    "dcat": "http://www.w3.org/ns/dcat#",
-                                    "gax-core": "http://w3id.org/gaia-x/core#"
-                                },
-                                "gax-core:offeredBy": {
-                                    "@id": "${offeredBy}"
-                                },
-                                "gax-trust-framework:name": {
-                                    "@type": "xsd:string",
-                                    "@value": "${name}"
-                                },
-                                "gax-trust-framework:termsAndConditions": [
-                                    {
-                                        "gax-trust-framework:content": {
-                                            "@type": "xsd:anyURI",
-                                            "@value": "asd"
-                                        },
-                                        "gax-trust-framework:hash": {
-                                            "@type": "xsd:string",
-                                            "@value": "asd"
-                                        },
-                                        "@type": "gax-trust-framework:TermsAndConditions"
-                                    }
-                                ],
-                                "gax-trust-framework:policy": [
-                                    {
-                                        "@type": "xsd:string",
-                                        "@value": "dummyPolicy"
-                                    }
-                                ],
-                                "gax-trust-framework:dataAccountExport": [
-                                    {
-                                        "gax-trust-framework:formatType": {
-                                            "@type": "xsd:string",
-                                            "@value": "dummyValue"
-                                        },
-                                        "gax-trust-framework:accessType": {
-                                            "@type": "xsd:string",
-                                            "@value": "dummyValue"
-                                        },
-                                        "gax-trust-framework:requestType": {
-                                            "@type": "xsd:string",
-                                            "@value": "dummyValue"
-                                        },
-                                        "@type": "gax-trust-framework:DataAccountExport"
-                                    }
-                                ],
-                                "gax-trust-framework:providedBy": {
-                                    "@id": "${offeredBy}"
-                                },
-                                "merlot:creationDate": {
-                                    "@type": "xsd:string",
-                                    "@value": "2023-08-21T13:32:19.100660534Z"
-                                },
-                                "merlot:runtimeOption": [
-                                    {
-                                        "@type": null,
-                                        "merlot:runtimeCount": {
-                                            "@type": "xsd:integer",
-                                            "@value": 0
-                                        },
-                                        "merlot:runtimeMeasurement": {
-                                            "@type": "xsd:string",
-                                            "@value": "unlimited"
-                                        }
-                                    },
-                                    {
-                                        "@type": null,
-                                        "merlot:runtimeCount": {
-                                            "@type": "xsd:integer",
-                                            "@value": 4
-                                        },
-                                        "merlot:runtimeMeasurement": {
-                                            "@type": "xsd:string",
-                                            "@value": "day(s)"
-                                        }
-                                    }
-                                ],
-                                "merlot:merlotTermsAndConditionsAccepted": true
-                                ${typeSpecificFields}
-                            },
-                            "@context": [
-                                "https://www.w3.org/2018/credentials/v1"
-                            ],
-                            "id": "https://www.example.org/ServiceOffering.json",
-                            "type": [
-                                "VerifiableCredential"
-                            ]
-                        },
-                        "id": "http://example.edu/verifiablePresentation/self-description1",
-                        "@context": [
-                            "https://www.w3.org/2018/credentials/v1"
-                        ]
-                    }
-                }
-                """;
+    private ServiceOfferingDto createServiceOfferingOrchestratorResponse(String id, String hash, String name, String providedBy,
+                                                             String offeringType) throws JsonProcessingException {
+        ServiceOfferingDto dto = new ServiceOfferingDto();
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("id", id);
-        params.put("name", name);
-        params.put("hash", hash);
-        params.put("offeredBy", offeredBy);
-        params.put("offeringType", offeringType);
-        params.put("typeSpecificFields", typeSpecificFields);
-        return StringSubstitutor.replace(response, params, "${", "}");
+        OfferingMetaDto metaDto = new OfferingMetaDto();
+        metaDto.setState("RELEASED");
+        metaDto.setHash(hash);
+        metaDto.setCreationDate("2023-08-21T15:32:19.100661+02:00");
+        metaDto.setModifiedDate("2023-08-21T13:32:19.487564Z");
+
+        ProviderDetailsDto providerDto = new ProviderDetailsDto();
+        providerDto.setProviderId(providedBy);
+        providerDto.setProviderLegalName("MyProvider");
+
+        GxServiceOfferingCredentialSubject gxCs = getGxServiceOfferingCs(id, name, providedBy);
+        MerlotServiceOfferingCredentialSubject merlotCs = getMerlotServiceOfferingCs(id);
+        PojoCredentialSubject merlotSpecificCs = switch (offeringType) {
+            case MerlotSaasServiceOfferingCredentialSubject.TYPE -> getMerlotSaasServiceOfferingCs(id);
+            case MerlotDataDeliveryServiceOfferingCredentialSubject.TYPE -> getMerlotDataDeliveryServiceOfferingCs(id, "Push");
+            case MerlotCoopContractServiceOfferingCredentialSubject.TYPE -> getMerlotCoopContractServiceOfferingCs(id);
+            default -> null;
+        };
+        ExtendedVerifiablePresentation vp = createVpFromCsList(
+                List.of(
+                        gxCs,
+                        merlotCs,
+                        merlotSpecificCs
+                ),
+                "did:web:someorga"
+        );
+
+        dto.setMetadata(metaDto);
+        dto.setProviderDetails(providerDto);
+        dto.setSelfDescription(vp);
+        return dto;
     }
 
-    private String createOrganizationsOrchestratorResponse(String id) {
-        String response = """
-                {
-                    "metadata": null,
-                    "selfDescription": {
-                        "proof": {
-                            "created": "2023-08-21T09:18:08Z",
-                            "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..C2JD8wNX1A4AOym4e_4WRoe7zHdtiRI6Va15y7e7BzpKWJz86WE1iYBQ-ZXQZEYSHBfJGBQIXA_dXGyidT5K6KBdcW6s2acekvU17oXOXWOxv6U6QsZQcBWOcEhXzLc_PSr0_ZaCVzEYx6iisxyniBmQ8-eQWKkGbgnJMBCeFbAGmiqLIF3nRjwi4cpkvfQCm0YQnq44_rdswcWJ07DfQyEeE0hRuZ4Ge7DFGUQG9eqsw4AJnEJfFHjebGY-SGvYRD_eusqmWd1RQCCujkhQDJzplTnOad3Lv_glOJQeyaY_1N-ITFsn8H_FKHkY5YiQ4cmA8v5WPthQY7IPbrKxp5dgEoVEvVykAB5MoDO8fCAolkk9EH2rF-6NZJT_uiM4mG0dNrCrZTgq1nVGO_G2VDVxflIyrsdj9M7NkCXjiTR3FQtMsn7kMH7WPlO86ArIp9ZtID5pjG7_vY_H5604kQHBSPRH4L-Ho01mFscNNl5qPjhV-tqFLaA9NBH7dlY1q1sLJL-w_u1nqYodzOxiLR-IUqin40qQiebr5Z4E4t0SXGdA_be1xY2PuQc9m1LQ7tGL-2z_iOxSzmaxE7JiZNITuvSS3tlgsLpyiN5sG8buArnn-EUDw8RSrT9S4dUgiVevPTqf0Ibu4jsE4_PEoGKjA7a3pbISYLEl-Pww2-g",
-                            "proofPurpose": "assertionMethod",
-                            "type": "JsonWebSignature2020",
-                            "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
-                        },
-                        "type": [
-                            "VerifiablePresentation"
-                        ],
-                        "verifiableCredential": {
-                            "credentialSubject": {
-                                "id": "did:web:${merlotDomain}#orga-${id}",
-                                "type": "merlot:MerlotOrganization",
-                                "@context": {
-                                    "merlot": "http://w3id.org/gaia-x/merlot#",
-                                    "gax-trust-framework": "http://w3id.org/gaia-x/gax-trust-framework#",
-                                    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-                                    "sh": "http://www.w3.org/ns/shacl#",
-                                    "xsd": "http://www.w3.org/2001/XMLSchema#",
-                                    "gax-validation": "http://w3id.org/gaia-x/validation#",
-                                    "skos": "http://www.w3.org/2004/02/skos/core#",
-                                    "vcard": "http://www.w3.org/2006/vcard/ns#"
-                                },
-                                "gax-trust-framework:legalName": {
-                                    "@type": "xsd:string",
-                                    "@value": "MyOrga"
-                                },
-                                "gax-trust-framework:legalForm": null,
-                                "gax-trust-framework:description": null,
-                                "gax-trust-framework:registrationNumber": {
-                                    "@type": "gax-trust-framework:RegistrationNumber",
-                                    "gax-trust-framework:local": {
-                                        "@type": "xsd:string",
-                                        "@value": "0110"
-                                    }
-                                },
-                                "gax-trust-framework:legalAddress": {
-                                    "@type": "vcard:Address",
-                                    "vcard:country-name": {
-                                        "@type": "xsd:string",
-                                        "@value": "DE"
-                                    },
-                                    "vcard:street-address": {
-                                        "@type": "xsd:string",
-                                        "@value": "asdasd"
-                                    },
-                                    "vcard:locality": {
-                                        "@type": "xsd:string",
-                                        "@value": "Berlin"
-                                    },
-                                    "vcard:postal-code": {
-                                        "@type": "xsd:string",
-                                        "@value": "12345"
-                                    }
-                                },
-                                "gax-trust-framework:headquarterAddress": {
-                                    "@type": "vcard:Address",
-                                    "vcard:country-name": {
-                                        "@type": "xsd:string",
-                                        "@value": "DE"
-                                    },
-                                    "vcard:street-address": {
-                                        "@type": "xsd:string",
-                                        "@value": "asdasd"
-                                    },
-                                    "vcard:locality": {
-                                        "@type": "xsd:string",
-                                        "@value": "Berlin"
-                                    },
-                                    "vcard:postal-code": {
-                                        "@type": "xsd:string",
-                                        "@value": "12345"
-                                    }
-                                },
-                                "merlot:orgaName": {
-                                    "@type": "xsd:string",
-                                    "@value": "MyOrga"
-                                },
-                                "merlot:addressCode": {
-                                    "@type": "xsd:string",
-                                    "@value": "DE-BER"
-                                },
-                                "merlot:termsAndConditions": {
-                                    "gax-trust-framework:content": {
-                                        "@type": "xsd:anyURI",
-                                        "@value": "http://example.com"
-                                    },
-                                    "gax-trust-framework:hash": {
-                                        "@type": "xsd:string",
-                                        "@value": "hash1234"
-                                    },
-                                    "@type": "gax-trust-framework:TermsAndConditions"
-                                }
-                            },
-                            "issuanceDate": "2022-10-19T18:48:09Z",
-                            "proof": {
-                                "created": "2023-08-21T09:18:08Z",
-                                "jws": "eyJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCJdLCJhbGciOiJQUzI1NiJ9..EDmuZTeGy1tPG1dpvEtmDOQoVsoNZizqJjZIQ15iDGcZnE2IPsreJrJlJ25WwYDADcCHhjh-kUcxt8tqq5-ehGavZ6xGyvg6U4Y3QpzrGj8wdVhfcuNEyQMh0HkziVGhToBs6pkq7Aswjws6t0eUc4p5lHxdntn8WPDr1qOUiSfCq5HdSvX-Ib4JtSELSvCvv-v9ALBchtayztLaf6SVfyPJSotx4Nv178gjrAddux-PGBwDQJrTqkULzC6auMafe5daXfi2VRm9NbddOxRBa-scKkN8b6yp7qLijvxSiAazwdvyeSZA7uRAZBTlFjiKFB9Ly3061usN5wGe22Ikv7BBZU3OM6GHzGRYD4TefpVQOMkY1Qec1BzatH2SRd9a1mPtZI6bOYopV_hU7oYsy0wQwH4nj-EoDGtCfhMOpHt_U63eXRLeGnBYjk1q-vpy_UAfmzBo6qx_C0Avvf43JAhstiV85dwx0UC0PU5k89DSJ6bCMNqGTJgidaeHlon859bPx73eHP4ArRxT7EZqMPMFLHI3Q8mckiPXC4X2qz05BEwLb9zMFo9jr7o44O6P8NPGmk6B4z-5JEMFTCYcEbe4yOPqCYtIt13GeiIbLTlPm5DOpemk17imJ3GMtqIf50VWJyWE0KhR0xlihRRhZwERN_uCq0nn-bY64alDALo",
-                                "proofPurpose": "assertionMethod",
-                                "type": "JsonWebSignature2020",
-                                "verificationMethod": "did:web:compliance.lab.gaia-x.eu"
-                            },
-                            "issuer": "did:web:${merlotDomain}#orga-${id}",
-                            "type": [
-                                "VerifiableCredential"
-                            ],
-                            "id": "https://www.example.org/legalPerson.json",
-                            "@context": [
-                                "https://www.w3.org/2018/credentials/v1"
-                            ]
-                        },
-                        "id": "http://example.edu/verifiablePresentation/self-description1",
-                        "@context": [
-                            "https://www.w3.org/2018/credentials/v1"
-                        ]
-                    }
-                }
-                """;
-        Map<String, Object> params = new HashMap<>();
-        params.put("id", id);
-        return StringSubstitutor.replace(response, params, "${", "}");
+    private MerlotParticipantDto createOrganizationsOrchestratorResponse(String id) throws JsonProcessingException {
+        MerlotParticipantDto dto = new MerlotParticipantDto();
+        dto.setSelfDescription(createVpFromCsList(
+                List.of(
+                        getGxParticipantCs(id),
+                        getGxRegistrationNumberCs(id),
+                        getMerlotParticipantCs(id)
+                ),
+                "did:web:someorga"
+        ));
+        return dto;
     }
 
     private String getParticipantId(int num) {
-        return "did:web:"+ merlotDomain + "#orga-" + num;
+        return "did:web:"+ merlotDomain + ":orga-" + num;
     }
 
     @BeforeAll
@@ -408,14 +203,14 @@ class ContractStorageServiceTest {
         saasContract = new SaasContractTemplate();
         saasContract.setConsumerId(getParticipantId(10));
         saasContract.setProviderId(getParticipantId(20));
-        saasContract.setOfferingId("ServiceOffering:1234");
+        saasContract.setOfferingId("urn:uuid:" + UUID.randomUUID());
         saasContract.setTermsAndConditions(List.of(tnc));
         contractTemplateRepository.save(saasContract);
 
         dataDeliveryContract = new DataDeliveryContractTemplate();
         dataDeliveryContract.setConsumerId(getParticipantId(20));
         dataDeliveryContract.setProviderId(getParticipantId(10));
-        dataDeliveryContract.setOfferingId("ServiceOffering:2345");
+        dataDeliveryContract.setOfferingId("urn:uuid:" + UUID.randomUUID());
         dataDeliveryContract.setTermsAndConditions(List.of(tnc));
         dataDeliveryContract.setServiceContractProvisioning(new DataDeliveryProvisioning());
         dataDeliveryContract.getServiceContractProvisioning()
@@ -427,7 +222,7 @@ class ContractStorageServiceTest {
         coopContract = new CooperationContractTemplate();
         coopContract.setConsumerId(getParticipantId(10));
         coopContract.setProviderId(getParticipantId(20));
-        coopContract.setOfferingId("ServiceOffering:3456");
+        coopContract.setOfferingId("urn:uuid:" + UUID.randomUUID());
         coopContract.setTermsAndConditions(List.of(tnc));
         contractTemplateRepository.save(coopContract);
 
@@ -437,74 +232,39 @@ class ContractStorageServiceTest {
 
     @BeforeEach
     public void beforeEach() throws IOException, StorageClientException {
-        String userCountOption = """
-                                ,"merlot:userCountOption": [
-                                     {
-                                         "@type": "merlot:AllowedUserCount",
-                                         "merlot:userCountUpTo": {
-                                             "@type": "xsd:integer",
-                                             "@value": 0
-                                         }
-                                     }
-                                 ]
-                """;
-
-        String exchangeCountOption = """
-                                ,"merlot:dataAccessType": {
-                                    "@type": "xsd:string",
-                                    "@value": "Download"
-                                },
-                                "merlot:dataTransferType": {
-                                    "@type": "xsd:string",
-                                    "@value": "Push"
-                                },
-                                "merlot:exchangeCountOption": [
-                                    {
-                                        "@type": null,
-                                        "merlot:exchangeCountUpTo": {
-                                            "@type": "xsd:integer",
-                                            "@value": 0
-                                        }
-                                    }
-                                ]
-                """;
         ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        ServiceOfferingDto offering4321 = objectMapper.readValue(
-                createServiceOfferingOrchestratorResponse(
-                        "ServiceOffering:4321",
-                        "4321",
-                        "OfferingName",
-                        getParticipantId(40),
-                        "merlot:MerlotServiceOfferingSaaS",
-                        userCountOption), ServiceOfferingDto.class);
+        ServiceOfferingDto offering4321 = createServiceOfferingOrchestratorResponse(
+                "ServiceOffering:4321",
+                "4321",
+                "OfferingName",
+                getParticipantId(40),
+                MerlotSaasServiceOfferingCredentialSubject.TYPE
+        );
 
-        ServiceOfferingDto saasOffering = objectMapper.readValue(
-                createServiceOfferingOrchestratorResponse(
-                        saasContract.getOfferingId(),
-                        "1234",
-                        "MyOffering",
-                        saasContract.getProviderId(),
-                        "merlot:MerlotServiceOfferingSaaS",
-                        userCountOption), ServiceOfferingDto.class);
+        ServiceOfferingDto saasOffering = createServiceOfferingOrchestratorResponse(
+                saasContract.getOfferingId(),
+                "1234",
+                "MyOffering",
+                saasContract.getProviderId(),
+                MerlotSaasServiceOfferingCredentialSubject.TYPE
+        );
 
-        ServiceOfferingDto dataDeliveryOffering = objectMapper.readValue(
-                createServiceOfferingOrchestratorResponse(
-                        dataDeliveryContract.getOfferingId(),
-                        "2345",
-                        "MyOffering",
-                        dataDeliveryContract.getProviderId(),
-                        "merlot:MerlotServiceOfferingDataDelivery",
-                        exchangeCountOption), ServiceOfferingDto.class);
+        ServiceOfferingDto dataDeliveryOffering = createServiceOfferingOrchestratorResponse(
+                dataDeliveryContract.getOfferingId(),
+                "2345",
+                "MyOffering",
+                dataDeliveryContract.getProviderId(),
+                MerlotDataDeliveryServiceOfferingCredentialSubject.TYPE
+        );
 
-        ServiceOfferingDto coopOffering = objectMapper.readValue(
-                createServiceOfferingOrchestratorResponse(
-                        coopContract.getOfferingId(),
-                        "3456",
-                        "MyOffering",
-                        coopContract.getProviderId(),
-                        "merlot:MerlotServiceOfferingCooperation",
-                        ""), ServiceOfferingDto.class);
+        ServiceOfferingDto coopOffering = createServiceOfferingOrchestratorResponse(
+                coopContract.getOfferingId(),
+                "3456",
+                "MyOffering",
+                coopContract.getProviderId(),
+                MerlotCoopContractServiceOfferingCredentialSubject.TYPE
+        );
 
 
         lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq("ServiceOffering:4321"), any()))
@@ -527,9 +287,9 @@ class ContractStorageServiceTest {
         lenient().when(messageQueueService.remoteRequestOfferingDetails(eq(coopContract.getOfferingId())))
                 .thenReturn(coopOffering);
 
-        String organizationOrchestratorResponse = createOrganizationsOrchestratorResponse("40");
+        MerlotParticipantDto organizationOrchestratorResponse = createOrganizationsOrchestratorResponse(getParticipantId(40));
         lenient().when(organizationOrchestratorClient.getOrganizationDetails(any(), any()))
-                .thenReturn(objectMapper.readValue(organizationOrchestratorResponse, MerlotParticipantDto.class));
+                .thenReturn(organizationOrchestratorResponse);
 
         lenient().when(storageClient.getItem(any(), any())).thenReturn(new byte[]{0x01, 0x02, 0x03, 0x04});
 
@@ -1175,11 +935,8 @@ class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionSaasContractRevokedNotAllowed() throws JSONException, IOException {
-        Set<String> representedOrgaIds = new HashSet<>();
         String consumer = saasContract.getConsumerId();
         String provider = saasContract.getProviderId();
-        representedOrgaIds.add(consumer);
-        representedOrgaIds.add(provider);
 
         SaasContractDto editedContract = (SaasContractDto) contractStorageService.getContractDetails(saasContract.getId(),
                 "authToken");
@@ -1198,7 +955,7 @@ class ContractStorageServiceTest {
 
         SaasContractDto result2 = (SaasContractDto) contractStorageService
                 .updateContractTemplate(result, "authToken",
-                        representedOrgaIds.iterator().next());
+                        provider);
 
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
 
@@ -1211,11 +968,8 @@ class ContractStorageServiceTest {
     @Test
     @Transactional
     void transitionCooperationContractRevokedNotAllowed() throws JSONException, IOException {
-        Set<String> representedOrgaIds = new HashSet<>();
         String consumer = coopContract.getConsumerId();
         String provider = coopContract.getProviderId();
-        representedOrgaIds.add(consumer);
-        representedOrgaIds.add(provider);
         CooperationContractTemplate template = new CooperationContractTemplate(coopContract, false);
 
         CooperationContractDto editedContract = (CooperationContractDto) contractStorageService.getContractDetails(coopContract.getId(),
@@ -1236,7 +990,7 @@ class ContractStorageServiceTest {
 
         CooperationContractDto result2 = (CooperationContractDto) contractStorageService
                 .updateContractTemplate(result, "authToken",
-                        representedOrgaIds.iterator().next());
+                        provider);
 
         assertEquals(result.getNegotiation().isProviderTncAccepted(), result2.getNegotiation().isProviderTncAccepted());
 

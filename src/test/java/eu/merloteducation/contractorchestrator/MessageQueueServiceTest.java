@@ -1,5 +1,6 @@
 package eu.merloteducation.contractorchestrator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryContractTemplate;
 import eu.merloteducation.contractorchestrator.models.entities.datadelivery.DataDeliveryProvisioning;
@@ -8,10 +9,7 @@ import eu.merloteducation.contractorchestrator.models.entities.datadelivery.iono
 import eu.merloteducation.contractorchestrator.models.entities.saas.SaasContractTemplate;
 import eu.merloteducation.contractorchestrator.repositories.ContractTemplateRepository;
 import eu.merloteducation.contractorchestrator.service.MessageQueueService;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescription;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.SelfDescriptionVerifiableCredential;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.TermsAndConditions;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotOrganizationCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.participants.MerlotLegalParticipantCredentialSubject;
 import eu.merloteducation.modelslib.api.organization.MerlotParticipantDto;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,7 +26,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.List;
 
+import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doReturn;
@@ -57,21 +57,20 @@ class MessageQueueServiceTest {
     }
 
     @BeforeEach
-    void beforeEach() {
+    void beforeEach() throws JsonProcessingException {
         when(rabbitTemplate.convertSendAndReceiveAsType(anyString(), anyString(), any(Object.class),any()))
                 .thenReturn(null);
         orga10 = new MerlotParticipantDto();
-        orga10.setSelfDescription(new SelfDescription());
-        orga10.getSelfDescription().setVerifiableCredential(new SelfDescriptionVerifiableCredential());
-        orga10.getSelfDescription().getVerifiableCredential().setCredentialSubject(new MerlotOrganizationCredentialSubject());
-        MerlotOrganizationCredentialSubject credentialSubject = (MerlotOrganizationCredentialSubject)
-                orga10.getSelfDescription().getVerifiableCredential()
-                .getCredentialSubject();
-        credentialSubject.setId("did:web:test.eu#orga-10");
-        credentialSubject.setLegalName("Orga 10");
-        credentialSubject.setTermsAndConditions(new TermsAndConditions());
-        credentialSubject.getTermsAndConditions().setContent("http://example.com");
-        credentialSubject.getTermsAndConditions().setHash("hash1234");
+        String orga10Id = "did:web:test.eu:orga-10";
+        orga10.setId(orga10Id);
+        orga10.setSelfDescription(createVpFromCsList(
+                List.of(
+                       getGxParticipantCs(orga10Id),
+                        getGxRegistrationNumberCs(orga10Id),
+                        getMerlotParticipantCs(orga10Id)
+                ),
+                "did:web:someorga"
+        ));
         doReturn(orga10).when(rabbitTemplate)
                 .convertSendAndReceiveAsType(anyString(), anyString(), eq("10"),any());
     }
@@ -80,20 +79,19 @@ class MessageQueueServiceTest {
     void remoteGetOrgaDetailsExistent() {
         MerlotParticipantDto details = messageQueueService.remoteRequestOrganizationDetails("10");
         assertNotNull(details);
-        MerlotOrganizationCredentialSubject orga10CredentialSubject = (MerlotOrganizationCredentialSubject)
-                orga10.getSelfDescription().getVerifiableCredential()
-                        .getCredentialSubject();
-        MerlotOrganizationCredentialSubject detailsCredentialSubject = (MerlotOrganizationCredentialSubject)
-                details.getSelfDescription().getVerifiableCredential()
-                        .getCredentialSubject();
-        assertEquals(orga10CredentialSubject.getId(),
-                detailsCredentialSubject.getId());
-        assertEquals(orga10CredentialSubject.getLegalName(),
-                detailsCredentialSubject.getLegalName());
-        assertEquals(orga10CredentialSubject.getTermsAndConditions().getContent(),
-                detailsCredentialSubject.getTermsAndConditions().getContent());
-        assertEquals(orga10CredentialSubject.getTermsAndConditions().getHash(),
-                detailsCredentialSubject.getTermsAndConditions().getHash());
+        MerlotLegalParticipantCredentialSubject orga10Cs = orga10.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotLegalParticipantCredentialSubject.class);
+        MerlotLegalParticipantCredentialSubject detailsCs = details.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotLegalParticipantCredentialSubject.class);
+
+        assertEquals(orga10Cs.getId(),
+                detailsCs.getId());
+        assertEquals(orga10Cs.getLegalName(),
+                detailsCs.getLegalName());
+        assertEquals(orga10Cs.getTermsAndConditions().getUrl(),
+                detailsCs.getTermsAndConditions().getUrl());
+        assertEquals(orga10Cs.getTermsAndConditions().getHash(),
+                detailsCs.getTermsAndConditions().getHash());
     }
 
     @Test

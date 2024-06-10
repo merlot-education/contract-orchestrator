@@ -1,7 +1,7 @@
 package eu.merloteducation.contractorchestrator.service;
 
 import eu.merloteducation.contractorchestrator.models.entities.ContractState;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.DataDeliveryCredentialSubject;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.DataDeliveryContractDto;
 import eu.merloteducation.modelslib.api.contract.datadelivery.TransferProvisioningDto;
@@ -73,8 +73,8 @@ public class EdcOrchestrationService {
         boolean isConsumer = activeRoleOrgaId.equals(contractDto.getDetails().getConsumerId());
         boolean isProvider = activeRoleOrgaId.equals(contractDto.getDetails().getProviderId());
         ServiceOfferingDto offeringDetails = contractDto.getOffering();
-        DataDeliveryCredentialSubject credentialSubject = (DataDeliveryCredentialSubject) offeringDetails
-                .getSelfDescription().getVerifiableCredential().getCredentialSubject();
+        MerlotDataDeliveryServiceOfferingCredentialSubject credentialSubject = offeringDetails.getSelfDescription()
+                .findFirstCredentialSubjectByType(MerlotDataDeliveryServiceOfferingCredentialSubject.class);
         String dataTransferType = credentialSubject.getDataTransferType();
 
         if (!((dataTransferType.equals("Push") && isProvider) ||

@@ -1,6 +1,6 @@
 package eu.merloteducation.contractorchestrator.models.entities;
 
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gax.datatypes.TermsAndConditions;
+import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxSOTermsAndConditions;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,8 +14,8 @@ public class ContractTnc {
     private String content;
     private String hash;
 
-    public ContractTnc(TermsAndConditions termsAndConditions) {
-        this.content = termsAndConditions.getContent();
+    public ContractTnc(GxSOTermsAndConditions termsAndConditions) {
+        this.content = termsAndConditions.getUrl();
         this.hash = termsAndConditions.getHash();
     }
 }
