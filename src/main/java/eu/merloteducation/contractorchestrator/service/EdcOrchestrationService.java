@@ -135,7 +135,7 @@ public class EdcOrchestrationService {
                 .dataAddress(getProviderDataAddress(providerTransferDto, providerConnector))
                 .build();
 
-        logger.debug("Creating Asset {} on {}", assetCreateRequest, providerConnector);
+        logger.info("Creating Asset {} on {}", assetCreateRequest, providerConnector);
         IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
 
         // create policy
@@ -148,7 +148,7 @@ public class EdcOrchestrationService {
                         .permission(Collections.emptyList())
                         .build())
                 .build();
-        logger.debug("Creating Policy {} on {}", policyCreateRequest, providerConnector);
+        logger.info("Creating Policy {} on {}", policyCreateRequest, providerConnector);
         IdResponse policyIdResponse = providerEdcClient.createPolicy(policyCreateRequest);
 
         // create contract definition
@@ -162,7 +162,7 @@ public class EdcOrchestrationService {
                         .operandRight(assetId)
                         .build()))
                 .build();
-        logger.debug("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
+        logger.info("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
         providerEdcClient.createContractDefinition(contractDefinitionCreateRequest);
 
         // schedule deletion of the contract definition in 5 minutes
@@ -174,7 +174,7 @@ public class EdcOrchestrationService {
         // consumer side
         // find the offering we are interested in
         CatalogRequest catalogRequest = new CatalogRequest(providerConnector.getProtocolBaseUrl());
-        logger.debug("Query Catalog with request {} on {}", catalogRequest, consumerConnector);
+        logger.info("Query Catalog with request {} on {}", catalogRequest, consumerConnector);
         DcatCatalog catalog = consumerEdcClient.queryCatalog(catalogRequest);
         List<DcatDataset> matches =
                 catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
@@ -195,7 +195,7 @@ public class EdcOrchestrationService {
                         .policy(dataset.getHasPolicy().get(0))
                         .build())
                 .build();
-        logger.debug("Negotiate Offer with request {} on {}", negotiationInitiateRequest, consumerConnector);
+        logger.info("Negotiate Offer with request {} on {}", negotiationInitiateRequest, consumerConnector);
         return consumerEdcClient.negotiateOffer(negotiationInitiateRequest);
     }
 
@@ -216,7 +216,7 @@ public class EdcOrchestrationService {
                 contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-        logger.debug("Check status of offer {} on {}", negotiationId, consumerConnector);
+        logger.info("Check status of offer {} on {}", negotiationId, consumerConnector);
         return consumerEdcClient.checkOfferStatus(negotiationId);
     }
 
@@ -254,7 +254,7 @@ public class EdcOrchestrationService {
                 .dataDestination(getConsumerDataAddress(consumerTransferDto, consumerConnector))
                 .build();
 
-        logger.debug("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
+        logger.info("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
         IdResponse transferResponse = consumerEdcClient.initiateTransfer(transferRequest);
 
         // schedule deprovisioning of transfer related data 5 minutes after the transfer initiation
@@ -281,7 +281,7 @@ public class EdcOrchestrationService {
                 contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-        logger.debug("Check status of transfer {} on {}", transferId, consumerConnector);
+        logger.info("Check status of transfer {} on {}", transferId, consumerConnector);
 
         return consumerEdcClient.checkTransferStatus(transferId);
     }
