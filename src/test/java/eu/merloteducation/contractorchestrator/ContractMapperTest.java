@@ -170,7 +170,7 @@ class ContractMapperTest {
         contractDto = (SaasContractDto) getTestContractDto(contractDto);
         contractDto.getNegotiation().setUserCountSelection("10");
 
-        String id = "ServiceOffering:1234";
+        String id = "urn:uuid:1234";
 
         contractDto.getOffering().setSelfDescription(createVpFromCsList(
                 List.of(
@@ -193,7 +193,7 @@ class ContractMapperTest {
         contractDto = (DataDeliveryContractDto) getTestContractDto(contractDto);
         contractDto.getNegotiation().setExchangeCountSelection("10");
 
-        String id = "ServiceOffering:1234";
+        String id = "urn:uuid:1234";
 
         contractDto.getOffering().setSelfDescription(createVpFromCsList(
                 List.of(
@@ -214,7 +214,7 @@ class ContractMapperTest {
 
         contractDto = (CooperationContractDto) getTestContractDto(contractDto);
 
-        String id = "ServiceOffering:1234";
+        String id = "urn:uuid:1234";
 
         contractDto.getOffering().setSelfDescription(createVpFromCsList(
                 List.of(
@@ -254,7 +254,7 @@ class ContractMapperTest {
         attachments.add("def.pdf");
 
         contractPdfDto.setContractAttachmentFilenames(attachments);
-        contractPdfDto.setServiceId("ServiceOffering:1234");
+        contractPdfDto.setServiceId("urn:uuid:1234");
         contractPdfDto.setServiceName("Mein Dienst");
         contractPdfDto.setServiceDescription("Some offering description");
         contractPdfDto.setServiceExampleCosts("5€");

@@ -191,7 +191,7 @@ class ContractStorageServiceTest {
     }
 
     private String getParticipantId(int num) {
-        return "did:web:"+ merlotDomain + ":orga-" + num;
+        return "did:web:"+ merlotDomain + ":participant:orga-" + num;
     }
 
     @BeforeAll
@@ -235,7 +235,7 @@ class ContractStorageServiceTest {
         ObjectMapper objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         ServiceOfferingDto offering4321 = createServiceOfferingOrchestratorResponse(
-                "ServiceOffering:4321",
+                "urn:uuid:4321",
                 "4321",
                 "OfferingName",
                 getParticipantId(40),
@@ -267,9 +267,9 @@ class ContractStorageServiceTest {
         );
 
 
-        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq("ServiceOffering:4321"), any()))
+        lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq("urn:uuid:4321"), any()))
                 .thenReturn(offering4321);
-        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq("ServiceOffering:4321")))
+        lenient().when(messageQueueService.remoteRequestOfferingDetails(eq("urn:uuid:4321")))
                 .thenReturn(offering4321);
 
         lenient().when(serviceOfferingOrchestratorClient.getOfferingDetails(eq(saasContract.getOfferingId()), any()))
@@ -406,7 +406,7 @@ class ContractStorageServiceTest {
     void createContractTemplateInvalidConsumerId() {
         ContractCreateRequest request = new ContractCreateRequest();
         request.setConsumerId("garbage");
-        request.setOfferingId("ServiceOffering:4321");
+        request.setOfferingId("urn:uuid:4321");
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> contractStorageService.addContractTemplate(request, "authToken"));
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, ex.getStatusCode());
