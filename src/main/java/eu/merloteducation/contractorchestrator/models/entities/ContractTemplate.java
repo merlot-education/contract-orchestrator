@@ -102,7 +102,7 @@ public abstract class ContractTemplate {
         this.consumerTncAccepted = template.isConsumerTncAccepted();
         this.consumerAttachmentsAccepted = template.isConsumerAttachmentsAccepted();
         this.providerTncAccepted = template.isProviderTncAccepted();
-        this.termsAndConditions = template.getTermsAndConditions();
+        this.termsAndConditions = new ArrayList<>(template.getTermsAndConditions());
         this.additionalAgreements = template.getAdditionalAgreements();
         this.attachments = new HashSet<>(template.getAttachments());
         this.providerSignature = regenerate ? null : template.getProviderSignature();
