@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import eu.merloteducation.authorizationlibrary.authorization.OrganizationRoleGrantedAuthority;
 import eu.merloteducation.contractorchestrator.models.entities.*;
 import eu.merloteducation.contractorchestrator.service.ContractStorageService;
-import eu.merloteducation.contractorchestrator.service.EdcOrchestrationService;
 import eu.merloteducation.modelslib.api.contract.ContractBasicDto;
 import eu.merloteducation.modelslib.api.contract.ContractCreateRequest;
 import eu.merloteducation.modelslib.api.contract.ContractDto;
@@ -51,12 +50,11 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/")
 public class ContractsController {
+    private final ContractStorageService contractStorageService;
 
-    @Autowired
-    private ContractStorageService contractStorageService;
-
-    @Autowired
-    private EdcOrchestrationService edcOrchestrationService;
+    public ContractsController(@Autowired ContractStorageService contractStorageService) {
+        this.contractStorageService = contractStorageService;
+    }
 
     /**
      * POST endpoint for creating a new contract in draft state.

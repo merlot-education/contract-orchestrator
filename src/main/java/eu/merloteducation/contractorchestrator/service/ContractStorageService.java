@@ -135,14 +135,10 @@ public class ContractStorageService {
             return false;
         }
 
-        if (contract instanceof DataDeliveryContractTemplate dataDeliveryContract
-                && !StringUtil.isNullOrEmpty(dataDeliveryContract.getExchangeCountSelection())
-                && !isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
-                offeringDetails)) {
-            return false;
-        }
-
-        return true;
+        return !(contract instanceof DataDeliveryContractTemplate dataDeliveryContract)
+                || StringUtil.isNullOrEmpty(dataDeliveryContract.getExchangeCountSelection())
+                || isValidExchangeCountSelection(dataDeliveryContract.getExchangeCountSelection(),
+                offeringDetails);
     }
 
     private boolean isValidRuntimeSelection(String selection, ServiceOfferingDto offeringDetails) throws JSONException {
@@ -235,7 +231,6 @@ public class ContractStorageService {
                                                ContractDto editedContract,
                                                boolean isConsumer,
                                                boolean isProvider) {
-        // TODO consider moving this logic into a DTO pattern
         if (targetContract.getState() == ContractState.IN_DRAFT) {
             targetContract.setRuntimeSelection(editedContract.getNegotiation().getRuntimeSelection());
             if (isConsumer) {

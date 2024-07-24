@@ -31,8 +31,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.AbstractMappingJacksonResponseBodyAdvice;
 
-import java.util.Objects;
-
 @ControllerAdvice(assignableTypes = ContractsController.class)
 public class ContractsControllerAdvice extends AbstractMappingJacksonResponseBodyAdvice {
     @Override

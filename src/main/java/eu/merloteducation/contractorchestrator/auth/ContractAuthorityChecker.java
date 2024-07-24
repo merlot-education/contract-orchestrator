@@ -27,12 +27,14 @@ import java.util.Set;
 
 @Component("contractAuthorityChecker")
 public class ContractAuthorityChecker {
+    private final ContractTemplateRepository contractTemplateRepository;
+    private final AuthorityChecker authorityChecker;
 
-    @Autowired
-    private ContractTemplateRepository contractTemplateRepository;
-
-    @Autowired
-    private AuthorityChecker authorityChecker;
+    public ContractAuthorityChecker(@Autowired ContractTemplateRepository contractTemplateRepository,
+                                    @Autowired AuthorityChecker authorityChecker) {
+        this.contractTemplateRepository = contractTemplateRepository;
+        this.authorityChecker = authorityChecker;
+    }
 
     private boolean canAccessContract(Authentication authentication, ContractTemplate template) {
         return this.isContractConsumer(authentication, template) || this.isContractProvider(authentication, template);

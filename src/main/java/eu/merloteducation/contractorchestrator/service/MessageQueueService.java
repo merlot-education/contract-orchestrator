@@ -25,8 +25,7 @@ import eu.merloteducation.modelslib.api.organization.OrganizationConnectorTransf
 import eu.merloteducation.modelslib.api.serviceoffering.ServiceOfferingDto;
 import eu.merloteducation.modelslib.queue.ConnectorDetailsRequest;
 import eu.merloteducation.modelslib.queue.ContractTemplateUpdated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,15 +35,16 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@Slf4j
 public class MessageQueueService {
+    private final RabbitTemplate rabbitTemplate;
+    private final ContractTemplateRepository contractTemplateRepository;
 
-    @Autowired
-    RabbitTemplate rabbitTemplate;
-
-    @Autowired
-    private ContractTemplateRepository contractTemplateRepository;
-
-    private final Logger logger = LoggerFactory.getLogger(MessageQueueService.class);
+    public MessageQueueService(@Autowired RabbitTemplate rabbitTemplate,
+                               @Autowired ContractTemplateRepository contractTemplateRepository) {
+        this.rabbitTemplate = rabbitTemplate;
+        this.contractTemplateRepository = contractTemplateRepository;
+    }
 
     private void sendContractUpdatedMessage(ContractTemplateUpdated contractTemplateUpdated, String routingKey) {
         rabbitTemplate.convertAndSend(
@@ -60,7 +60,7 @@ public class MessageQueueService {
      * @param contractTemplateUpdated data about the created contract
      */
     public void sendContractCreatedMessage(ContractTemplateUpdated contractTemplateUpdated) {
-        logger.info("Sending contract created message for contract with id {} and offering with id {}",
+        log.info("Sending contract created message for contract with id {} and offering with id {}",
                 contractTemplateUpdated.getContractId(),
                 contractTemplateUpdated.getServiceOfferingId());
         sendContractUpdatedMessage(contractTemplateUpdated, MessageQueueConfig.CONTRACT_CREATED_KEY);
@@ -72,7 +72,7 @@ public class MessageQueueService {
      * @param contractTemplateUpdated data about the purged contract
      */
     public void sendContractPurgedMessage(ContractTemplateUpdated contractTemplateUpdated) {
-        logger.info("Sending contract purged message for contract with id {} and offering with id {}",
+        log.info("Sending contract purged message for contract with id {} and offering with id {}",
                 contractTemplateUpdated.getContractId(),
                 contractTemplateUpdated.getServiceOfferingId());
         sendContractUpdatedMessage(contractTemplateUpdated, MessageQueueConfig.CONTRACT_PURGED_KEY);
@@ -136,28 +136,28 @@ public class MessageQueueService {
      */
     @RabbitListener(queues = MessageQueueConfig.ORGANIZATION_REVOKED_QUEUE)
     public void organizationRevokedListener(String orgaId) {
-        logger.info("Organization revoked message: organization ID {}", orgaId);
+        log.info("Organization revoked message: organization ID {}", orgaId);
 
         List<ContractTemplate> contractsToDelete = contractTemplateRepository.findAllByOrgaIdAndState(orgaId,
             ContractState.IN_DRAFT);
 
         if (!contractsToDelete.isEmpty()) {
-            logger.info("Deleting in-draft contracts associated with organization with ID {}", orgaId);
+            log.info("Deleting in-draft contracts associated with organization with ID {}", orgaId);
 
             contractsToDelete.forEach(contract -> { contract.transitionState(ContractState.DELETED); contractTemplateRepository.save(contract);});
         } else {
-            logger.info("No in-draft contracts associated with organization with ID {} found to delete", orgaId);
+            log.info("No in-draft contracts associated with organization with ID {} found to delete", orgaId);
         }
 
         List<ContractTemplate> contractsToRevoke = contractTemplateRepository.findAllByOrgaIdAndState(orgaId,
             ContractState.SIGNED_CONSUMER);
 
         if (!contractsToRevoke.isEmpty()) {
-            logger.info("Revoking consumer-signed contracts associated with organization with ID {}", orgaId);
+            log.info("Revoking consumer-signed contracts associated with organization with ID {}", orgaId);
 
             contractsToRevoke.forEach(contract -> { contract.transitionState(ContractState.REVOKED); contractTemplateRepository.save(contract);});
         } else {
-            logger.info("No consumer-signed contracts associated with organization with ID {} found to revoke", orgaId);
+            log.info("No consumer-signed contracts associated with organization with ID {} found to revoke", orgaId);
         }
     }
 }

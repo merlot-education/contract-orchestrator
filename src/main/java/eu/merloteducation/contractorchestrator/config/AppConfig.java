@@ -47,7 +47,8 @@ public class AppConfig {
                 .baseUrl(serviceOfferingOrchestratorBaseUri)
                 .build();
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
-                .builder(WebClientAdapter.forClient(webClient))
+                .builder()
+                .exchangeAdapter(WebClientAdapter.create(webClient))
                 .build();
         return httpServiceProxyFactory.createClient(ServiceOfferingOrchestratorClient.class);
     }
@@ -58,7 +59,8 @@ public class AppConfig {
                 .baseUrl(organizationsOrchestratorBaseUri)
                 .build();
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
-                .builder(WebClientAdapter.forClient(webClient))
+                .builder()
+                .exchangeAdapter(WebClientAdapter.create(webClient))
                 .build();
         return httpServiceProxyFactory.createClient(OrganizationOrchestratorClient.class);
     }
@@ -71,7 +73,8 @@ public class AppConfig {
                 .defaultHeader("X-API-Key", connector.getConnectorAccessToken())
                 .build();
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
-                .builder(WebClientAdapter.forClient(webClient))
+                .builder()
+                .exchangeAdapter(WebClientAdapter.create(webClient))
                 .build();
         return httpServiceProxyFactory.createClient(EdcClient.class);
     }
@@ -82,8 +85,9 @@ public class AppConfig {
             .baseUrl(pdfServiceBaseUri)
             .build();
         HttpServiceProxyFactory httpServiceProxyFactory = HttpServiceProxyFactory
-            .builder(WebClientAdapter.forClient(webClient))
-            .build();
+                .builder()
+                .exchangeAdapter(WebClientAdapter.create(webClient))
+                .build();
         return httpServiceProxyFactory.createClient(PdfServiceClient.class);
     }
 }

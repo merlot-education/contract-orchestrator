@@ -24,7 +24,7 @@ public class ContractSignerService {
 
     /**
      * Given a contract object and a signing key, generate a signature for this contract.
-     * TODO this method needs to be extended later to actually sign, currently it just passes through the input value.
+     * NOTE: this method needs to be extended later to actually sign, currently it just passes through the input value.
      *
      * @param template   contract object to sign
      * @param signingKey key to use to sign

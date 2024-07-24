@@ -28,9 +28,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/transfers")
 public class DataTransferController {
+    private final EdcOrchestrationService edcOrchestrationService;
 
-    @Autowired
-    private EdcOrchestrationService edcOrchestrationService;
+    public DataTransferController(@Autowired EdcOrchestrationService edcOrchestrationService) {
+        this.edcOrchestrationService = edcOrchestrationService;
+    }
 
     /**
      * POST request to start automated contract negotiation over a given contract id.

@@ -44,8 +44,7 @@ import eu.merloteducation.modelslib.edc.policy.Policy;
 import eu.merloteducation.modelslib.edc.policy.PolicyCreateRequest;
 import eu.merloteducation.modelslib.edc.transfer.IonosS3TransferProcess;
 import eu.merloteducation.modelslib.edc.transfer.TransferRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -58,20 +57,22 @@ import java.time.Instant;
 import java.util.*;
 
 @Service
+@Slf4j
 public class EdcOrchestrationService {
+    private final MessageQueueService messageQueueService;
+    private final ContractStorageService contractStorageService;
+    private final ObjectProvider<EdcClient> edcClientProvider;
+    private final TaskScheduler taskScheduler;
 
-    private final Logger logger = LoggerFactory.getLogger(EdcOrchestrationService.class);
-    @Autowired
-    private MessageQueueService messageQueueService;
-
-    @Autowired
-    private ContractStorageService contractStorageService;
-
-    @Autowired
-    private ObjectProvider<EdcClient> edcClientProvider;
-
-    @Autowired
-    private TaskScheduler taskScheduler;
+    public EdcOrchestrationService(@Autowired MessageQueueService messageQueueService,
+                                   @Autowired ContractStorageService contractStorageService,
+                                   @Autowired ObjectProvider<EdcClient> edcClientProvider,
+                                   @Autowired TaskScheduler taskScheduler) {
+        this.messageQueueService = messageQueueService;
+        this.contractStorageService = contractStorageService;
+        this.edcClientProvider = edcClientProvider;
+        this.taskScheduler = taskScheduler;
+    }
 
     private DataDeliveryContractDto loadContract(String contractId, String activeRoleOrgaId, String authToken) {
         ContractDto contract = contractStorageService.getContractDetails(contractId, authToken);
@@ -151,7 +152,7 @@ public class EdcOrchestrationService {
                 .dataAddress(getProviderDataAddress(providerTransferDto, providerConnector))
                 .build();
 
-        logger.info("Creating Asset {} on {}", assetCreateRequest, providerConnector);
+        log.info("Creating Asset {} on {}", assetCreateRequest, providerConnector);
         IdResponse assetIdResponse = providerEdcClient.createAsset(assetCreateRequest);
 
         // create policy
@@ -164,7 +165,7 @@ public class EdcOrchestrationService {
                         .permission(Collections.emptyList())
                         .build())
                 .build();
-        logger.info("Creating Policy {} on {}", policyCreateRequest, providerConnector);
+        log.info("Creating Policy {} on {}", policyCreateRequest, providerConnector);
         IdResponse policyIdResponse = providerEdcClient.createPolicy(policyCreateRequest);
 
         // create contract definition
@@ -178,7 +179,7 @@ public class EdcOrchestrationService {
                         .operandRight(assetId)
                         .build()))
                 .build();
-        logger.info("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
+        log.info("Creating Contract Definition {} on {}", contractDefinitionCreateRequest, providerConnector);
         providerEdcClient.createContractDefinition(contractDefinitionCreateRequest);
 
         // schedule deletion of the contract definition in 5 minutes
@@ -190,7 +191,7 @@ public class EdcOrchestrationService {
         // consumer side
         // find the offering we are interested in
         CatalogRequest catalogRequest = new CatalogRequest(providerConnector.getProtocolBaseUrl());
-        logger.info("Query Catalog with request {} on {}", catalogRequest, consumerConnector);
+        log.info("Query Catalog with request {} on {}", catalogRequest, consumerConnector);
         DcatCatalog catalog = consumerEdcClient.queryCatalog(catalogRequest);
         List<DcatDataset> matches =
                 catalog.getDataset().stream().filter(d -> d.getAssetId().equals(assetIdResponse.getId())).toList();
@@ -211,7 +212,7 @@ public class EdcOrchestrationService {
                         .policy(dataset.getHasPolicy().get(0))
                         .build())
                 .build();
-        logger.info("Negotiate Offer with request {} on {}", negotiationInitiateRequest, consumerConnector);
+        log.info("Negotiate Offer with request {} on {}", negotiationInitiateRequest, consumerConnector);
         return consumerEdcClient.negotiateOffer(negotiationInitiateRequest);
     }
 
@@ -232,7 +233,7 @@ public class EdcOrchestrationService {
                 contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-        logger.info("Check status of offer {} on {}", negotiationId, consumerConnector);
+        log.info("Check status of offer {} on {}", negotiationId, consumerConnector);
         return consumerEdcClient.checkOfferStatus(negotiationId);
     }
 
@@ -266,11 +267,11 @@ public class EdcOrchestrationService {
                 .connectorId(providerConnector.getConnectorId())
                 .counterPartyAddress(negotiation.getCounterPartyAddress())
                 .contractId(negotiation.getContractAgreementId())
-                .assetId("some-asset") // TODO this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
+                .assetId("some-asset") // this needs to be replaced once it is actually used by the EDC, for now it does not seem to matter
                 .dataDestination(getConsumerDataAddress(consumerTransferDto, consumerConnector))
                 .build();
 
-        logger.info("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
+        log.info("Initiate transfer with request {} on {}", transferRequest, consumerConnector);
         IdResponse transferResponse = consumerEdcClient.initiateTransfer(transferRequest);
 
         // schedule deprovisioning of transfer related data 5 minutes after the transfer initiation
@@ -297,7 +298,7 @@ public class EdcOrchestrationService {
                 contractDto.getProvisioning().getConsumerTransferProvisioning().getSelectedConnectorId());
 
         EdcClient consumerEdcClient = edcClientProvider.getObject(consumerConnector);
-        logger.info("Check status of transfer {} on {}", transferId, consumerConnector);
+        log.info("Check status of transfer {} on {}", transferId, consumerConnector);
 
         return consumerEdcClient.checkTransferStatus(transferId);
     }
