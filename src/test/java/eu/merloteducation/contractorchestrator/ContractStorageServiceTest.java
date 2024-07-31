@@ -69,14 +69,12 @@ import eu.merloteducation.s3library.service.StorageClient;
 import eu.merloteducation.s3library.service.StorageClientException;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import org.apache.commons.text.StringSubstitutor;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -87,15 +85,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.net.URI;
-import java.time.Instant;
 import java.util.*;
 
 import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
@@ -849,7 +844,7 @@ class ContractStorageServiceTest {
                     ContractState.SIGNED_CONSUMER, consumer, "User Name", "authToken");
 
                 return contract;
-            } catch (JSONException | IOException e) {
+            } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
         });
@@ -875,7 +870,7 @@ class ContractStorageServiceTest {
                         "User Name", "authToken");
 
                     return "foo";
-                } catch (JSONException | IOException e) {
+                } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
             });

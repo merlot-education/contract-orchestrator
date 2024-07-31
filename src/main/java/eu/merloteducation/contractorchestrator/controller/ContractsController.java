@@ -122,7 +122,7 @@ public class ContractsController {
                                                   @PathVariable(value = "status") ContractState status,
                                                   @RequestHeader(name = "Active-Role") OrganizationRoleGrantedAuthority activeRole,
                                                   @RequestHeader(name = "Authorization") String authToken,
-                                                  Principal principal) throws IOException {
+                                                  Principal principal) {
         String userName = principal.getName();
 
         return contractStorageService.transitionContractTemplateState(contractId, status,

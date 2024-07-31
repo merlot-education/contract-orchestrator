@@ -32,16 +32,19 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Mapper(componentModel = "spring", imports = {GxServiceOfferingCredentialSubject.class,
         MerlotServiceOfferingCredentialSubject.class, MerlotSaasServiceOfferingCredentialSubject.class,
-        MerlotDataDeliveryServiceOfferingCredentialSubject.class, MerlotCoopContractServiceOfferingCredentialSubject.class})
+        MerlotDataDeliveryServiceOfferingCredentialSubject.class, MerlotCoopContractServiceOfferingCredentialSubject.class,
+        OffsetDateTime.class})
 public interface ContractDtoToPdfMapper {
+
     @Mapping(target = "contractId", expression = "java(contractDto.getDetails().getId().replace(\"Contract:\", \"\"))")
-    @Mapping(target = "contractCreationDate", source = "contractDto.details.creationDate")
+    @Mapping(target = "contractCreationDate", expression = "java(map(OffsetDateTime.now()))")
     @Mapping(target = "contractRuntime", source = "contractDto.negotiation.runtimeSelection", qualifiedByName = "contractRuntime")
     @Mapping(target = "contractTnc", source = "contractDto.details.termsAndConditions", qualifiedByName = "contractTnc")
     @Mapping(target = "contractAttachmentFilenames", expression = "java(contractDto.getNegotiation().getAttachments().stream().toList())")
@@ -191,5 +194,10 @@ public interface ContractDtoToPdfMapper {
         return offeringDto.getSelfDescription()
                 .findFirstCredentialSubjectByType(MerlotSaasServiceOfferingCredentialSubject.class)
                 .getHardwareRequirements();
+    }
+
+    default String map(OffsetDateTime offsetDateTime) {
+
+        return offsetDateTime != null ? offsetDateTime.toString() : null;
     }
 }

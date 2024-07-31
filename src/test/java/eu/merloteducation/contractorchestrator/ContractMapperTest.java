@@ -16,25 +16,13 @@
 
 package eu.merloteducation.contractorchestrator;
 
-import com.danubetech.verifiablecredentials.VerifiableCredential;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.merloteducation.contractorchestrator.models.mappers.ContractDtoToPdfMapper;
-import eu.merloteducation.gxfscataloglibrary.models.credentials.CastableCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.credentials.ExtendedVerifiableCredential;
 import eu.merloteducation.gxfscataloglibrary.models.credentials.ExtendedVerifiablePresentation;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.PojoCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxDataAccountExport;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.GxSOTermsAndConditions;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.datatypes.NodeKindIRITypeId;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.gx.serviceofferings.GxServiceOfferingCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.AllowedUserCount;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.DataExchangeCount;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.datatypes.OfferingRuntime;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotCoopContractServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotDataDeliveryServiceOfferingCredentialSubject;
 import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotSaasServiceOfferingCredentialSubject;
-import eu.merloteducation.gxfscataloglibrary.models.selfdescriptions.merlot.serviceofferings.MerlotServiceOfferingCredentialSubject;
 import eu.merloteducation.modelslib.api.contract.*;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDetailsDto;
 import eu.merloteducation.modelslib.api.contract.cooperation.CooperationContractDto;
@@ -51,8 +39,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.net.URI;
-import java.time.Instant;
 import java.util.*;
 
 import static eu.merloteducation.contractorchestrator.SelfDescriptionDemoData.*;
@@ -71,7 +57,8 @@ class ContractMapperTest {
 
         ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestSaasContractDto());
         ContractPdfDto expected = getTestContractPdfDtoSaas();
-        assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields("contractAttachmentFilenames", "contractCreationDate").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
             expected.getContractAttachmentFilenames());
     }
@@ -81,7 +68,8 @@ class ContractMapperTest {
 
         ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestDataDeliveryContractDto());
         ContractPdfDto expected = getTestContractPdfDtoDataDelivery();
-        assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields("contractAttachmentFilenames", "contractCreationDate").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
             expected.getContractAttachmentFilenames());
     }
@@ -92,7 +80,8 @@ class ContractMapperTest {
         ContractPdfDto actual = contractDtoToPdfMapper.contractDtoToContractPdfDto(getTestCoopContractDto());
         ContractPdfDto expected = getTestContractPdfDto();
         expected.setServiceType(MerlotCoopContractServiceOfferingCredentialSubject.TYPE);
-        assertThat(actual).usingRecursiveComparison().ignoringFields("contractAttachmentFilenames").isEqualTo(expected);
+        assertThat(actual).usingRecursiveComparison()
+                .ignoringFields("contractAttachmentFilenames", "contractCreationDate").isEqualTo(expected);
         assertThat(actual.getContractAttachmentFilenames()).containsExactlyInAnyOrderElementsOf(
             expected.getContractAttachmentFilenames());
     }

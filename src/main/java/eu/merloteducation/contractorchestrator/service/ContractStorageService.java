@@ -484,7 +484,7 @@ public class ContractStorageService {
                                                        ContractState targetState,
                                                        String activeRoleOrgaId,
                                                        String userName,
-                                                       String authToken) throws IOException {
+                                                       String authToken) {
         ContractTemplate contract = this.loadContract(contractId);
 
         boolean isConsumer = activeRoleOrgaId.equals(contract.getConsumerId());
